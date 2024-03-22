@@ -142,3 +142,4 @@ if __name__ == '__main__':
     print(f'The script is successfully executed. Run time: {end_time - start_time}')
 
     CLIENT.close()
+
