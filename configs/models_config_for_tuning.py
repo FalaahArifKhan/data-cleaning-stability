@@ -1,7 +1,7 @@
 import numpy as np
+from pprint import pprint
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
-from pprint import pprint
 from lightgbm import LGBMClassifier
 
 
