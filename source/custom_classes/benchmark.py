@@ -57,13 +57,13 @@ class Benchmark:
         date_time_str = datetime.now(timezone.utc).strftime("%Y%m%d__%H%M%S")
         save_results_dir_path = pathlib.Path(__file__).parent.joinpath('..', '..', 'results', 'exp_nulls_data_cleaning')
         os.makedirs(save_results_dir_path, exist_ok=True)
-        tuned_df_path = os.path.join(save_results_dir_path,
-                                     f'tuning_results_{self.virny_config.dataset_name}_{null_imputer_name}_{date_time_str}.csv')
+        filename = f'tuning_results_{self.virny_config.dataset_name}_{null_imputer_name}_{date_time_str}.csv'
+        tuned_df_path = os.path.join(save_results_dir_path, filename)
         tuned_params_df.to_csv(tuned_df_path, sep=",", columns=tuned_params_df.columns, float_format="%.4f", index=False)
         self.__logger.info("Models are tuned and saved to a file")
 
         # Create models_config from the saved tuned_params_df for higher reliability
-        models_config = create_models_config_from_tuned_params_df(models_params_for_tuning, save_results_dir_path)
+        models_config = create_models_config_from_tuned_params_df(models_params_for_tuning, tuned_df_path)
         print(f'{list(models_config.keys())[0]}: ', models_config[list(models_config.keys())[0]].get_params())
         self.__logger.info("Models config is loaded from the input file")
 
@@ -92,14 +92,14 @@ class Benchmark:
 
         X_train_imputed = copy.deepcopy(X_train_with_nulls)
         X_test_imputed = copy.deepcopy(X_test_with_nulls)
-        if null_imputer_name == ErrorRepairMethod.median_mode:
+        if null_imputer_name == ErrorRepairMethod.median_mode.value:
             # Impute with median
             median_imputer = SimpleImputer(strategy='median')
             X_train_imputed[common_numerical_null_columns] = median_imputer.fit_transform(X_train_imputed[common_numerical_null_columns])
             X_test_imputed[common_numerical_null_columns] = median_imputer.transform(X_test_imputed[common_numerical_null_columns])
 
             # Impute with mode
-            mode_imputer = SimpleImputer(strategy='mode')
+            mode_imputer = SimpleImputer(strategy='most_frequent')
             X_train_imputed[common_categorical_null_columns] = mode_imputer.fit_transform(X_train_imputed[common_categorical_null_columns])
             X_test_imputed[common_categorical_null_columns] = mode_imputer.transform(X_test_imputed[common_categorical_null_columns])
 
@@ -180,7 +180,7 @@ class Benchmark:
                                        models_config=models_config,
                                        custom_tbl_fields_dct=custom_table_fields_dct,
                                        db_writer_func=self.__db.get_db_writer(),
-                                       notebook_logs_stdout=True,
+                                       notebook_logs_stdout=False,
                                        verbose=0)
 
     def run_experiment(self, run_nums: list, evaluation_scenarios: list, model_names: list, ml_impute: bool):

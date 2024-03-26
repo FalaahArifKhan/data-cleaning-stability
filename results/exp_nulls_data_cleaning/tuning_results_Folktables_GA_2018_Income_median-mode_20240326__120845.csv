@@ -1,0 +1,2 @@
+Dataset_Name,Model_Name,F1_Score,Accuracy_Score,Model_Best_Params
+Folktables_GA_2018_Income,lr_clf,0.7756,0.7997,"{'C': 1, 'penalty': 'l2', 'solver': 'newton-cg'}"
