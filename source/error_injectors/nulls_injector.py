@@ -1,11 +1,10 @@
 import numpy as np
 import pandas as pd
 
-from mlcf.error_injectors.abstract_error_injector import AbstractErrorInjector
+from source.error_injectors.abstract_error_injector import AbstractErrorInjector
 
 
-class RandomNullsInjectorStrategies(AbstractErrorInjector):
-    
+class NullsInjector(AbstractErrorInjector):
     def __init__(self, seed: int, strategy: str, columns_nulls_percentage_dct: dict):
         super().__init__(seed)
         self.strategy = strategy
@@ -23,7 +22,7 @@ class RandomNullsInjectorStrategies(AbstractErrorInjector):
             self._validate_mnar_input(df)
 
     def _validate_mcar_input(self, df: pd.DataFrame):
-         for col, col_nulls_pct in self.columns_nulls_percentage_dct.items():
+        for col, col_nulls_pct in self.columns_nulls_percentage_dct.items():
             if col not in df.columns:
                 raise ValueError(f"Value caused the issue is {col}. "
                                  f"Keys in columns_nulls_percentage_dct must be the dataframe column names")
@@ -62,16 +61,19 @@ class RandomNullsInjectorStrategies(AbstractErrorInjector):
     def _impute_nulls(self, df: pd.DataFrame, col_name: str, nulls_pct: float):
         if nulls_pct == 0:
             return df
+
         existing_nulls_count = df[col_name].isna().sum()
         target_nulls_count = int(df.shape[0] * nulls_pct)
         if existing_nulls_count > target_nulls_count:
             raise ValueError(f"Existing nulls count in '{col_name}' is greater than target nulls count. "
                              f"Increase nulls percentage for '{col_name}' to be greater than existing nulls percentage.")
+
         nulls_sample_size = target_nulls_count - existing_nulls_count
         notna_idxs = df[df[col_name].notna()].index
         np.random.seed(self.seed)
         random_row_idxs = np.random.choice(notna_idxs, size=nulls_sample_size, replace=False)
         df.loc[random_row_idxs, col_name] = None
+
         return df
 
     def _transform_mcar(self, df: pd.DataFrame):
@@ -107,7 +109,6 @@ class RandomNullsInjectorStrategies(AbstractErrorInjector):
             return self._transform_mnar(df)
         else:
             raise ValueError(f"Strategy '{self.strategy}' is not supported. Supported strategies are: MCAR, MAR, NMAR")
-
 
     def fit_transform(self, df, target_column: str = None):
         self.fit(df, target_column)

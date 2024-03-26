@@ -4,10 +4,20 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from lightgbm import LGBMClassifier
 
+from configs.constants import MLModels
+
 
 def get_models_params_for_tuning(models_tuning_seed):
     return {
-        'DecisionTreeClassifier': {
+        MLModels.lr_clf: {
+            'model': LogisticRegression(random_state=models_tuning_seed, max_iter=1000),
+            'params': {
+                'penalty': ['l1', 'l2'],
+                'C' : [0.001, 0.01, 0.1, 1],
+                'solver': ['newton-cg', 'lbfgs', 'sag', 'saga'],
+            }
+        },
+        MLModels.dt_clf: {
             'model': DecisionTreeClassifier(random_state=models_tuning_seed),
             'params': {
                 "max_depth": [5, 10, 20, 30],
@@ -16,15 +26,7 @@ def get_models_params_for_tuning(models_tuning_seed):
                 "criterion": ["gini", "entropy"]
             }
         },
-        'LogisticRegression': {
-            'model': LogisticRegression(random_state=models_tuning_seed, max_iter=1000),
-            'params': {
-                'penalty': ['l1', 'l2'],
-                'C' : [0.001, 0.01, 0.1, 1],
-                'solver': ['newton-cg', 'lbfgs', 'sag', 'saga'],
-            }
-        },
-        'LGBMClassifier': {
+        MLModels.lgbm_clf: {
             'model': LGBMClassifier(random_state=models_tuning_seed),
             'params': {
                 'max_depth' : [i for i in range(3, 12)],

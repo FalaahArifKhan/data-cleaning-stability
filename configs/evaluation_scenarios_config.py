@@ -1,5 +1,3 @@
-import pathlib
-
 from configs.constants import (GERMAN_CREDIT_DATASET, BANK_MARKETING_DATASET, CARDIOVASCULAR_DISEASE_DATASET,
                                DIABETES_DATASET, LAW_SCHOOL_DATASET, ACS_INCOME_DATASET)
 
