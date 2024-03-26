@@ -9,7 +9,7 @@ from configs.constants import MLModels
 
 def get_models_params_for_tuning(models_tuning_seed):
     return {
-        MLModels.lr_clf: {
+        MLModels.lr_clf.value: {
             'model': LogisticRegression(random_state=models_tuning_seed, max_iter=1000),
             'params': {
                 'penalty': ['l1', 'l2'],
@@ -17,7 +17,7 @@ def get_models_params_for_tuning(models_tuning_seed):
                 'solver': ['newton-cg', 'lbfgs', 'sag', 'saga'],
             }
         },
-        MLModels.dt_clf: {
+        MLModels.dt_clf.value: {
             'model': DecisionTreeClassifier(random_state=models_tuning_seed),
             'params': {
                 "max_depth": [5, 10, 20, 30],
@@ -26,7 +26,7 @@ def get_models_params_for_tuning(models_tuning_seed):
                 "criterion": ["gini", "entropy"]
             }
         },
-        MLModels.lgbm_clf: {
+        MLModels.lgbm_clf.value: {
             'model': LGBMClassifier(random_state=models_tuning_seed),
             'params': {
                 'max_depth' : [i for i in range(3, 12)],

@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 # Define a correct root path
-sys.path.append(str(Path(f"{__file__}").parent.parent.parent))
+sys.path.append(str(Path(f"{__file__}").parent.parent))
 print('Current location: ', os.getcwd())
 
 # Import dependencies
@@ -66,7 +66,7 @@ if __name__ == '__main__':
                           model_names=args.models)
     benchmark.run_experiment(run_nums=args.run_nums,
                              evaluation_scenarios=args.evaluation_scenarios,
-                             model_names=args.model_names,
+                             model_names=args.models,
                              ml_impute=args.ml_impute)
 
     end_time = datetime.now()
