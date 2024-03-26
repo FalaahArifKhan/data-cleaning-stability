@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from mlcf.error_injectors.abstract_error_injector import AbstractErrorInjector
+from abstract_error_injector import AbstractErrorInjector
 
 
 class RandomNullsInjectorStrategies(AbstractErrorInjector):
