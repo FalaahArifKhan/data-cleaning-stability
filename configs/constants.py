@@ -4,6 +4,7 @@ from enum import Enum
 EXPERIMENT_RUN_SEEDS = [100 * i for i in range(1, 11)]
 NUM_FOLDS_FOR_TUNING = 3
 EXP_COLLECTION_NAME = 'exp_nulls_data_cleaning'
+MODEL_HYPER_PARAMS_COLLECTION_NAME = 'tuned_model_hyper_params'
 EVALUATION_SCENARIOS = [
     # MCAR as train
     'mcar_mcar1', 'mcar_mcar2', 'mcar_mcar3',

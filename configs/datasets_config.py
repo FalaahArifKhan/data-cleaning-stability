@@ -27,7 +27,7 @@ DATASET_CONFIG = {
     },
     DIABETES_DATASET: {
         "data_loader": DiabetesDataset2019,
-        "data_loader_kwargs": {},
+        "data_loader_kwargs": {'with_nulls': False},
         "test_set_fraction": 0.3,
         "virny_config_path": ''
     },

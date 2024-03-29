@@ -1,6 +1,4 @@
-import os
 import copy
-import pathlib
 from pprint import pprint
 from datetime import datetime, timezone
 from sklearn.impute import SimpleImputer
@@ -8,11 +6,11 @@ from sklearn.model_selection import train_test_split
 
 from virny.custom_classes.base_dataset import BaseFlowDataset
 from virny.utils.custom_initializers import create_config_obj
-from virny.utils.custom_initializers import create_models_config_from_tuned_params_df
 from virny.user_interfaces.multiple_models_with_db_writer_api import compute_metrics_with_db_writer
 
 from configs.models_config_for_tuning import get_models_params_for_tuning
-from configs.constants import EXP_COLLECTION_NAME, EXPERIMENT_RUN_SEEDS, NUM_FOLDS_FOR_TUNING, ErrorRepairMethod
+from configs.constants import (EXP_COLLECTION_NAME, MODEL_HYPER_PARAMS_COLLECTION_NAME, EXPERIMENT_RUN_SEEDS,
+                               NUM_FOLDS_FOR_TUNING, ErrorRepairMethod)
 from configs.datasets_config import DATASET_CONFIG
 from configs.dataset_uuids import DATASET_UUIDS
 from source.utils.custom_logger import get_logger
@@ -43,7 +41,9 @@ class Benchmark:
         self.__logger = get_logger()
         self.__db = DatabaseClient()
 
-    def _tune_ML_models(self, model_names, null_imputer_name, base_flow_dataset, experiment_seed):
+    def _tune_ML_models(self, model_names, base_flow_dataset, experiment_seed,
+                        evaluation_scenario, null_imputer_name):
+        # Get hyper-parameters for tuning. Each time reinitialize an init model and its hyper-params for tuning.
         all_models_params_for_tuning = get_models_params_for_tuning(experiment_seed)
         models_params_for_tuning = {model_name: all_models_params_for_tuning[model_name] for model_name in model_names}
 
@@ -54,18 +54,18 @@ class Benchmark:
                                                         n_folds=self.num_folds_for_tuning)
 
         # Save tunes parameters
-        date_time_str = datetime.now(timezone.utc).strftime("%Y%m%d__%H%M%S")
-        save_results_dir_path = pathlib.Path(__file__).parent.joinpath('..', '..', 'results', 'exp_nulls_data_cleaning')
-        os.makedirs(save_results_dir_path, exist_ok=True)
-        filename = f'tuning_results_{self.virny_config.dataset_name}_{null_imputer_name}_{date_time_str}.csv'
-        tuned_df_path = os.path.join(save_results_dir_path, filename)
-        tuned_params_df.to_csv(tuned_df_path, sep=",", columns=tuned_params_df.columns, float_format="%.4f", index=False)
-        self.__logger.info("Models are tuned and saved to a file")
-
-        # Create models_config from the saved tuned_params_df for higher reliability
-        models_config = create_models_config_from_tuned_params_df(models_params_for_tuning, tuned_df_path)
-        print(f'{list(models_config.keys())[0]}: ', models_config[list(models_config.keys())[0]].get_params())
-        self.__logger.info("Models config is loaded from the input file")
+        date_time_str = datetime.now(timezone.utc)
+        tuned_params_df['Model_Best_Params'] = tuned_params_df['Model_Best_Params'].astype(str)
+        self.__db.write_pandas_df_into_db(collection_name=MODEL_HYPER_PARAMS_COLLECTION_NAME,
+                                          df=tuned_params_df,
+                                          custom_tbl_fields_dct={
+                                              'session_uuid': DATASET_UUIDS[self.dataset_name][null_imputer_name],
+                                              'experiment_seed': experiment_seed,
+                                              'evaluation_scenario': evaluation_scenario,
+                                              'null_imputer_name': null_imputer_name,
+                                              'record_create_date_time': date_time_str,
+                                          })
+        self.__logger.info("Models are tuned and their hyper-params are saved into a database")
 
         return models_config
 
@@ -140,11 +140,13 @@ class Benchmark:
                                numerical_columns=data_loader.numerical_columns,
                                categorical_columns=data_loader.categorical_columns)
 
-    def _run_exp_iter(self, init_data_loader, run_num, null_imputer_name, model_names, ml_impute):
+    def _run_exp_iter(self, init_data_loader, run_num, evaluation_scenario, null_imputer_name, model_names, ml_impute):
         custom_table_fields_dct = dict()
         experiment_seed = EXPERIMENT_RUN_SEEDS[run_num - 1]
         custom_table_fields_dct['session_uuid'] = DATASET_UUIDS[self.dataset_name][null_imputer_name]
-        custom_table_fields_dct['experiment_iteration'] = f'Exp_iter_{run_num}'
+        custom_table_fields_dct['experiment_iteration'] = f'exp_iter_{run_num}'
+        custom_table_fields_dct['evaluation_scenario'] = evaluation_scenario
+        custom_table_fields_dct['null_imputer_name'] = null_imputer_name
         custom_table_fields_dct['dataset_split_seed'] = experiment_seed
         custom_table_fields_dct['model_init_seed'] = experiment_seed
 
@@ -172,25 +174,34 @@ class Benchmark:
         base_flow_dataset.X_test = column_transformer.transform(base_flow_dataset.X_test)
 
         # Tune ML models
-        models_config = self._tune_ML_models(model_names, null_imputer_name, base_flow_dataset, experiment_seed)
+        models_config = self._tune_ML_models(model_names=model_names,
+                                             base_flow_dataset=base_flow_dataset,
+                                             experiment_seed=experiment_seed,
+                                             evaluation_scenario=evaluation_scenario,
+                                             null_imputer_name=null_imputer_name)
 
         # Compute metrics for tuned models
         compute_metrics_with_db_writer(dataset=base_flow_dataset,
                                        config=self.virny_config,
                                        models_config=models_config,
                                        custom_tbl_fields_dct=custom_table_fields_dct,
-                                       db_writer_func=self.__db.get_db_writer(),
+                                       db_writer_func=self.__db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
                                        notebook_logs_stdout=False,
                                        verbose=0)
 
     def run_experiment(self, run_nums: list, evaluation_scenarios: list, model_names: list, ml_impute: bool):
-        self.__db.connect(EXP_COLLECTION_NAME)
+        self.__db.connect()
         # TODO: add tqdm
         for run_num in run_nums:
             for null_imputer_name in self.null_imputers:
                 for evaluation_scenario in evaluation_scenarios:
                     # TODO: apply strategy based on evaluation scenario
-                    self._run_exp_iter(self.init_data_loader, run_num, null_imputer_name, model_names, ml_impute)
+                    self._run_exp_iter(init_data_loader=self.init_data_loader,
+                                       run_num=run_num,
+                                       evaluation_scenario=evaluation_scenario,
+                                       null_imputer_name=null_imputer_name,
+                                       model_names=model_names,
+                                       ml_impute=ml_impute)
 
         self.__db.close()
         self.__logger.info("Experimental results were successfully saved!")
