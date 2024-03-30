@@ -162,6 +162,7 @@ class Benchmark:
                 print('Precision for {}: {:.2f}'.format(column_name, precision))
                 print('Recall for {}: {:.2f}'.format(column_name, recall))
                 print('F1 score for {}: {:.2f}'.format(column_name, f1))
+                print('\n')
 
             # Save imputation performance metric of the imputer in a dataframe
             metrics_df.loc[column_idx] = [self.dataset_name, null_imputer_name, null_imputer_params,
