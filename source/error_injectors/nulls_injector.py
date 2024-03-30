@@ -82,7 +82,7 @@ class NullsInjector(AbstractErrorInjector):
             if col_random_row_idxs.shape[0] == 0:
                 continue
 
-            df_copy.loc[col_random_row_idxs, col_name] = None
+            df_copy.loc[col_random_row_idxs, col_name] = np.nan
 
         return df_copy
 

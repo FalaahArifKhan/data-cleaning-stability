@@ -54,4 +54,4 @@ def validate_args(exp_config_obj):
         if evaluation_scenario not in EVALUATION_SCENARIOS:
             raise ValueError('evaluation_scenarios argument should include values from the EVALUATION_SCENARIOS list in configs/constants.py')
 
-    return True
+    return exp_config_obj
