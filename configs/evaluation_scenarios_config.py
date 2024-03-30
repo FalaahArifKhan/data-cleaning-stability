@@ -6,7 +6,7 @@ DATASET_CONFIG = {
     ACS_INCOME_DATASET: {
         "MCAR": [
             {
-                'missing_features': ['AGEP', 'SCHL', 'MAR', 'DIS'],
+                'missing_features': ['AGEP', 'SCHL', 'MAR', 'COW'],
                 'error_rates': [0.1, 0.5, 0.9]
             },
         ],
@@ -15,13 +15,11 @@ DATASET_CONFIG = {
                 'missing_features': ['AGEP', 'MAR'],
                 'conditions': [
                     {'SEX': '2', 'error_rates': [0.1, 0.5, 0.9]},
-                    {'SEX': '1', 'error_rates': [0.1, 0.5, 0.9]},
                 ]
             },
             {
-                'missing_features': ['SCHL', 'DIS'],
+                'missing_features': ['SCHL', 'COW'],
                 'conditions': [
-                    {'RAC1P': '1', 'error_rates': [0.1, 0.5, 0.9]},
                     {'RAC1P': ['2', '3', '4', '5', '6', '7', '8', '9'], 'error_rates': [0.1, 0.5, 0.9]},
                 ]
             },
@@ -31,26 +29,24 @@ DATASET_CONFIG = {
                 'missing_features': ['MAR'],
                 'conditions': [
                     {'MAR': '5', 'error_rates': [0.1, 0.5, 0.9]},
-                    {'MAR': ['1', '2', '3', '4'], 'error_rates': [0.1, 0.5, 0.9]},
                 ]
             },
             {
-                'missing_features': ['DIS'],
+                'missing_features': ['COW'],
                 'conditions': [
-                    {'DIS': '2', 'error_rates': [0.0, 0.1, 0.3]},
-                    {'DIS': '1', 'error_rates': [0.1, 0.5, 0.9]},
+                    {'COW': '9', 'error_rates': [0.1, 0.5, 0.9]},
                 ]
             },
             {
                 'missing_features': ['AGEP'],
                 'conditions': [
-                    {'AGEP': [i for i in range(46, 100)], 'error_rates': [0.1, 0.3, 0.9]},
+                    {'AGEP': [i for i in range(46, 100)], 'error_rates': [0.1, 0.5, 0.9]},
                 ]
             },
             {
                 'missing_features': ['SCHL'],
                 'conditions': [
-                    {'SCHL': [str(i) for i in range(1, 15)], 'error_rates': [0.1, 0.3, 0.9]},
+                    {'SCHL': [str(i) for i in range(1, 15)], 'error_rates': [0.1, 0.5, 0.9]},
                 ]
             },
         ],
