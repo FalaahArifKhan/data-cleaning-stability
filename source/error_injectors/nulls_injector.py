@@ -1,15 +1,20 @@
+from typing import List, Dict, Tuple, Any
+
 import numpy as np
 import pandas as pd
 
-from source.error_injectors.abstract_error_injector import AbstractErrorInjector
+from .abstract_error_injector import AbstractErrorInjector
 
 
 class NullsInjector(AbstractErrorInjector):
-    def __init__(self, seed: int, strategy: str, columns_nulls_percentage_dct: dict):
+    def __init__(self, seed: int, strategy: str, columns_with_nulls: list, null_percentage: float, condition: Tuple[str, Any] = None):
         super().__init__(seed)
+        np.random.seed(seed)
         self.strategy = strategy
-        self.columns_nulls_percentage_dct = columns_nulls_percentage_dct
-        
+        self.columns_with_nulls = columns_with_nulls
+        self.null_percentage = null_percentage
+        self.condition = condition
+
     def _validate_input_dicts(self, df: pd.DataFrame):
         if self.strategy not in ['MCAR', 'MAR', 'MNAR']:
             raise ValueError(f"Invalid strategy '{self.strategy}'. Supported strategies are: MCAR, MAR, NMAR")
@@ -22,95 +27,108 @@ class NullsInjector(AbstractErrorInjector):
             self._validate_mnar_input(df)
 
     def _validate_mcar_input(self, df: pd.DataFrame):
-        for col, col_nulls_pct in self.columns_nulls_percentage_dct.items():
+        for col in self.columns_with_nulls:
             if col not in df.columns:
                 raise ValueError(f"Value caused the issue is {col}. "
                                  f"Keys in columns_nulls_percentage_dct must be the dataframe column names")
-            if col_nulls_pct < 0 or col_nulls_pct > 1:
-                raise ValueError(f"Value caused the issue is {col_nulls_pct}. "
+            if self.null_percentage < 0 or self.null_percentage > 1:
+                raise ValueError(f"Value caused the issue is {self.null_percentage}. "
                                  f"Column nulls percentage must be in [0.0-1.0] range.")
 
     def _validate_mar_input(self, df: pd.DataFrame):
-        for col, dependent_cols_dict in self.columns_nulls_percentage_dct.items():
-            if not isinstance(dependent_cols_dict, dict):
-                raise ValueError(f"Invalid input for column '{col}'. It should be a dictionary.")
-            for dep_col, dep_col_values_dict in dependent_cols_dict.items():
-                if not isinstance(dep_col_values_dict, dict):
-                    raise ValueError(f"Invalid input for dependent column '{dep_col}'. It should be a dictionary.")
-                if dep_col not in df.columns:
-                    raise ValueError(f"Value caused the issue is {dep_col}. "
-                                     f"Keys in dependent_cols_dict must be the dataframe column names.")
-                for dep_col_value, nulls_pct in dep_col_values_dict.items():
-                    if nulls_pct < 0 or nulls_pct > 1:
-                        raise ValueError(f"Invalid nulls percentage '{nulls_pct}' for value '{dep_col_value}' in column '{dep_col}'. Percentage should be a number between 0 and 1.")
+        self._validate_mcar_input(df)
+        if not isinstance(self.condition, tuple):
+            raise ValueError(f"Invalid input for condition '{self.condition}'. It should be a tuple.")
+        if len(self.condition) != 2:
+            raise ValueError(f"Invalid input for condition '{self.condition}'. It should be a tuple with 2 elements.")
+        if self.condition[0] not in df.columns:
+            raise ValueError(f"Value caused the issue is {self.condition[0]}. "
+                             f"Keys in condition must be the dataframe column names.")
 
     def _validate_mnar_input(self, df: pd.DataFrame):
-        for col, col_values_dict in self.columns_nulls_percentage_dct.items():
-            if not isinstance(col_values_dict, dict):
-                raise ValueError(f"Invalid input for column '{col}'. It should be a dictionary.")
-            if col not in df.columns:
-                raise ValueError(f"Value caused the issue is {col}. "
-                                 f"Keys in columns_nulls_percentage_dct must be the dataframe column names.")    
-            for col_value, nulls_pct in col_values_dict.items():
-                if nulls_pct < 0 or nulls_pct > 1:
-                    raise ValueError(f"Invalid nulls percentage '{nulls_pct}' for value '{col_value}' in column '{col}'. Percentage should be a number between 0 and 1.")      
-    
-    def fit(self, df, target_column: str = None):
-        self._validate_input_dicts(df)
-        
-    def _impute_nulls(self, df: pd.DataFrame, col_name: str, nulls_pct: float):
-        if nulls_pct == 0:
-            return df
+        self._validate_mar_input(df)
+        if len(self.columns_with_nulls) != 1:
+            raise ValueError(f"Invalid input for columns_with_nulls '{self.columns_with_nulls}'. It should be a list with 1 element.")
+        if self.columns_with_nulls[0] != self.condition[0]:
+            raise ValueError(f"Invalid input for columns_with_nulls '{self.columns_with_nulls}'. It should be the same as the condition column.")
 
-        existing_nulls_count = df[col_name].isna().sum()
-        target_nulls_count = int(df.shape[0] * nulls_pct)
+    def _filter_df_by_condition(self, df: pd.DataFrame, condition_col: str, condition_val, include_val: bool):
+        if isinstance(condition_val, list):
+            df_condition = df[condition_col].isin(condition_val) if include_val else ~df[condition_col].isin(condition_val)
+        else:
+            df_condition = df[condition_col] == condition_val if include_val else df[condition_col] != condition_val
+
+        return df[df_condition]
+
+    def _inject_nulls(self, df: pd.DataFrame):
+        df_copy = df.copy(deep=True)
+
+        existing_nulls_count = df_copy[self.columns_with_nulls].isna().any().sum()
+        target_nulls_count = int(df_copy.shape[0] * self.null_percentage)
+
         if existing_nulls_count > target_nulls_count:
-            raise ValueError(f"Existing nulls count in '{col_name}' is greater than target nulls count. "
-                             f"Increase nulls percentage for '{col_name}' to be greater than existing nulls percentage.")
+            raise ValueError(f"Existing nulls count in '{self.columns_with_nulls}' is greater than target nulls count. "
+                             f"Increase nulls percentage for '{self.columns_with_nulls}' to be greater than existing nulls percentage.")
 
         nulls_sample_size = target_nulls_count - existing_nulls_count
-        notna_idxs = df[df[col_name].notna()].index
-        np.random.seed(self.seed)
+        notna_idxs = df_copy[df_copy[self.columns_with_nulls].notna()].index
+
         random_row_idxs = np.random.choice(notna_idxs, size=nulls_sample_size, replace=False)
-        df.loc[random_row_idxs, col_name] = None
+        random_columns = np.random.choice(self.columns_with_nulls, size=nulls_sample_size, replace=True)
 
-        return df
+        random_sample_df = pd.DataFrame({'column': random_columns, 'random_idx': random_row_idxs})
+        for idx, col_name in enumerate(self.columns_with_nulls):
+            col_random_row_idxs = random_sample_df[random_sample_df['column'] == col_name]['random_idx'].values
+            if col_random_row_idxs.shape[0] == 0:
+                continue
 
-    def _transform_mcar(self, df: pd.DataFrame):
-        df_copy = df.copy(deep=True)
-        for col_name, nulls_pct in self.columns_nulls_percentage_dct.items():
-            df_copy = self._impute_nulls(df_copy, col_name, nulls_pct)
+            df_copy.loc[col_random_row_idxs, col_name] = None
+
         return df_copy
-    
-    def _transform_mar(self, df: pd.DataFrame):
+
+    def _inject_nulls_mcar(self, df: pd.DataFrame):
+        return self._inject_nulls(df)
+
+    def _inject_nulls_mar(self, df: pd.DataFrame):
         df_copy = df.copy(deep=True)
-        for col_name, dependent_cols_dict in self.columns_nulls_percentage_dct.items():
-            for dependent_col_name, dependent_col_values_dict in dependent_cols_dict.items():
-                for dependent_col_value, nulls_pct in dependent_col_values_dict.items():
-                    df_subset = df_copy[df_copy[dependent_col_name] == dependent_col_value]
-                    df_copy.loc[df_subset.index, col_name] = self._impute_nulls(df_subset, col_name, nulls_pct)[col_name]
+        condition_col, condition_value = self.condition
+        subset_df = self._filter_df_by_condition(df=df_copy,
+                                                 condition_col=condition_col,
+                                                 condition_val=condition_value,
+                                                 include_val=True)
+        subset_df_injected = self._inject_nulls(subset_df)
+        df_copy.loc[subset_df_injected.index, :] = subset_df_injected
+
         return df_copy
-    
-    def _transform_mnar(self, df: pd.DataFrame):
+
+    def _inject_nulls_mnar(self, df: pd.DataFrame):
         df_copy = df.copy(deep=True)
-        for col_name, col_values_dict in self.columns_nulls_percentage_dct.items():
-            for col_value, nulls_pct in col_values_dict.items():
-                df_subset = df_copy[df_copy[col_name] == col_value]
-                df_copy.loc[df_subset.index, col_name] = self._impute_nulls(df_subset, col_name, nulls_pct)[col_name]
+        condition_col, condition_value = self.condition
+        subset_df = self._filter_df_by_condition(df=df_copy,
+                                                 condition_col=condition_col,
+                                                 condition_val=condition_value,
+                                                 include_val=True)
+        subset_df_injected = self._inject_nulls(subset_df)
+        df_copy.loc[subset_df_injected.index, :] = subset_df_injected
+
         return df_copy
-                
+
     def transform(self, df: pd.DataFrame):
         self._validate_input_dicts(df)
         if self.strategy == 'MCAR':
-            return self._transform_mcar(df)
+            return self._inject_nulls_mcar(df)
         elif self.strategy == 'MAR':
-            return self._transform_mar(df)
+            return self._inject_nulls_mar(df)
         elif self.strategy == 'MNAR':
-            return self._transform_mnar(df)
+            return self._inject_nulls_mnar(df)
         else:
             raise ValueError(f"Strategy '{self.strategy}' is not supported. Supported strategies are: MCAR, MAR, NMAR")
+
+    def fit(self, df, target_column: str = None):
+        self._validate_input_dicts(df)
 
     def fit_transform(self, df, target_column: str = None):
         self.fit(df, target_column)
         transformed_df = self.transform(df)
+
         return transformed_df

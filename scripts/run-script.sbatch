@@ -15,3 +15,10 @@ python ./scripts/evaluate_models.py \
     --models \[\"lr_clf\"\] \
     --run_nums \[1,2,3\] \
     --ml_impute True --evaluation_scenarios \[\"mcar_mcar1\"\]
+
+python ./scripts/evaluate_models.py \
+    --dataset folk \
+    --null_imputers \[\"median-mode\"\] \
+    --models \[\"lr_clf\"\] \
+    --run_nums \[1\] \
+    --ml_impute True --evaluation_scenarios \[\"mcar_mcar1\"\]

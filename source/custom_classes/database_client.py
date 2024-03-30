@@ -12,25 +12,41 @@ class DatabaseClient:
 
         # Provide the mongodb atlas url to connect python to mongodb using pymongo
         self.connection_string = os.getenv("CONNECTION_STRING")
+        self.db_name = os.getenv("DB_NAME")
+
         self.client = None
-        self.collection = None
 
-    def connect(self, collection_name):
-        # Create a connection using MongoClient. You can import MongoClient or use pymongo.MongoClient
+    def connect(self):
+        # Create a connection using MongoClient
         self.client = MongoClient(self.connection_string)
-        self.collection = self.client[os.getenv("DB_NAME")][collection_name]
 
-    def execute_write_query(self, records):
-        return self.collection.insert_many(records)
+    def _get_collection(self, collection_name):
+        return self.client[self.db_name][collection_name]
 
-    def execute_read_query(self, query: dict):
-        cursor = self.collection.find(query)
+    def execute_write_query(self, records, collection_name):
+        collection = self._get_collection(collection_name)
+        collection.insert_many(records)
+
+    def execute_read_query(self, collection_name: str, query: dict):
+        collection = self._get_collection(collection_name)
+        cursor = collection.find(query)
         records = []
         for record in cursor:
             del record['_id']
             records.append(record)
 
         return records
+
+    def write_pandas_df_into_db(self, collection_name: str, df: pd.DataFrame, custom_tbl_fields_dct: dict = None):
+        # Append custom fields to the df
+        for column, value in custom_tbl_fields_dct.items():
+            df[column] = value
+
+        # Rename Pandas columns to lower case
+        df.columns = df.columns.str.lower()
+
+        self.execute_write_query(df.to_dict('records'), collection_name)
+        print('Dataframe is successfully written into a database')
 
     def read_model_metric_dfs_from_db(self, session_uuid):
         records = self.execute_read_query(query={'session_uuid': session_uuid, 'tag': 'OK'})
@@ -45,8 +61,10 @@ class DatabaseClient:
         model_metric_dfs.columns = new_column_names
         return model_metric_dfs
 
-    def get_db_writer(self):
-        def db_writer_func(run_models_metrics_df, collection=self.collection):
+    def get_db_writer(self, collection_name: str):
+        collection_obj = self._get_collection(collection_name)
+
+        def db_writer_func(run_models_metrics_df, collection=collection_obj):
             # Rename Pandas columns to lower case
             run_models_metrics_df.columns = run_models_metrics_df.columns.str.lower()
             collection.insert_many(run_models_metrics_df.to_dict('records'))

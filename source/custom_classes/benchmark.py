@@ -1,20 +1,21 @@
-import os
 import copy
-import pathlib
 from pprint import pprint
 from datetime import datetime, timezone
+
+import pandas as pd
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 
 from virny.custom_classes.base_dataset import BaseFlowDataset
 from virny.utils.custom_initializers import create_config_obj
-from virny.utils.custom_initializers import create_models_config_from_tuned_params_df
 from virny.user_interfaces.multiple_models_with_db_writer_api import compute_metrics_with_db_writer
 
 from configs.models_config_for_tuning import get_models_params_for_tuning
-from configs.constants import EXP_COLLECTION_NAME, EXPERIMENT_RUN_SEEDS, NUM_FOLDS_FOR_TUNING, ErrorRepairMethod
+from configs.constants import (EXP_COLLECTION_NAME, MODEL_HYPER_PARAMS_COLLECTION_NAME, EXPERIMENT_RUN_SEEDS,
+                               NUM_FOLDS_FOR_TUNING, ErrorRepairMethod, ErrorInjectionStrategy)
 from configs.datasets_config import DATASET_CONFIG
 from configs.dataset_uuids import DATASET_UUIDS
+from configs.evaluation_scenarios_config import EVALUATION_SCENARIOS_CONFIG
 from source.utils.custom_logger import get_logger
 from source.utils.model_tuning_utils import tune_ML_models
 from source.custom_classes.database_client import DatabaseClient
@@ -43,7 +44,9 @@ class Benchmark:
         self.__logger = get_logger()
         self.__db = DatabaseClient()
 
-    def _tune_ML_models(self, model_names, null_imputer_name, base_flow_dataset, experiment_seed):
+    def _tune_ML_models(self, model_names, base_flow_dataset, experiment_seed,
+                        evaluation_scenario, null_imputer_name):
+        # Get hyper-parameters for tuning. Each time reinitialize an init model and its hyper-params for tuning.
         all_models_params_for_tuning = get_models_params_for_tuning(experiment_seed)
         models_params_for_tuning = {model_name: all_models_params_for_tuning[model_name] for model_name in model_names}
 
@@ -54,20 +57,49 @@ class Benchmark:
                                                         n_folds=self.num_folds_for_tuning)
 
         # Save tunes parameters
-        date_time_str = datetime.now(timezone.utc).strftime("%Y%m%d__%H%M%S")
-        save_results_dir_path = pathlib.Path(__file__).parent.joinpath('..', '..', 'results', 'exp_nulls_data_cleaning')
-        os.makedirs(save_results_dir_path, exist_ok=True)
-        filename = f'tuning_results_{self.virny_config.dataset_name}_{null_imputer_name}_{date_time_str}.csv'
-        tuned_df_path = os.path.join(save_results_dir_path, filename)
-        tuned_params_df.to_csv(tuned_df_path, sep=",", columns=tuned_params_df.columns, float_format="%.4f", index=False)
-        self.__logger.info("Models are tuned and saved to a file")
-
-        # Create models_config from the saved tuned_params_df for higher reliability
-        models_config = create_models_config_from_tuned_params_df(models_params_for_tuning, tuned_df_path)
-        print(f'{list(models_config.keys())[0]}: ', models_config[list(models_config.keys())[0]].get_params())
-        self.__logger.info("Models config is loaded from the input file")
+        date_time_str = datetime.now(timezone.utc)
+        tuned_params_df['Model_Best_Params'] = tuned_params_df['Model_Best_Params'].astype(str)
+        self.__db.write_pandas_df_into_db(collection_name=MODEL_HYPER_PARAMS_COLLECTION_NAME,
+                                          df=tuned_params_df,
+                                          custom_tbl_fields_dct={
+                                              'session_uuid': DATASET_UUIDS[self.dataset_name][null_imputer_name],
+                                              'experiment_seed': experiment_seed,
+                                              'evaluation_scenario': evaluation_scenario,
+                                              'null_imputer_name': null_imputer_name,
+                                              'record_create_date_time': date_time_str,
+                                          })
+        self.__logger.info("Models are tuned and their hyper-params are saved into a database")
 
         return models_config
+
+    def _inject_nulls_into_one_set(self, df: pd.DataFrame, injection_strategy: str, error_rate_idx: int, experiment_seed: int):
+        for injection_scenario in EVALUATION_SCENARIOS_CONFIG[self.dataset_name][injection_strategy]:
+            error_rate = injection_scenario['setting']['error_rates'][error_rate_idx]
+            condition = None if injection_strategy == ErrorInjectionStrategy.mcar.value else injection_scenario['setting']['condition']
+            nulls_injector = NullsInjector(seed=experiment_seed,
+                                           strategy=injection_strategy,
+                                           columns_with_nulls=injection_scenario['missing_features'],
+                                           null_percentage=error_rate,
+                                           condition=condition)
+            df = nulls_injector.fit_transform(df)
+
+        return df
+
+    def _inject_nulls(self, X_train_val: pd.DataFrame, X_test: pd.DataFrame, evaluation_scenario: str, experiment_seed: int):
+        evaluation_scenario = evaluation_scenario.upper()
+        error_rate_idx = int(evaluation_scenario[-1]) - 1
+        train_injection_strategy, test_injection_strategy = evaluation_scenario[:-1].split('_')
+
+        X_train_val_with_nulls = self._inject_nulls_into_one_set(df=X_train_val,
+                                                                 injection_strategy=train_injection_strategy,
+                                                                 error_rate_idx=error_rate_idx,
+                                                                 experiment_seed=experiment_seed)
+        X_test_with_nulls = self._inject_nulls_into_one_set(df=X_test,
+                                                            injection_strategy=test_injection_strategy,
+                                                            error_rate_idx=error_rate_idx,
+                                                            experiment_seed=experiment_seed)
+
+        return X_train_val_with_nulls, X_test_with_nulls
 
     def _impute_nulls(self, X_train_with_nulls, X_test_with_nulls, null_imputer_name, experiment_seed,
                       categorical_columns, numerical_columns):
@@ -108,7 +140,7 @@ class Benchmark:
 
         return X_train_imputed, X_test_imputed
 
-    def inject_and_impute_nulls(self, data_loader, null_imputer_name, experiment_seed):
+    def inject_and_impute_nulls(self, data_loader, null_imputer_name: str, evaluation_scenario: str, experiment_seed: int):
         if self.test_set_fraction < 0.0 or self.test_set_fraction > 1.0:
             raise ValueError("test_set_fraction must be a float in the [0.0-1.0] range")
 
@@ -117,12 +149,10 @@ class Benchmark:
                                                                     test_size=self.test_set_fraction,
                                                                     random_state=experiment_seed)
         # Inject nulls
-        nulls_injector = NullsInjector(seed=experiment_seed,
-                                       strategy='MCAR',
-                                       columns_nulls_percentage_dct={'AGEP': 0.5, 'MAR': 0.5})
-        X_train_val_with_nulls = nulls_injector.fit_transform(X_train_val)
-        X_test_with_nulls = nulls_injector.fit_transform(X_test)
-
+        X_train_val_with_nulls, X_test_with_nulls = self._inject_nulls(X_train_val=X_train_val,
+                                                                       X_test=X_test,
+                                                                       evaluation_scenario=evaluation_scenario,
+                                                                       experiment_seed=experiment_seed)
         # Impute nulls
         X_train_val_imputed, X_test_imputed = self._impute_nulls(X_train_with_nulls=X_train_val_with_nulls,
                                                                  X_test_with_nulls=X_test_with_nulls,
@@ -140,11 +170,15 @@ class Benchmark:
                                numerical_columns=data_loader.numerical_columns,
                                categorical_columns=data_loader.categorical_columns)
 
-    def _run_exp_iter(self, init_data_loader, run_num, null_imputer_name, model_names, ml_impute):
+    def _run_exp_iter(self, init_data_loader, run_num, evaluation_scenario, null_imputer_name, model_names, ml_impute):
+        data_loader = copy.deepcopy(init_data_loader)
+
         custom_table_fields_dct = dict()
         experiment_seed = EXPERIMENT_RUN_SEEDS[run_num - 1]
         custom_table_fields_dct['session_uuid'] = DATASET_UUIDS[self.dataset_name][null_imputer_name]
-        custom_table_fields_dct['experiment_iteration'] = f'Exp_iter_{run_num}'
+        custom_table_fields_dct['null_imputer_name'] = null_imputer_name
+        custom_table_fields_dct['evaluation_scenario'] = evaluation_scenario
+        custom_table_fields_dct['experiment_iteration'] = f'exp_iter_{run_num}'
         custom_table_fields_dct['dataset_split_seed'] = experiment_seed
         custom_table_fields_dct['model_init_seed'] = experiment_seed
 
@@ -152,11 +186,13 @@ class Benchmark:
         pprint(custom_table_fields_dct)
         print('\n', flush=True)
 
-        data_loader = copy.deepcopy(init_data_loader)
         if ml_impute:
-            base_flow_dataset = self.inject_and_impute_nulls(data_loader, null_imputer_name, experiment_seed)
+            base_flow_dataset = self.inject_and_impute_nulls(data_loader=data_loader,
+                                                             null_imputer_name=null_imputer_name,
+                                                             evaluation_scenario=evaluation_scenario,
+                                                             experiment_seed=experiment_seed)
         else:
-            # TODO:
+            # TODO: extract train and test sets from AWS S3
             base_flow_dataset = None
 
         # Remove sensitive attributes to create a blind estimator
@@ -172,25 +208,34 @@ class Benchmark:
         base_flow_dataset.X_test = column_transformer.transform(base_flow_dataset.X_test)
 
         # Tune ML models
-        models_config = self._tune_ML_models(model_names, null_imputer_name, base_flow_dataset, experiment_seed)
+        models_config = self._tune_ML_models(model_names=model_names,
+                                             base_flow_dataset=base_flow_dataset,
+                                             experiment_seed=experiment_seed,
+                                             evaluation_scenario=evaluation_scenario,
+                                             null_imputer_name=null_imputer_name)
 
         # Compute metrics for tuned models
         compute_metrics_with_db_writer(dataset=base_flow_dataset,
                                        config=self.virny_config,
                                        models_config=models_config,
                                        custom_tbl_fields_dct=custom_table_fields_dct,
-                                       db_writer_func=self.__db.get_db_writer(),
+                                       db_writer_func=self.__db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
                                        notebook_logs_stdout=False,
                                        verbose=0)
 
     def run_experiment(self, run_nums: list, evaluation_scenarios: list, model_names: list, ml_impute: bool):
-        self.__db.connect(EXP_COLLECTION_NAME)
+        self.__db.connect()
         # TODO: add tqdm
-        for run_num in run_nums:
-            for null_imputer_name in self.null_imputers:
-                for evaluation_scenario in evaluation_scenarios:
+        for null_imputer_name in self.null_imputers:
+            for evaluation_scenario in evaluation_scenarios:
+                for run_num in run_nums:
                     # TODO: apply strategy based on evaluation scenario
-                    self._run_exp_iter(self.init_data_loader, run_num, null_imputer_name, model_names, ml_impute)
+                    self._run_exp_iter(init_data_loader=self.init_data_loader,
+                                       run_num=run_num,
+                                       evaluation_scenario=evaluation_scenario,
+                                       null_imputer_name=null_imputer_name,
+                                       model_names=model_names,
+                                       ml_impute=ml_impute)
 
         self.__db.close()
         self.__logger.info("Experimental results were successfully saved!")

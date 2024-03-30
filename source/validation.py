@@ -1,63 +1,57 @@
-# TODO: missingness in train/test
+import ast
+
+from configs.constants import ErrorRepairMethod, MLModels, EVALUATION_SCENARIOS
+from configs.datasets_config import DATASET_CONFIG
+
+
+def check_str_list_type(str_param):
+    if '[' in str_param and ']' in str_param:
+        return True
+    return False
+
+
+def is_in_enum(val, enum_obj):
+    enum_vals = [member.value for member in enum_obj]
+    return val in enum_vals
+
+
 def validate_args(exp_config_obj):
     """
-    Validate parameters types and values in config yaml file.
-
-    Extra details:
-    * exp_config_obj.model_setting is an optional argument that defines a type of models to use
-      to compute fairness and stability metrics. Default: 'batch'.
-
-    * exp_config_obj.computation_mode is an optional argument that defines a non-default mode for metrics computation.
-      Currently, only 'error_analysis' mode is supported.
-
-    Parameters
-    ----------
-    exp_config_obj
-        Object with parameters defined in a yaml file
-
+    Validate parameter types and values in the exp_config_obj.
     """
-    # ================== Required parameters ==================
-    if not isinstance(exp_config_obj.dataset_name, str):
-        raise ValueError('dataset_name must be string')
+    # Check list types
+    if not check_str_list_type(exp_config_obj.null_imputers):
+        raise ValueError('null_imputers argument must be a list')
 
-    if not isinstance(exp_config_obj.bootstrap_fraction, float) \
-            or exp_config_obj.bootstrap_fraction < 0.0 \
-            or exp_config_obj.bootstrap_fraction > 1.0:
-        raise ValueError('bootstrap_fraction must be float in [0.0, 1.0] range')
+    if not check_str_list_type(exp_config_obj.models):
+        raise ValueError('models argument must be a list')
 
-    if not isinstance(exp_config_obj.n_estimators, int) or exp_config_obj.n_estimators <= 1:
-        raise ValueError('n_estimators must be integer greater than 1')
+    if not check_str_list_type(exp_config_obj.run_nums):
+        raise ValueError('run_nums argument must be a list')
 
-    if not isinstance(exp_config_obj.sensitive_attributes_dct, dict):
-        raise ValueError('sensitive_attributes_dct must be python dictionary')
+    if not check_str_list_type(exp_config_obj.evaluation_scenarios):
+        raise ValueError('evaluation_scenarios argument must be a list')
 
-    if isinstance(exp_config_obj.sensitive_attributes_dct, dict):
-        intersectional_attrs = [attr for attr in exp_config_obj.sensitive_attributes_dct.keys()
-                                if INTERSECTION_SIGN in attr]
-        for intersectional_attr in intersectional_attrs:
-            intersectional_attr = intersectional_attr.strip()
-            attrs = intersectional_attr.split(INTERSECTION_SIGN)
-            attrs = [attr.strip() for attr in attrs]
-            if len(attrs) != intersectional_attr.count(INTERSECTION_SIGN) + 1:
-                raise ValueError(f"Incorrect format for an intersectional attribute name -- {intersectional_attr}."
-                                 f"Intersectional signs must be between all attributes in this intersectional attribute.")
+    # Cast to lists
+    exp_config_obj.null_imputers = ast.literal_eval(exp_config_obj.null_imputers)
+    exp_config_obj.models = ast.literal_eval(exp_config_obj.models)
+    exp_config_obj.run_nums = ast.literal_eval(exp_config_obj.run_nums)
+    exp_config_obj.evaluation_scenarios = ast.literal_eval(exp_config_obj.evaluation_scenarios)
 
-            for attr in attrs:
-                if attr not in exp_config_obj.sensitive_attributes_dct.keys():
-                    raise ValueError('Intersectional attributes in sensitive_attributes_dct must contain '
-                                     'single sensitive attributes that also exist in sensitive_attributes_dct')
+    # Check argument values
+    if not DATASET_CONFIG.get(exp_config_obj.dataset, False):
+        raise ValueError('dataset argument should be from the DATASET_CONFIG dictionary in configs/datasets_config.py')
 
-    # ================== Optional parameters ==================
-    if exp_config_obj.model_setting is not None \
-            and not isinstance(exp_config_obj.model_setting, str) \
-            and exp_config_obj.model_setting not in ModelSetting:
-        raise ValueError('model_setting must be a string that is included in the ModelSetting enum. '
-                         'Refer to this function documentation for more details!')
+    for null_imputer_name in exp_config_obj.null_imputers:
+        if not is_in_enum(val=null_imputer_name, enum_obj=ErrorRepairMethod):
+            raise ValueError('null_imputers argument should include values from the ErrorRepairMethod enum in configs/constants.py')
 
-    if exp_config_obj.computation_mode is not None \
-            and not isinstance(exp_config_obj.computation_mode, str) \
-            and exp_config_obj.computation_mode not in ComputationMode:
-        raise ValueError('computation_mode must be a string that is included in the ComputationMode enum. '
-                         'Refer to this function documentation for more details!')
+    for model_name in exp_config_obj.models:
+        if not is_in_enum(val=model_name, enum_obj=MLModels):
+            raise ValueError('models argument should include values from the MLModels enum in configs/constants.py')
+
+    for evaluation_scenario in exp_config_obj.evaluation_scenarios:
+        if evaluation_scenario not in EVALUATION_SCENARIOS:
+            raise ValueError('evaluation_scenarios argument should include values from the EVALUATION_SCENARIOS list in configs/constants.py')
 
     return True

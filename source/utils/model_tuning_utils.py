@@ -3,7 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from pprint import pprint
+from pprint import pprint, pformat
 from copy import deepcopy
 from datetime import datetime
 
@@ -81,25 +81,29 @@ def tune_ML_models(models_params_for_tuning: dict, base_flow_dataset: BaseFlowDa
      models_config is a dict with model tuned params for the metrics computation stage
     """
     models_config = dict()
-    tuned_params_df = pd.DataFrame(columns=('Dataset_Name', 'Model_Name', 'F1_Score', 'Accuracy_Score', 'Model_Best_Params'))
+    tuned_params_df = pd.DataFrame(columns=('Dataset_Name', 'Model_Name', 'F1_Score', 'Accuracy_Score', 'Tuning_Duration_In_Mins', 'Model_Best_Params'))
     # Find the most optimal hyperparameters based on accuracy and F1-score for each model in models_config
     for model_idx, (model_name, model_params) in enumerate(models_params_for_tuning.items()):
         try:
-            print(f"{datetime.now().strftime('%Y/%m/%d, %H:%M:%S')}: Tuning {model_name}...", flush=True)
+            tuning_start_time = datetime.now()
+            print(f"{tuning_start_time.strftime('%Y/%m/%d, %H:%M:%S')}: Tuning {model_name}...", flush=True)
             cur_model, cur_f1_score, cur_accuracy, cur_params = validate_model(deepcopy(model_params['model']),
                                                                                base_flow_dataset.X_train_val,
                                                                                base_flow_dataset.y_train_val,
                                                                                model_params['params'],
                                                                                n_folds)
-            print(f'{datetime.now().strftime("%Y/%m/%d, %H:%M:%S")}: Tuning for {model_name} is finished '
+            tuning_end_time = datetime.now()
+            print(f'{tuning_end_time.strftime("%Y/%m/%d, %H:%M:%S")}: Tuning for {model_name} is finished '
                   f'[F1 score = {cur_f1_score}, Accuracy = {cur_accuracy}]\n', flush=True)
+            print(f'Best hyper-parameters for {model_name}:\n{pformat(cur_params)}', flush=True)
 
         except Exception as err:
             print(f"ERROR with {model_name}: ", err)
             continue
 
         # Save test results of each model in dataframe
-        tuned_params_df.loc[model_idx] = [dataset_name, model_name, cur_f1_score, cur_accuracy, cur_params]
+        tuning_duration = (tuning_end_time - tuning_start_time).total_seconds() / 60.0
+        tuned_params_df.loc[model_idx] = [dataset_name, model_name, cur_f1_score, cur_accuracy, tuning_duration, cur_params]
         models_config[model_name] = model_params['model'].set_params(**cur_params)
 
     return tuned_params_df, models_config
