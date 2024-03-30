@@ -6,7 +6,7 @@ import pandas as pd
 from .abstract_error_injector import AbstractErrorInjector
 
 
-class RandomNullsInjectorStrategies(AbstractErrorInjector):
+class NullsInjector(AbstractErrorInjector):
     def __init__(self, seed: int, strategy: str, columns_with_nulls: list, null_percentage: float, condition: Tuple[str, Any] = None):
         super().__init__(seed)
         np.random.seed(seed)
@@ -45,7 +45,6 @@ class RandomNullsInjectorStrategies(AbstractErrorInjector):
             raise ValueError(f"Value caused the issue is {self.condition[0]}. "
                              f"Keys in condition must be the dataframe column names.")
 
-
     def _validate_mnar_input(self, df: pd.DataFrame):
         self._validate_mar_input(df)
         if len(self.columns_with_nulls) != 1:
@@ -53,8 +52,7 @@ class RandomNullsInjectorStrategies(AbstractErrorInjector):
         if self.columns_with_nulls[0] != self.condition[0]:
             raise ValueError(f"Invalid input for columns_with_nulls '{self.columns_with_nulls}'. It should be the same as the condition column.")
 
-
-    def _impute_nulls(self, df: pd.DataFrame):
+    def _inject_nulls(self, df: pd.DataFrame):
         df_copy = df.copy(deep=True)
 
         existing_nulls_count = df_copy[self.columns_with_nulls].isna().any().sum()
@@ -80,35 +78,35 @@ class RandomNullsInjectorStrategies(AbstractErrorInjector):
 
         return df_copy
 
+    def _inject_nulls_mcar(self, df: pd.DataFrame):
+        return self._inject_nulls(df)
 
-    def _impute_nulls_mcar(self, df: pd.DataFrame):
-        return self._impute_nulls(df)
-
-    def _impute_nulls_mar(self, df: pd.DataFrame):
+    def _inject_nulls_mar(self, df: pd.DataFrame):
         df_copy = df.copy(deep=True)
         condition_col, condition_value = self.condition
         subset_df = df_copy[df_copy[condition_col] == condition_value]
-        subset_df_imputed = self._impute_nulls(subset_df)
-        df_copy.loc[subset_df_imputed.index, :] = subset_df_imputed
+        subset_df_injected = self._inject_nulls(subset_df)
+        df_copy.loc[subset_df_injected.index, :] = subset_df_injected
+
         return df_copy
 
-
-    def _impute_nulls_mnar(self, df: pd.DataFrame):
+    def _inject_nulls_mnar(self, df: pd.DataFrame):
         df_copy = df.copy(deep=True)
         condition_col, condition_value = self.condition
         subset_df = df_copy[df_copy[condition_col] == condition_value]
-        subset_df_imputed = self._impute_nulls(subset_df)
-        df_copy.loc[subset_df_imputed.index, :] = subset_df_imputed
+        subset_df_injected = self._inject_nulls(subset_df)
+        df_copy.loc[subset_df_injected.index, :] = subset_df_injected
+
         return df_copy
 
     def transform(self, df: pd.DataFrame):
         self._validate_input_dicts(df)
         if self.strategy == 'MCAR':
-            return self._impute_nulls_mcar(df)
+            return self._inject_nulls_mcar(df)
         elif self.strategy == 'MAR':
-            return self._impute_nulls_mar(df)
+            return self._inject_nulls_mar(df)
         elif self.strategy == 'MNAR':
-            return self._impute_nulls_mnar(df)
+            return self._inject_nulls_mnar(df)
         else:
             raise ValueError(f"Strategy '{self.strategy}' is not supported. Supported strategies are: MCAR, MAR, NMAR")
 
@@ -118,4 +116,5 @@ class RandomNullsInjectorStrategies(AbstractErrorInjector):
     def fit_transform(self, df, target_column: str = None):
         self.fit(df, target_column)
         transformed_df = self.transform(df)
+
         return transformed_df
