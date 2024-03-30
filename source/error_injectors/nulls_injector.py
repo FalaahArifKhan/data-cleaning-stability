@@ -52,6 +52,14 @@ class NullsInjector(AbstractErrorInjector):
         if self.columns_with_nulls[0] != self.condition[0]:
             raise ValueError(f"Invalid input for columns_with_nulls '{self.columns_with_nulls}'. It should be the same as the condition column.")
 
+    def _filter_df_by_condition(self, df: pd.DataFrame, condition_col: str, condition_val, include_val: bool):
+        if isinstance(condition_val, list):
+            df_condition = df[condition_col].isin(condition_val) if include_val else ~df[condition_col].isin(condition_val)
+        else:
+            df_condition = df[condition_col] == condition_val if include_val else df[condition_col] != condition_val
+
+        return df[df_condition]
+
     def _inject_nulls(self, df: pd.DataFrame):
         df_copy = df.copy(deep=True)
 
@@ -84,7 +92,10 @@ class NullsInjector(AbstractErrorInjector):
     def _inject_nulls_mar(self, df: pd.DataFrame):
         df_copy = df.copy(deep=True)
         condition_col, condition_value = self.condition
-        subset_df = df_copy[df_copy[condition_col] == condition_value]
+        subset_df = self._filter_df_by_condition(df=df_copy,
+                                                 condition_col=condition_col,
+                                                 condition_val=condition_value,
+                                                 include_val=True)
         subset_df_injected = self._inject_nulls(subset_df)
         df_copy.loc[subset_df_injected.index, :] = subset_df_injected
 
@@ -93,7 +104,10 @@ class NullsInjector(AbstractErrorInjector):
     def _inject_nulls_mnar(self, df: pd.DataFrame):
         df_copy = df.copy(deep=True)
         condition_col, condition_value = self.condition
-        subset_df = df_copy[df_copy[condition_col] == condition_value]
+        subset_df = self._filter_df_by_condition(df=df_copy,
+                                                 condition_col=condition_col,
+                                                 condition_val=condition_value,
+                                                 include_val=True)
         subset_df_injected = self._inject_nulls(subset_df)
         df_copy.loc[subset_df_injected.index, :] = subset_df_injected
 

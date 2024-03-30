@@ -1,6 +1,8 @@
 import copy
 from pprint import pprint
 from datetime import datetime, timezone
+
+import pandas as pd
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 
@@ -10,9 +12,10 @@ from virny.user_interfaces.multiple_models_with_db_writer_api import compute_met
 
 from configs.models_config_for_tuning import get_models_params_for_tuning
 from configs.constants import (EXP_COLLECTION_NAME, MODEL_HYPER_PARAMS_COLLECTION_NAME, EXPERIMENT_RUN_SEEDS,
-                               NUM_FOLDS_FOR_TUNING, ErrorRepairMethod)
+                               NUM_FOLDS_FOR_TUNING, ErrorRepairMethod, ErrorInjectionStrategy)
 from configs.datasets_config import DATASET_CONFIG
 from configs.dataset_uuids import DATASET_UUIDS
+from configs.evaluation_scenarios_config import EVALUATION_SCENARIOS_CONFIG
 from source.utils.custom_logger import get_logger
 from source.utils.model_tuning_utils import tune_ML_models
 from source.custom_classes.database_client import DatabaseClient
@@ -69,6 +72,35 @@ class Benchmark:
 
         return models_config
 
+    def _inject_nulls_into_one_set(self, df: pd.DataFrame, injection_strategy: str, error_rate_idx: int, experiment_seed: int):
+        for injection_scenario in EVALUATION_SCENARIOS_CONFIG[self.dataset_name][injection_strategy]:
+            error_rate = injection_scenario['setting']['error_rates'][error_rate_idx]
+            condition = None if injection_strategy == ErrorInjectionStrategy.mcar.value else injection_scenario['setting']['condition']
+            nulls_injector = NullsInjector(seed=experiment_seed,
+                                           strategy=injection_strategy,
+                                           columns_with_nulls=injection_scenario['missing_features'],
+                                           null_percentage=error_rate,
+                                           condition=condition)
+            df = nulls_injector.fit_transform(df)
+
+        return df
+
+    def _inject_nulls(self, X_train_val: pd.DataFrame, X_test: pd.DataFrame, evaluation_scenario: str, experiment_seed: int):
+        evaluation_scenario = evaluation_scenario.upper()
+        error_rate_idx = int(evaluation_scenario[-1]) - 1
+        train_injection_strategy, test_injection_strategy = evaluation_scenario[:-1].split('_')
+
+        X_train_val_with_nulls = self._inject_nulls_into_one_set(df=X_train_val,
+                                                                 injection_strategy=train_injection_strategy,
+                                                                 error_rate_idx=error_rate_idx,
+                                                                 experiment_seed=experiment_seed)
+        X_test_with_nulls = self._inject_nulls_into_one_set(df=X_test,
+                                                            injection_strategy=test_injection_strategy,
+                                                            error_rate_idx=error_rate_idx,
+                                                            experiment_seed=experiment_seed)
+
+        return X_train_val_with_nulls, X_test_with_nulls
+
     def _impute_nulls(self, X_train_with_nulls, X_test_with_nulls, null_imputer_name, experiment_seed,
                       categorical_columns, numerical_columns):
         # TODO:
@@ -108,7 +140,7 @@ class Benchmark:
 
         return X_train_imputed, X_test_imputed
 
-    def inject_and_impute_nulls(self, data_loader, null_imputer_name, experiment_seed):
+    def inject_and_impute_nulls(self, data_loader, null_imputer_name: str, evaluation_scenario: str, experiment_seed: int):
         if self.test_set_fraction < 0.0 or self.test_set_fraction > 1.0:
             raise ValueError("test_set_fraction must be a float in the [0.0-1.0] range")
 
@@ -117,12 +149,10 @@ class Benchmark:
                                                                     test_size=self.test_set_fraction,
                                                                     random_state=experiment_seed)
         # Inject nulls
-        nulls_injector = NullsInjector(seed=experiment_seed,
-                                       strategy='MCAR',
-                                       columns_nulls_percentage_dct={'AGEP': 0.5, 'MAR': 0.5})
-        X_train_val_with_nulls = nulls_injector.fit_transform(X_train_val)
-        X_test_with_nulls = nulls_injector.fit_transform(X_test)
-
+        X_train_val_with_nulls, X_test_with_nulls = self._inject_nulls(X_train_val=X_train_val,
+                                                                       X_test=X_test,
+                                                                       evaluation_scenario=evaluation_scenario,
+                                                                       experiment_seed=experiment_seed)
         # Impute nulls
         X_train_val_imputed, X_test_imputed = self._impute_nulls(X_train_with_nulls=X_train_val_with_nulls,
                                                                  X_test_with_nulls=X_test_with_nulls,
@@ -141,12 +171,14 @@ class Benchmark:
                                categorical_columns=data_loader.categorical_columns)
 
     def _run_exp_iter(self, init_data_loader, run_num, evaluation_scenario, null_imputer_name, model_names, ml_impute):
+        data_loader = copy.deepcopy(init_data_loader)
+
         custom_table_fields_dct = dict()
         experiment_seed = EXPERIMENT_RUN_SEEDS[run_num - 1]
         custom_table_fields_dct['session_uuid'] = DATASET_UUIDS[self.dataset_name][null_imputer_name]
-        custom_table_fields_dct['experiment_iteration'] = f'exp_iter_{run_num}'
-        custom_table_fields_dct['evaluation_scenario'] = evaluation_scenario
         custom_table_fields_dct['null_imputer_name'] = null_imputer_name
+        custom_table_fields_dct['evaluation_scenario'] = evaluation_scenario
+        custom_table_fields_dct['experiment_iteration'] = f'exp_iter_{run_num}'
         custom_table_fields_dct['dataset_split_seed'] = experiment_seed
         custom_table_fields_dct['model_init_seed'] = experiment_seed
 
@@ -154,9 +186,11 @@ class Benchmark:
         pprint(custom_table_fields_dct)
         print('\n', flush=True)
 
-        data_loader = copy.deepcopy(init_data_loader)
         if ml_impute:
-            base_flow_dataset = self.inject_and_impute_nulls(data_loader, null_imputer_name, experiment_seed)
+            base_flow_dataset = self.inject_and_impute_nulls(data_loader=data_loader,
+                                                             null_imputer_name=null_imputer_name,
+                                                             evaluation_scenario=evaluation_scenario,
+                                                             experiment_seed=experiment_seed)
         else:
             # TODO: extract train and test sets from AWS S3
             base_flow_dataset = None
@@ -192,9 +226,9 @@ class Benchmark:
     def run_experiment(self, run_nums: list, evaluation_scenarios: list, model_names: list, ml_impute: bool):
         self.__db.connect()
         # TODO: add tqdm
-        for run_num in run_nums:
-            for null_imputer_name in self.null_imputers:
-                for evaluation_scenario in evaluation_scenarios:
+        for null_imputer_name in self.null_imputers:
+            for evaluation_scenario in evaluation_scenarios:
+                for run_num in run_nums:
                     # TODO: apply strategy based on evaluation scenario
                     self._run_exp_iter(init_data_loader=self.init_data_loader,
                                        run_num=run_num,
