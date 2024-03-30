@@ -17,7 +17,7 @@ from source.utils.custom_logger import get_logger
 from source.utils.model_tuning_utils import tune_ML_models
 from source.custom_classes.database_client import DatabaseClient
 from source.preprocessing import get_simple_preprocessor
-from source.custom_error_injectors.nulls_injector import NullsInjector
+from source.error_injectors.nulls_injector import NullsInjector
 
 
 class Benchmark:
