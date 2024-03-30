@@ -81,7 +81,7 @@ def tune_ML_models(models_params_for_tuning: dict, base_flow_dataset: BaseFlowDa
      models_config is a dict with model tuned params for the metrics computation stage
     """
     models_config = dict()
-    tuned_params_df = pd.DataFrame(columns=('Dataset_Name', 'Model_Name', 'F1_Score', 'Accuracy_Score', 'Tuning_Duration_In_Mins', 'Model_Best_Params'))
+    tuned_params_df = pd.DataFrame(columns=('Dataset_Name', 'Model_Name', 'F1_Score', 'Accuracy_Score', 'Runtime_In_Mins', 'Model_Best_Params'))
     # Find the most optimal hyperparameters based on accuracy and F1-score for each model in models_config
     for model_idx, (model_name, model_params) in enumerate(models_params_for_tuning.items()):
         try:

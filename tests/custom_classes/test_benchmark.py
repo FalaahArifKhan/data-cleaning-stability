@@ -130,10 +130,10 @@ def test_inject_nulls_into_one_set_should_apply_mnar_scenario_for_multiple_colum
                                                                   error_rate_idx=error_rate_idx,
                                                                   experiment_seed=experiment_seed)
 
-    for mnar_injection_scenario in EVALUATION_SCENARIOS_CONFIG[folk_benchmark.dataset_name][injection_strategy]:
-        missing_feature = mnar_injection_scenario['missing_features'][0]
-        error_rate = mnar_injection_scenario['setting']['error_rates'][error_rate_idx]
-        condition_value = mnar_injection_scenario['setting']['condition'][1]
+    for injection_scenario in EVALUATION_SCENARIOS_CONFIG[folk_benchmark.dataset_name][injection_strategy]:
+        missing_feature = injection_scenario['missing_features'][0]
+        error_rate = injection_scenario['setting']['error_rates'][error_rate_idx]
+        condition_value = injection_scenario['setting']['condition'][1]
 
         actual_column_nulls_count = X_test_with_nulls[missing_feature].isnull().sum()
         df_condition = get_df_condition(df=X_test,
