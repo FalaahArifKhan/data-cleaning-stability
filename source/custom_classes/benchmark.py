@@ -1,4 +1,6 @@
+import os
 import copy
+import pathlib
 import pandas as pd
 from pprint import pprint
 from datetime import datetime, timezone
@@ -170,7 +172,8 @@ class Benchmark:
 
         return metrics_df
 
-    def inject_and_impute_nulls(self, data_loader, null_imputer_name: str, evaluation_scenario: str, experiment_seed: int):
+    def inject_and_impute_nulls(self, data_loader, null_imputer_name: str, evaluation_scenario: str,
+                                experiment_seed: int, save_imputed_datasets: bool = False):
         if self.test_set_fraction < 0.0 or self.test_set_fraction > 1.0:
             raise ValueError("test_set_fraction must be a float in the [0.0-1.0] range")
 
@@ -235,6 +238,23 @@ class Benchmark:
                                           })
         self.__logger.info("Performance metrics and tuned parameters of the null imputer are saved into a database")
 
+        if save_imputed_datasets:
+            save_sets_dir_path = pathlib.Path(__file__).parent.parent.joinpath('results').joinpath(self.dataset_name).joinpath(null_imputer_name)
+            os.makedirs(save_sets_dir_path, exist_ok=True)
+
+            train_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_train_val.csv'
+            X_train_val_imputed.to_csv(os.path.join(save_sets_dir_path, train_set_filename),
+                                       sep=",",
+                                       columns=X_train_val_imputed.columns,
+                                       index=False)
+
+            test_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_test.csv'
+            X_test_imputed.to_csv(os.path.join(save_sets_dir_path, test_set_filename),
+                                  sep=",",
+                                  columns=X_test_imputed.columns,
+                                  index=False)
+            self.__logger.info("Imputed train and test sets are saved locally")
+
         return BaseFlowDataset(init_features_df=data_loader.full_df[self.dataset_sensitive_attrs],  # keep only sensitive attributes with original indexes to compute group metrics
                                X_train_val=X_train_val_imputed,
                                X_test=X_test_imputed,
@@ -296,6 +316,39 @@ class Benchmark:
                                        db_writer_func=self.__db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
                                        notebook_logs_stdout=False,
                                        verbose=0)
+
+    def _run_null_imputation_iter(self, init_data_loader, run_num, evaluation_scenario, null_imputer_name, save_imputed_datasets):
+        data_loader = copy.deepcopy(init_data_loader)
+        experiment_seed = EXPERIMENT_RUN_SEEDS[run_num - 1]
+        self.inject_and_impute_nulls(data_loader=data_loader,
+                                     null_imputer_name=null_imputer_name,
+                                     evaluation_scenario=evaluation_scenario,
+                                     experiment_seed=experiment_seed,
+                                     save_imputed_datasets=save_imputed_datasets)
+
+    def impute_nulls_with_multiple_technique(self, run_nums: list, evaluation_scenarios: list, save_imputed_datasets: bool):
+        self.__db.connect()
+        # TODO: add tqdm
+        for null_imputer_name in self.null_imputers:
+            for evaluation_scenario in evaluation_scenarios:
+                for run_num in run_nums:
+                    print('\n\n\n\n\n', flush=True)
+                    self.__logger.info(f"\n{'=' * 30} NEW DATASET IMPUTATION RUN {'=' * 30}")
+                    print('Configs for a new experiment run:')
+                    print(
+                        f"Null imputer: {null_imputer_name}\n"
+                        f"Evaluation scenario: {evaluation_scenario}\n"
+                        f"Run num: {run_num}\n"
+                    )
+
+                    self._run_null_imputation_iter(init_data_loader=self.init_data_loader,
+                                                   run_num=run_num,
+                                                   evaluation_scenario=evaluation_scenario,
+                                                   null_imputer_name=null_imputer_name,
+                                                   save_imputed_datasets=save_imputed_datasets)
+
+        self.__db.close()
+        self.__logger.info("Experimental results were successfully saved!")
 
     def run_experiment(self, run_nums: list, evaluation_scenarios: list, model_names: list, ml_impute: bool):
         self.__db.connect()
