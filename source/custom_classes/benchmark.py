@@ -164,7 +164,7 @@ class Benchmark:
                 print('Precision for {}: {:.2f}'.format(column_name, precision))
                 print('Recall for {}: {:.2f}'.format(column_name, recall))
                 print('F1 score for {}: {:.2f}'.format(column_name, f1))
-                print('\n')
+                print()
 
             # Save imputation performance metric of the imputer in a dataframe
             metrics_df.loc[column_idx] = [self.dataset_name, null_imputer_name, null_imputer_params,
@@ -196,7 +196,7 @@ class Benchmark:
                                                                                    numerical_columns=data_loader.numerical_columns)
 
         # Evaluate imputation for train and test sets
-        print('\n\n')
+        print('\n')
         self.__logger.info('Evaluating imputation for X_train_val...')
         train_imputation_metrics_df = self._evaluate_imputation(real=X_train_val,
                                                                 corrupted=X_train_val_with_nulls,
@@ -205,7 +205,7 @@ class Benchmark:
                                                                 null_imputer_name=null_imputer_name,
                                                                 numerical_null_imputer_params=numerical_null_imputer_params,
                                                                 categorical_null_imputer_params=categorical_null_imputer_params)
-        print('\n\n')
+        print('\n')
         self.__logger.info('Evaluating imputation for X_test...')
         test_imputation_metrics_df = self._evaluate_imputation(real=X_test,
                                                                corrupted=X_test_with_nulls,
@@ -239,7 +239,7 @@ class Benchmark:
         self.__logger.info("Performance metrics and tuned parameters of the null imputer are saved into a database")
 
         if save_imputed_datasets:
-            save_sets_dir_path = pathlib.Path(__file__).parent.parent.joinpath('results').joinpath(self.dataset_name).joinpath(null_imputer_name)
+            save_sets_dir_path = pathlib.Path(__file__).parent.parent.parent.joinpath('results').joinpath(self.dataset_name).joinpath(null_imputer_name)
             os.makedirs(save_sets_dir_path, exist_ok=True)
 
             train_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_train_val.csv'
@@ -332,7 +332,7 @@ class Benchmark:
         for null_imputer_name in self.null_imputers:
             for evaluation_scenario in evaluation_scenarios:
                 for run_num in run_nums:
-                    print('\n\n\n\n\n', flush=True)
+                    print('\n\n\n\n', flush=True)
                     self.__logger.info(f"\n{'=' * 30} NEW DATASET IMPUTATION RUN {'=' * 30}")
                     print('Configs for a new experiment run:')
                     print(
@@ -356,7 +356,7 @@ class Benchmark:
         for null_imputer_name in self.null_imputers:
             for evaluation_scenario in evaluation_scenarios:
                 for run_num in run_nums:
-                    print('\n\n\n\n\n', flush=True)
+                    print('\n\n\n\n', flush=True)
                     self.__logger.info(f"\n{'=' * 30} NEW EXPERIMENT RUN {'=' * 30}")
                     print('Configs for a new experiment run:')
                     print(

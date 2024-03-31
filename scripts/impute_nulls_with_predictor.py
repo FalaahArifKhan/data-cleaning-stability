@@ -40,7 +40,7 @@ def parse_input_args():
                         default=str(EVALUATION_SCENARIOS))
 
     args = parser.parse_args()
-    args = validate_args(exp_config_obj=args)
+    args = validate_args(exp_config_obj=args, with_model_names=False)
 
     print(
         f"Dataset name: {args.dataset}\n"
