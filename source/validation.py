@@ -15,16 +15,13 @@ def is_in_enum(val, enum_obj):
     return val in enum_vals
 
 
-def validate_args(exp_config_obj):
+def validate_args(exp_config_obj, with_model_names=True):
     """
     Validate parameter types and values in the exp_config_obj.
     """
     # Check list types
     if not check_str_list_type(exp_config_obj.null_imputers):
         raise ValueError('null_imputers argument must be a list')
-
-    if not check_str_list_type(exp_config_obj.models):
-        raise ValueError('models argument must be a list')
 
     if not check_str_list_type(exp_config_obj.run_nums):
         raise ValueError('run_nums argument must be a list')
@@ -34,7 +31,6 @@ def validate_args(exp_config_obj):
 
     # Cast to lists
     exp_config_obj.null_imputers = ast.literal_eval(exp_config_obj.null_imputers)
-    exp_config_obj.models = ast.literal_eval(exp_config_obj.models)
     exp_config_obj.run_nums = ast.literal_eval(exp_config_obj.run_nums)
     exp_config_obj.evaluation_scenarios = ast.literal_eval(exp_config_obj.evaluation_scenarios)
 
@@ -46,12 +42,18 @@ def validate_args(exp_config_obj):
         if not is_in_enum(val=null_imputer_name, enum_obj=ErrorRepairMethod):
             raise ValueError('null_imputers argument should include values from the ErrorRepairMethod enum in configs/constants.py')
 
-    for model_name in exp_config_obj.models:
-        if not is_in_enum(val=model_name, enum_obj=MLModels):
-            raise ValueError('models argument should include values from the MLModels enum in configs/constants.py')
-
     for evaluation_scenario in exp_config_obj.evaluation_scenarios:
         if evaluation_scenario not in EVALUATION_SCENARIOS:
             raise ValueError('evaluation_scenarios argument should include values from the EVALUATION_SCENARIOS list in configs/constants.py')
+
+    if with_model_names:
+        if not check_str_list_type(exp_config_obj.models):
+            raise ValueError('models argument must be a list')
+
+        exp_config_obj.models = ast.literal_eval(exp_config_obj.models)
+
+        for model_name in exp_config_obj.models:
+            if not is_in_enum(val=model_name, enum_obj=MLModels):
+                raise ValueError('models argument should include values from the MLModels enum in configs/constants.py')
 
     return exp_config_obj

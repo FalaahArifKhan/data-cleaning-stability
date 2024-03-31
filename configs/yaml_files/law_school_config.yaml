@@ -1,4 +1,4 @@
-dataset_name: Law_School
+dataset_name: law_school
 bootstrap_fraction: 0.8
 n_estimators: 50
 computation_mode: error_analysis
