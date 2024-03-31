@@ -1,5 +1,6 @@
 import os
 import copy
+import tqdm
 import pathlib
 import pandas as pd
 from pprint import pprint
@@ -328,49 +329,53 @@ class Benchmark:
 
     def impute_nulls_with_multiple_technique(self, run_nums: list, evaluation_scenarios: list, save_imputed_datasets: bool):
         self.__db.connect()
-        # TODO: add tqdm
-        for null_imputer_name in self.null_imputers:
-            for evaluation_scenario in evaluation_scenarios:
-                for run_num in run_nums:
-                    print('\n\n\n\n', flush=True)
-                    self.__logger.info(f"\n{'=' * 30} NEW DATASET IMPUTATION RUN {'=' * 30}")
-                    print('Configs for a new experiment run:')
-                    print(
-                        f"Null imputer: {null_imputer_name}\n"
-                        f"Evaluation scenario: {evaluation_scenario}\n"
-                        f"Run num: {run_num}\n"
-                    )
 
-                    self._run_null_imputation_iter(init_data_loader=self.init_data_loader,
-                                                   run_num=run_num,
-                                                   evaluation_scenario=evaluation_scenario,
-                                                   null_imputer_name=null_imputer_name,
-                                                   save_imputed_datasets=save_imputed_datasets)
+        total_iterations = len(self.null_imputers) * len(evaluation_scenarios) * len(run_nums)
+        with tqdm.tqdm(total=total_iterations, desc="Null Imputation Progress") as pbar:
+            for null_imputer_idx, null_imputer_name in enumerate(self.null_imputers):
+                for evaluation_scenario_idx, evaluation_scenario in enumerate(evaluation_scenarios):
+                    for run_idx, run_num in enumerate(run_nums):
+                        self.__logger.info(f"{'=' * 30} NEW DATASET IMPUTATION RUN {'=' * 30}")
+                        print('Configs for a new experiment run:')
+                        print(
+                            f"Null imputer: {null_imputer_name} ({null_imputer_idx + 1} out of {len(self.null_imputers)})\n"
+                            f"Evaluation scenario: {evaluation_scenario} ({evaluation_scenario_idx + 1} out of {len(evaluation_scenarios)})\n"
+                            f"Run num: {run_num} ({run_idx + 1} out of {len(run_nums)})\n"
+                        )
+                        self._run_null_imputation_iter(init_data_loader=self.init_data_loader,
+                                                       run_num=run_num,
+                                                       evaluation_scenario=evaluation_scenario,
+                                                       null_imputer_name=null_imputer_name,
+                                                       save_imputed_datasets=save_imputed_datasets)
+                        pbar.update(1)
+                        print('\n\n\n\n', flush=True)
 
         self.__db.close()
         self.__logger.info("Experimental results were successfully saved!")
 
     def run_experiment(self, run_nums: list, evaluation_scenarios: list, model_names: list, ml_impute: bool):
         self.__db.connect()
-        # TODO: add tqdm
-        for null_imputer_name in self.null_imputers:
-            for evaluation_scenario in evaluation_scenarios:
-                for run_num in run_nums:
-                    print('\n\n\n\n', flush=True)
-                    self.__logger.info(f"\n{'=' * 30} NEW EXPERIMENT RUN {'=' * 30}")
-                    print('Configs for a new experiment run:')
-                    print(
-                        f"Null imputer: {null_imputer_name}\n"
-                        f"Evaluation scenario: {evaluation_scenario}\n"
-                        f"Run num: {run_num}\n"
-                    )
 
-                    self._run_exp_iter(init_data_loader=self.init_data_loader,
-                                       run_num=run_num,
-                                       evaluation_scenario=evaluation_scenario,
-                                       null_imputer_name=null_imputer_name,
-                                       model_names=model_names,
-                                       ml_impute=ml_impute)
+        total_iterations = len(self.null_imputers) * len(evaluation_scenarios) * len(run_nums)
+        with tqdm.tqdm(total=total_iterations, desc="Experiment Progress") as pbar:
+            for null_imputer_idx, null_imputer_name in enumerate(self.null_imputers):
+                for evaluation_scenario_idx, evaluation_scenario in enumerate(evaluation_scenarios):
+                    for run_idx, run_num in enumerate(run_nums):
+                        self.__logger.info(f"{'=' * 30} NEW EXPERIMENT RUN {'=' * 30}")
+                        print('Configs for a new experiment run:')
+                        print(
+                            f"Null imputer: {null_imputer_name} ({null_imputer_idx + 1} out of {len(self.null_imputers)})\n"
+                            f"Evaluation scenario: {evaluation_scenario} ({evaluation_scenario_idx + 1} out of {len(evaluation_scenarios)})\n"
+                            f"Run num: {run_num} ({run_idx + 1} out of {len(run_nums)})\n"
+                        )
+                        self._run_exp_iter(init_data_loader=self.init_data_loader,
+                                           run_num=run_num,
+                                           evaluation_scenario=evaluation_scenario,
+                                           null_imputer_name=null_imputer_name,
+                                           model_names=model_names,
+                                           ml_impute=ml_impute)
+                        pbar.update(1)
+                        print('\n\n\n\n', flush=True)
 
         self.__db.close()
         self.__logger.info("Experimental results were successfully saved!")
