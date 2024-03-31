@@ -6,7 +6,6 @@ import pandas as pd
 from pprint import pprint
 from datetime import datetime, timezone
 
-from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_squared_error, precision_recall_fscore_support
 from sklearn.model_selection import train_test_split
 
@@ -14,6 +13,7 @@ from virny.custom_classes.base_dataset import BaseFlowDataset
 from virny.utils.custom_initializers import create_config_obj
 from virny.user_interfaces.multiple_models_with_db_writer_api import compute_metrics_with_db_writer
 
+import source.null_imputers.simple_imputer as simple_imputer
 from configs.models_config_for_tuning import get_models_params_for_tuning
 from configs.constants import (EXP_COLLECTION_NAME, MODEL_HYPER_PARAMS_COLLECTION_NAME, IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                EXPERIMENT_RUN_SEEDS, NUM_FOLDS_FOR_TUNING, ErrorRepairMethod, ErrorInjectionStrategy)
@@ -113,30 +113,21 @@ class Benchmark:
         train_numerical_null_columns = list(set(train_set_cols_with_nulls).intersection(numerical_columns))
         train_categorical_null_columns = list(set(train_set_cols_with_nulls).intersection(categorical_columns))
 
-        X_train_imputed = copy.deepcopy(X_train_with_nulls)
-        X_test_imputed = copy.deepcopy(X_test_with_nulls)
+        imputation_start_time = datetime.now()
         if null_imputer_name == ErrorRepairMethod.median_mode.value:
-            imputation_start_time = datetime.now()
-
-            # Impute with median
-            median_imputer = SimpleImputer(strategy='median')
-            X_train_imputed[train_numerical_null_columns] = median_imputer.fit_transform(X_train_imputed[train_numerical_null_columns])
-            X_test_imputed[train_numerical_null_columns] = median_imputer.transform(X_test_imputed[train_numerical_null_columns])
-            numerical_null_imputer_params = None
-
-            # Impute with mode
-            mode_imputer = SimpleImputer(strategy='most_frequent')
-            X_train_imputed[train_categorical_null_columns] = mode_imputer.fit_transform(X_train_imputed[train_categorical_null_columns])
-            X_test_imputed[train_categorical_null_columns] = mode_imputer.transform(X_test_imputed[train_categorical_null_columns])
-            categorical_null_imputer_params = None
-
-            imputation_end_time = datetime.now()
-            imputation_runtime = (imputation_end_time - imputation_start_time).total_seconds() / 60.0
+            X_train_imputed, X_test_imputed, numerical_null_imputer_params, categorical_null_imputer_params = (
+                simple_imputer.impute_with_median_mode(X_train_with_nulls=X_train_with_nulls,
+                                                       X_test_with_nulls=X_test_with_nulls,
+                                                       train_numerical_null_columns=train_numerical_null_columns,
+                                                       train_categorical_null_columns=train_categorical_null_columns))
 
         else:
             raise ValueError(f'{null_imputer_name} null imputer is not implemented')
 
+        imputation_end_time = datetime.now()
+        imputation_runtime = (imputation_end_time - imputation_start_time).total_seconds() / 60.0
         self.__logger.info('Nulls are successfully imputed')
+
         return X_train_imputed, X_test_imputed, numerical_null_imputer_params, categorical_null_imputer_params, imputation_runtime
 
     def _evaluate_imputation(self, real, imputed, corrupted, numerical_columns, null_imputer_name,
