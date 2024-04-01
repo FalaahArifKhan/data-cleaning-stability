@@ -40,6 +40,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
 
     datawig.utils.set_stream_log_level("ERROR")
     os.environ['MXNET_LOG_LEVEL'] = 'ERROR'
+    os.environ['MXNET_STORAGE_FALLBACK_LOG_VERBOSE'] = 0
 
     train_missing_mask = X_train_with_nulls.copy().isnull()
     test_missing_mask = X_test_with_nulls.copy().isnull()
