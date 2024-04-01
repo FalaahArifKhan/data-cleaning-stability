@@ -36,8 +36,10 @@ def complete(X_train_with_nulls: pd.DataFrame,
     """
     # Import datawig inside a function to avoid its installation to use other null imputers
     import datawig
+    import mxnet as mx
 
     datawig.utils.set_stream_log_level("ERROR")
+    os.environ['MXNET_LOG_LEVEL'] = 'ERROR'
 
     train_missing_mask = X_train_with_nulls.copy().isnull()
     test_missing_mask = X_test_with_nulls.copy().isnull()
@@ -55,7 +57,8 @@ def complete(X_train_with_nulls: pd.DataFrame,
             train_idx_missing = train_missing_mask[output_col]
 
             imputer = datawig.SimpleImputer(input_columns=input_cols,
-                                            output_column=output_col)
+                                            output_column=output_col,
+                                            output_path=os.path.join(output_path, output_col))
             if hpo:
                 imputer.fit_hpo(X_train_imputed.loc[~train_idx_missing, :],
                                 patience=5 if output_col in categorical_columns_with_nulls else 20,
@@ -65,6 +68,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
                 imputer.fit(X_train_imputed.loc[~train_idx_missing, :],
                             patience=5 if output_col in categorical_columns_with_nulls else 20,
                             num_epochs=num_epochs,
+                            ctx=[mx.gpu(0)],
                             batch_size=64,
                             calibrate=False)
 
