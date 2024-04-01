@@ -81,7 +81,9 @@ def complete(X_train_with_nulls: pd.DataFrame,
             tmp_test = imputer.predict(X_test_imputed, precision_threshold=precision_threshold)
             X_test_imputed.loc[test_idx_missing, output_col] = tmp_test[output_col + "_imputed"]
 
-            null_imputer_params[output_col] = {k: v for k, v in imputer.__dict__.items() if k not in ['imputer']}
+            # TODO
+            # null_imputer_params[output_col] = {k: str(v) for k, v in imputer.__dict__.items() if k not in ['imputer']}
+            null_imputer_params[output_col] = None
 
             # remove the directory with logfiles for this column
             shutil.rmtree(os.path.join(output_path, output_col))
