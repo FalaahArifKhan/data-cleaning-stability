@@ -14,6 +14,7 @@ from virny.utils.custom_initializers import create_config_obj
 from virny.user_interfaces.multiple_models_with_db_writer_api import compute_metrics_with_db_writer
 
 import source.null_imputers.simple_imputer as simple_imputer
+import source.null_imputers.datawig_imputer as datawig_imputer
 from configs.models_config_for_tuning import get_models_params_for_tuning
 from configs.constants import (EXP_COLLECTION_NAME, MODEL_HYPER_PARAMS_COLLECTION_NAME, IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                EXPERIMENT_RUN_SEEDS, NUM_FOLDS_FOR_TUNING, ErrorRepairMethod, ErrorInjectionStrategy)
@@ -121,6 +122,17 @@ class Benchmark:
                                                        train_numerical_null_columns=train_numerical_null_columns,
                                                        train_categorical_null_columns=train_categorical_null_columns))
 
+        elif null_imputer_name == ErrorRepairMethod.datawig.value:
+            X_train_imputed, X_test_imputed, null_imputer_params = (
+                datawig_imputer.complete(X_train_with_nulls=X_train_with_nulls,
+                                         X_test_with_nulls=X_test_with_nulls,
+                                         numeric_columns_with_nulls=train_numerical_null_columns,
+                                         categorical_columns_with_nulls=train_categorical_null_columns,
+                                         hpo=False,
+                                         output_path=pathlib.Path(__file__).parent.parent.parent.joinpath('results')))
+            numerical_null_imputer_params = null_imputer_params
+            categorical_null_imputer_params = null_imputer_params
+
         else:
             raise ValueError(f'{null_imputer_name} null imputer is not implemented')
 
@@ -147,11 +159,11 @@ class Benchmark:
             recall = None
             f1 = None
             if column_type == 'numerical':
-                null_imputer_params = numerical_null_imputer_params
+                null_imputer_params = numerical_null_imputer_params[column_name] if numerical_null_imputer_params is not None else None
                 rmse = mean_squared_error(true, pred, squared=False)
                 print('RMSE for {}: {:.2f}'.format(column_name, rmse))
             else:
-                null_imputer_params = categorical_null_imputer_params
+                null_imputer_params = categorical_null_imputer_params[column_name] if categorical_null_imputer_params is not None else None
                 precision, recall, f1, _ = precision_recall_fscore_support(true, pred, average="micro")
                 print('Precision for {}: {:.2f}'.format(column_name, precision))
                 print('Recall for {}: {:.2f}'.format(column_name, recall))

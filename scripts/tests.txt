@@ -1,0 +1,18 @@
+python ./scripts/evaluate_models.py \
+    --dataset folk \
+    --null_imputers \[\"median-mode\"\] \
+    --models \[\"lr_clf\"\] \
+    --run_nums \[1\] \
+    --ml_impute True --evaluation_scenarios \[\"mcar_mcar1\"\]
+
+python ./scripts/impute_nulls_with_predictor.py \
+    --dataset folk \
+    --null_imputers \[\"median-mode\"\] \
+    --run_nums \[1,2\] \
+    --save_imputed_datasets True --evaluation_scenarios \[\"mcar_mcar1\",\"mcar_mar1\"\]
+
+python ./scripts/impute_nulls_with_predictor.py \
+    --dataset folk \
+    --null_imputers \[\"datawig\"\] \
+    --run_nums \[1\] \
+    --save_imputed_datasets True --evaluation_scenarios \[\"mcar_mcar1\"\]

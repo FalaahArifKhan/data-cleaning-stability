@@ -3,11 +3,12 @@ import shutil
 import pandas as pd
 
 
-def complete(data_frame: pd.DataFrame,
+def complete(X_train_with_nulls: pd.DataFrame,
+             X_test_with_nulls: pd.DataFrame,
+             numeric_columns_with_nulls: list,
+             categorical_columns_with_nulls : list,
              precision_threshold: float = 0.0,
-             inplace: bool = False,
              hpo: bool = False,
-             verbose: int = 0,
              num_epochs: int = 100,
              iterations: int = 1,
              output_path: str = "."):
@@ -33,45 +34,48 @@ def complete(data_frame: pd.DataFrame,
 
     :return: dataframe with imputations
     """
-    missing_mask = data_frame.copy().isnull()
+    # Import datawig inside a function to avoid its installation to use other null imputers
+    import datawig
 
-    if inplace is False:
-        data_frame = data_frame.copy()
+    train_missing_mask = X_train_with_nulls.copy().isnull()
+    test_missing_mask = X_test_with_nulls.copy().isnull()
+    X_train_imputed = X_train_with_nulls.copy()
+    X_test_imputed = X_test_with_nulls.copy()
 
-    numeric_columns = [c for c in data_frame.columns if is_numeric_dtype(data_frame[c])]
-    string_columns = list(set(data_frame.columns) - set(numeric_columns))
-    logger.debug("Assuming numerical columns: {}".format(", ".join(numeric_columns)))
-
-    col_set = set(numeric_columns + string_columns)
-
-    categorical_columns = [col for col in string_columns if SimpleImputer._is_categorical(data_frame[col])]
-    logger.debug("Assuming categorical columns: {}".format(", ".join(categorical_columns)))
+    col_set = set(X_train_imputed.columns)
+    null_imputer_params = dict()
     for _ in range(iterations):
-        for output_col in set(numeric_columns) | set(categorical_columns):
+        for output_col in set(numeric_columns_with_nulls) | set(categorical_columns_with_nulls):
             # train on all input columns but the to-be-imputed one
             input_cols = list(col_set - set([output_col]))
 
             # train on all observed values
-            idx_missing = missing_mask[output_col]
+            train_idx_missing = train_missing_mask[output_col]
 
-            imputer = SimpleImputer(input_columns=input_cols,
-                                    output_column=output_col,
-                                    output_path=os.path.join(output_path, output_col))
+            imputer = datawig.SimpleImputer(input_columns=input_cols,
+                                            output_column=output_col,
+                                            output_path=os.path.join(output_path, output_col))
             if hpo:
-                imputer.fit_hpo(data_frame.loc[~idx_missing, :],
-                                patience=5 if output_col in categorical_columns else 20,
+                imputer.fit_hpo(X_train_imputed.loc[~train_idx_missing, :],
+                                patience=5 if output_col in categorical_columns_with_nulls else 20,
                                 num_epochs=100,
                                 final_fc_hidden_units=[[0], [10], [50], [100]])
             else:
-                imputer.fit(data_frame.loc[~idx_missing, :],
-                            patience=5 if output_col in categorical_columns else 20,
+                imputer.fit(X_train_imputed.loc[~train_idx_missing, :],
+                            patience=5 if output_col in categorical_columns_with_nulls else 20,
                             num_epochs=num_epochs,
                             calibrate=False)
 
-            tmp = imputer.predict(data_frame, precision_threshold=precision_threshold)
-            data_frame.loc[idx_missing, output_col] = tmp[output_col + "_imputed"]
+            tmp_train = imputer.predict(X_train_imputed, precision_threshold=precision_threshold)
+            X_train_imputed.loc[train_idx_missing, output_col] = tmp_train[output_col + "_imputed"]
+
+            test_idx_missing = test_missing_mask[output_col]
+            tmp_test = imputer.predict(X_test_imputed, precision_threshold=precision_threshold)
+            X_test_imputed.loc[test_idx_missing, output_col] = tmp_test[output_col + "_imputed"]
+
+            null_imputer_params[output_col] = {k: v for k, v in imputer.__dict__.items() if k not in ['imputer']}
 
             # remove the directory with logfiles for this column
             shutil.rmtree(os.path.join(output_path, output_col))
 
-    return data_frame
+    return X_train_imputed, X_test_imputed, null_imputer_params
