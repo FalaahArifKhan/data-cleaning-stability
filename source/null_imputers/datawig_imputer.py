@@ -69,7 +69,8 @@ def complete(X_train_with_nulls: pd.DataFrame,
                 imputer.fit(X_train_imputed.loc[~train_idx_missing, :],
                             patience=5 if output_col in categorical_columns_with_nulls else 20,
                             # num_epochs=num_epochs,
-                            num_epochs=1,
+                            num_epochs=10,
+                            ctx=[mx.gpu(0), mx.gpu(1)],
                             batch_size=64,
                             calibrate=False)
 
