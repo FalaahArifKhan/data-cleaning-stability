@@ -37,6 +37,8 @@ def complete(X_train_with_nulls: pd.DataFrame,
     # Import datawig inside a function to avoid its installation to use other null imputers
     import datawig
 
+    datawig.utils.set_stream_log_level("ERROR")
+
     train_missing_mask = X_train_with_nulls.copy().isnull()
     test_missing_mask = X_test_with_nulls.copy().isnull()
     X_train_imputed = X_train_with_nulls.copy()
@@ -64,6 +66,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
                 imputer.fit(X_train_imputed.loc[~train_idx_missing, :],
                             patience=5 if output_col in categorical_columns_with_nulls else 20,
                             num_epochs=num_epochs,
+                            batch_size=64,
                             calibrate=False)
 
             tmp_train = imputer.predict(X_train_imputed, precision_threshold=precision_threshold)

@@ -129,6 +129,7 @@ class Benchmark:
                                          numeric_columns_with_nulls=train_numerical_null_columns,
                                          categorical_columns_with_nulls=train_categorical_null_columns,
                                          hpo=False,
+                                         num_epochs=50,
                                          output_path=pathlib.Path(__file__).parent.parent.parent.joinpath('results')))
             numerical_null_imputer_params = null_imputer_params
             categorical_null_imputer_params = null_imputer_params
