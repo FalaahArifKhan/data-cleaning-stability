@@ -55,8 +55,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
             train_idx_missing = train_missing_mask[output_col]
 
             imputer = datawig.SimpleImputer(input_columns=input_cols,
-                                            output_column=output_col,
-                                            output_path=os.path.join(output_path, output_col))
+                                            output_column=output_col)
             if hpo:
                 imputer.fit_hpo(X_train_imputed.loc[~train_idx_missing, :],
                                 patience=5 if output_col in categorical_columns_with_nulls else 20,
