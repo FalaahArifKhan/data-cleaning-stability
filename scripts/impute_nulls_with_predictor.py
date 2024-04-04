@@ -41,6 +41,7 @@ def parse_input_args():
                         default=str(EVALUATION_SCENARIOS))
 
     args = parser.parse_args()
+    print('args.null_imputers -- ', args.null_imputers)
     args = validate_args(exp_config_obj=args, with_model_names=False)
 
     print(
