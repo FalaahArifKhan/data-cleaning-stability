@@ -38,5 +38,8 @@ singularity exec /scratch/work/public/singularity/cuda11.0-cudnn8-devel-ubuntu18
 Command for development on the cluster:
 ```shell
 # To request one GPU card, 16 GB memory, and 12 hour running duration
-$ srun -t12:00:00 --mem=16000 --gres=gpu:rtx8000:1 --pty /bin/bash
+srun -t12:00:00 --mem=16000 --gres=gpu:rtx8000:1 --pty /bin/bash
+
+singularity exec --overlay /scratch/dh3553/ml_life_cycle_project/vldb_env.ext3:ro /scratch/work/public/singularity/cuda11.0-cudnn8-devel-ubuntu18.04.sif /bin/bash
+source /ext3/env.sh
 ```
