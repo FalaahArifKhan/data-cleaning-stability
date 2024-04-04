@@ -14,7 +14,7 @@
 module purge
 
 EXECUTION_COMMAND="
-python ./scripts/impute_nulls_with_predictor.py \
+python ../scripts/impute_nulls_with_predictor.py \
     --dataset folk \
     --null_imputers ["datawig"] \
     --run_nums [1] \
