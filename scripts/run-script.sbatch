@@ -16,9 +16,10 @@ module purge
 EXECUTION_COMMAND="
 python ./scripts/impute_nulls_with_predictor.py \
     --dataset folk \
-    --null_imputers \[\"datawig\"\] \
-    --run_nums \[1\] \
-    --save_imputed_datasets True --evaluation_scenarios \[\"mcar_mcar1\"\]
+    --null_imputers ["datawig"] \
+    --run_nums [1] \
+    --save_imputed_datasets True \
+    --evaluation_scenarios ["mcar_mcar1"]
 "
 
 singularity exec --nv \
