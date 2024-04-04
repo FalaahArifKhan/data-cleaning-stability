@@ -11,7 +11,7 @@ warnings.filterwarnings('ignore')
 os.environ["PYTHONWARNINGS"] = "ignore"
 
 # Define a correct root path
-sys.path.append(str(Path(f"{__file__}").parent.parent))
+sys.path.append(str(Path(__file__).parent.parent))
 print('Current location: ', os.getcwd())
 
 # Import dependencies
