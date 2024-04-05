@@ -116,23 +116,21 @@ class Benchmark:
 
         imputation_start_time = datetime.now()
         if null_imputer_name == ErrorRepairMethod.median_mode.value:
-            X_train_imputed, X_test_imputed, numerical_null_imputer_params, categorical_null_imputer_params = (
+            X_train_imputed, X_test_imputed, null_imputer_params_dct = (
                 simple_imputer.impute_with_median_mode(X_train_with_nulls=X_train_with_nulls,
                                                        X_test_with_nulls=X_test_with_nulls,
                                                        train_numerical_null_columns=train_numerical_null_columns,
                                                        train_categorical_null_columns=train_categorical_null_columns))
 
         elif null_imputer_name == ErrorRepairMethod.datawig.value:
-            X_train_imputed, X_test_imputed, null_imputer_params = (
+            X_train_imputed, X_test_imputed, null_imputer_params_dct = (
                 datawig_imputer.complete(X_train_with_nulls=X_train_with_nulls,
                                          X_test_with_nulls=X_test_with_nulls,
                                          numeric_columns_with_nulls=train_numerical_null_columns,
                                          categorical_columns_with_nulls=train_categorical_null_columns,
                                          hpo=False,
                                          num_epochs=50,
-                                         output_path=pathlib.Path(__file__).parent.parent.parent.joinpath('results')))
-            numerical_null_imputer_params = null_imputer_params
-            categorical_null_imputer_params = null_imputer_params
+                                         output_path=pathlib.Path(__file__).parent.parent.parent.joinpath('results').joinpath(self.dataset_name).joinpath(ErrorRepairMethod.datawig.value)))
 
         else:
             raise ValueError(f'{null_imputer_name} null imputer is not implemented')
@@ -141,10 +139,9 @@ class Benchmark:
         imputation_runtime = (imputation_end_time - imputation_start_time).total_seconds() / 60.0
         self.__logger.info('Nulls are successfully imputed')
 
-        return X_train_imputed, X_test_imputed, numerical_null_imputer_params, categorical_null_imputer_params, imputation_runtime
+        return X_train_imputed, X_test_imputed, null_imputer_params_dct, imputation_runtime
 
-    def _evaluate_imputation(self, real, imputed, corrupted, numerical_columns, null_imputer_name,
-                             numerical_null_imputer_params, categorical_null_imputer_params):
+    def _evaluate_imputation(self, real, imputed, corrupted, numerical_columns, null_imputer_name, null_imputer_params_dct):
         columns_with_nulls = corrupted.columns[corrupted.isna().any()].tolist()
         metrics_df = pd.DataFrame(columns=('Dataset_Name', 'Null_Imputer_Name', 'Null_Imputer_Params',
                                            'Column_Type', 'Column_With_Nulls', 'RMSE', 'Precision', 'Recall', 'F1_Score'))
@@ -160,11 +157,11 @@ class Benchmark:
             recall = None
             f1 = None
             if column_type == 'numerical':
-                null_imputer_params = numerical_null_imputer_params[column_name] if numerical_null_imputer_params is not None else None
+                null_imputer_params = null_imputer_params_dct[column_name] if null_imputer_params_dct is not None else None
                 rmse = mean_squared_error(true, pred, squared=False)
                 print('RMSE for {}: {:.2f}'.format(column_name, rmse))
             else:
-                null_imputer_params = categorical_null_imputer_params[column_name] if categorical_null_imputer_params is not None else None
+                null_imputer_params = null_imputer_params_dct[column_name] if null_imputer_params_dct is not None else None
                 precision, recall, f1, _ = precision_recall_fscore_support(true, pred, average="micro")
                 print('Precision for {}: {:.2f}'.format(column_name, precision))
                 print('Recall for {}: {:.2f}'.format(column_name, recall))
@@ -192,13 +189,13 @@ class Benchmark:
                                                                        evaluation_scenario=evaluation_scenario,
                                                                        experiment_seed=experiment_seed)
         # Impute nulls
-        (X_train_val_imputed, X_test_imputed, numerical_null_imputer_params,
-         categorical_null_imputer_params, imputation_runtime) = self._impute_nulls(X_train_with_nulls=X_train_val_with_nulls,
-                                                                                   X_test_with_nulls=X_test_with_nulls,
-                                                                                   null_imputer_name=null_imputer_name,
-                                                                                   experiment_seed=experiment_seed,
-                                                                                   categorical_columns=data_loader.categorical_columns,
-                                                                                   numerical_columns=data_loader.numerical_columns)
+        (X_train_val_imputed, X_test_imputed, null_imputer_params_dct,
+         imputation_runtime) = self._impute_nulls(X_train_with_nulls=X_train_val_with_nulls,
+                                                  X_test_with_nulls=X_test_with_nulls,
+                                                  null_imputer_name=null_imputer_name,
+                                                  experiment_seed=experiment_seed,
+                                                  categorical_columns=data_loader.categorical_columns,
+                                                  numerical_columns=data_loader.numerical_columns)
 
         # Evaluate imputation for train and test sets
         print('\n')
@@ -208,8 +205,7 @@ class Benchmark:
                                                                 imputed=X_train_val_imputed,
                                                                 numerical_columns=data_loader.numerical_columns,
                                                                 null_imputer_name=null_imputer_name,
-                                                                numerical_null_imputer_params=numerical_null_imputer_params,
-                                                                categorical_null_imputer_params=categorical_null_imputer_params)
+                                                                null_imputer_params_dct=null_imputer_params_dct)
         print('\n')
         self.__logger.info('Evaluating imputation for X_test...')
         test_imputation_metrics_df = self._evaluate_imputation(real=X_test,
@@ -217,8 +213,7 @@ class Benchmark:
                                                                imputed=X_test_imputed,
                                                                numerical_columns=data_loader.numerical_columns,
                                                                null_imputer_name=null_imputer_name,
-                                                               numerical_null_imputer_params=numerical_null_imputer_params,
-                                                               categorical_null_imputer_params=categorical_null_imputer_params)
+                                                               null_imputer_params_dct=null_imputer_params_dct)
 
         # Save performance metrics and tuned parameters of the null imputer in database
         self.__db.write_pandas_df_into_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
