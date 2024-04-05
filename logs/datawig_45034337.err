@@ -1,0 +1,22 @@
+WARNING:root:No module named 'tempeh': LawSchoolGPADataset will be unavailable. To install, run:
+pip install 'aif360[LawSchoolGPA]'
+Traceback (most recent call last):
+  File "/home/dh3553/projects/data-cleaning-stability/logs/../scripts/impute_nulls_with_predictor.py", line 59, in <module>
+    args = parse_input_args()
+  File "/home/dh3553/projects/data-cleaning-stability/logs/../scripts/impute_nulls_with_predictor.py", line 44, in parse_input_args
+    args = validate_args(exp_config_obj=args, with_model_names=False)
+  File "/home/dh3553/projects/data-cleaning-stability/logs/../source/validation.py", line 33, in validate_args
+    exp_config_obj.null_imputers = ast.literal_eval(exp_config_obj.null_imputers)
+  File "/ext3/miniconda3/lib/python3.9/ast.py", line 105, in literal_eval
+    return _convert(node_or_string)
+  File "/ext3/miniconda3/lib/python3.9/ast.py", line 85, in _convert
+    return list(map(_convert, node.elts))
+  File "/ext3/miniconda3/lib/python3.9/ast.py", line 104, in _convert
+    return _convert_signed_num(node)
+  File "/ext3/miniconda3/lib/python3.9/ast.py", line 78, in _convert_signed_num
+    return _convert_num(node)
+  File "/ext3/miniconda3/lib/python3.9/ast.py", line 69, in _convert_num
+    _raise_malformed_node(node)
+  File "/ext3/miniconda3/lib/python3.9/ast.py", line 66, in _raise_malformed_node
+    raise ValueError(f'malformed node or string: {node!r}')
+ValueError: malformed node or string: <ast.Name object at 0x14dfe5e0b5b0>

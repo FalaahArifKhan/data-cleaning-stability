@@ -1,0 +1,76 @@
+2024-04-05 18:21:28,057 [INFO]  CategoricalEncoder for column COW                                found only 32 occurrences of value 8
+2024-04-05 18:21:29,021 [INFO]  
+========== start: fit model
+2024-04-05 18:21:29,021 [WARNING]  Already bound, ignoring bind()
+2024-04-05 18:22:29,001 [INFO]  Epoch[0] Batch [0-83]	Speed: 89.84 samples/sec	cross-entropy=1.263643	COW-accuracy=0.672619
+2024-04-05 18:23:26,530 [INFO]  Epoch[0] Train-cross-entropy=1.093900
+2024-04-05 18:23:26,530 [INFO]  Epoch[0] Train-COW-accuracy=0.679591
+2024-04-05 18:23:26,530 [INFO]  Epoch[0] Time cost=117.503
+2024-04-05 18:23:26,535 [INFO]  Saved checkpoint to "/home/dh3553/projects/data-cleaning-stability/logs/../results/COW/model-0000.params"
+2024-04-05 18:23:28,212 [INFO]  Epoch[0] Validation-cross-entropy=1.139909
+2024-04-05 18:23:28,212 [INFO]  Epoch[0] Validation-COW-accuracy=0.665296
+2024-04-05 18:24:27,844 [INFO]  Epoch[1] Batch [0-83]	Speed: 90.15 samples/sec	cross-entropy=1.052543	COW-accuracy=0.681176
+2024-04-05 18:25:25,531 [INFO]  Epoch[1] Train-cross-entropy=1.019508
+2024-04-05 18:25:25,531 [INFO]  Epoch[1] Train-COW-accuracy=0.683449
+2024-04-05 18:25:25,531 [INFO]  Epoch[1] Time cost=117.319
+2024-04-05 18:25:25,537 [INFO]  Saved checkpoint to "/home/dh3553/projects/data-cleaning-stability/logs/../results/COW/model-0001.params"
+2024-04-05 18:25:27,236 [INFO]  Epoch[1] Validation-cross-entropy=1.107419
+2024-04-05 18:25:27,236 [INFO]  Epoch[1] Validation-COW-accuracy=0.671053
+2024-04-05 18:26:26,990 [INFO]  Epoch[2] Batch [0-83]	Speed: 89.96 samples/sec	cross-entropy=0.997898	COW-accuracy=0.687128
+2024-04-05 18:27:24,728 [INFO]  Epoch[2] Train-cross-entropy=0.973802
+2024-04-05 18:27:24,728 [INFO]  Epoch[2] Train-COW-accuracy=0.693673
+2024-04-05 18:27:24,728 [INFO]  Epoch[2] Time cost=117.493
+2024-04-05 18:27:24,734 [INFO]  Saved checkpoint to "/home/dh3553/projects/data-cleaning-stability/logs/../results/COW/model-0002.params"
+2024-04-05 18:27:26,435 [INFO]  Epoch[2] Validation-cross-entropy=1.087147
+2024-04-05 18:27:26,435 [INFO]  Epoch[2] Validation-COW-accuracy=0.675987
+2024-04-05 18:28:26,375 [INFO]  Epoch[3] Batch [0-83]	Speed: 89.69 samples/sec	cross-entropy=0.959999	COW-accuracy=0.695871
+2024-04-05 18:29:24,007 [INFO]  Epoch[3] Train-cross-entropy=0.940465
+2024-04-05 18:29:24,007 [INFO]  Epoch[3] Train-COW-accuracy=0.703511
+2024-04-05 18:29:24,007 [INFO]  Epoch[3] Time cost=117.572
+2024-04-05 18:29:24,013 [INFO]  Saved checkpoint to "/home/dh3553/projects/data-cleaning-stability/logs/../results/COW/model-0003.params"
+2024-04-05 18:29:25,708 [INFO]  Epoch[3] Validation-cross-entropy=1.074070
+2024-04-05 18:29:25,708 [INFO]  Epoch[3] Validation-COW-accuracy=0.682566
+2024-04-05 18:30:25,579 [INFO]  Epoch[4] Batch [0-83]	Speed: 89.80 samples/sec	cross-entropy=0.931391	COW-accuracy=0.704241
+2024-04-05 18:31:23,214 [INFO]  Epoch[4] Train-cross-entropy=0.914602
+2024-04-05 18:31:23,214 [INFO]  Epoch[4] Train-COW-accuracy=0.709877
+2024-04-05 18:31:23,214 [INFO]  Epoch[4] Time cost=117.506
+2024-04-05 18:31:23,220 [INFO]  Saved checkpoint to "/home/dh3553/projects/data-cleaning-stability/logs/../results/COW/model-0004.params"
+2024-04-05 18:31:24,909 [INFO]  Epoch[4] Validation-cross-entropy=1.065144
+2024-04-05 18:31:24,909 [INFO]  Epoch[4] Validation-COW-accuracy=0.688322
+2024-04-05 18:32:24,674 [INFO]  Epoch[5] Batch [0-83]	Speed: 89.95 samples/sec	cross-entropy=0.908826	COW-accuracy=0.708147
+2024-04-05 18:33:22,278 [INFO]  Epoch[5] Train-cross-entropy=0.893942
+2024-04-05 18:33:22,278 [INFO]  Epoch[5] Train-COW-accuracy=0.717593
+2024-04-05 18:33:22,278 [INFO]  Epoch[5] Time cost=117.369
+2024-04-05 18:33:22,284 [INFO]  Saved checkpoint to "/home/dh3553/projects/data-cleaning-stability/logs/../results/COW/model-0005.params"
+2024-04-05 18:33:23,979 [INFO]  Epoch[5] Validation-cross-entropy=1.058781
+2024-04-05 18:33:23,979 [INFO]  Epoch[5] Validation-COW-accuracy=0.689145
+2024-04-05 18:34:23,750 [INFO]  Epoch[6] Batch [0-83]	Speed: 89.94 samples/sec	cross-entropy=0.890484	COW-accuracy=0.713542
+2024-04-05 18:35:21,624 [INFO]  Epoch[6] Train-cross-entropy=0.876952
+2024-04-05 18:35:21,638 [INFO]  Epoch[6] Train-COW-accuracy=0.722029
+2024-04-05 18:35:21,639 [INFO]  Epoch[6] Time cost=117.658
+2024-04-05 18:35:21,645 [INFO]  Saved checkpoint to "/home/dh3553/projects/data-cleaning-stability/logs/../results/COW/model-0006.params"
+2024-04-05 18:35:23,343 [INFO]  Epoch[6] Validation-cross-entropy=1.053964
+2024-04-05 18:35:23,343 [INFO]  Epoch[6] Validation-COW-accuracy=0.694079
+2024-04-05 18:36:23,078 [INFO]  Epoch[7] Batch [0-83]	Speed: 90.00 samples/sec	cross-entropy=0.875133	COW-accuracy=0.716704
+2024-04-05 18:37:20,692 [INFO]  Epoch[7] Train-cross-entropy=0.862575
+2024-04-05 18:37:20,789 [INFO]  Epoch[7] Train-COW-accuracy=0.725309
+2024-04-05 18:37:20,789 [INFO]  Epoch[7] Time cost=117.446
+2024-04-05 18:37:20,798 [INFO]  Saved checkpoint to "/home/dh3553/projects/data-cleaning-stability/logs/../results/COW/model-0007.params"
+2024-04-05 18:37:22,493 [INFO]  Epoch[7] Validation-cross-entropy=1.050331
+2024-04-05 18:37:22,493 [INFO]  Epoch[7] Validation-COW-accuracy=0.693257
+2024-04-05 18:38:22,306 [INFO]  Epoch[8] Batch [0-83]	Speed: 89.87 samples/sec	cross-entropy=0.861995	COW-accuracy=0.720238
+2024-04-05 18:39:19,954 [INFO]  Epoch[8] Train-cross-entropy=0.850181
+2024-04-05 18:39:19,955 [INFO]  Epoch[8] Train-COW-accuracy=0.727431
+2024-04-05 18:39:19,955 [INFO]  Epoch[8] Time cost=117.462
+2024-04-05 18:39:19,961 [INFO]  Saved checkpoint to "/home/dh3553/projects/data-cleaning-stability/logs/../results/COW/model-0008.params"
+2024-04-05 18:39:21,657 [INFO]  Epoch[8] Validation-cross-entropy=1.047508
+2024-04-05 18:39:21,657 [INFO]  Epoch[8] Validation-COW-accuracy=0.692434
+2024-04-05 18:40:21,476 [INFO]  Epoch[9] Batch [0-83]	Speed: 89.87 samples/sec	cross-entropy=0.850540	COW-accuracy=0.723586
+2024-04-05 18:41:19,209 [INFO]  Epoch[9] Train-cross-entropy=0.839332
+2024-04-05 18:41:19,209 [INFO]  Epoch[9] Train-COW-accuracy=0.731096
+2024-04-05 18:41:19,209 [INFO]  Epoch[9] Time cost=117.552
+2024-04-05 18:41:19,215 [INFO]  Saved checkpoint to "/home/dh3553/projects/data-cleaning-stability/logs/../results/COW/model-0009.params"
+2024-04-05 18:41:20,910 [INFO]  Epoch[9] Validation-cross-entropy=1.045225
+2024-04-05 18:41:20,910 [INFO]  Epoch[9] Validation-COW-accuracy=0.694901
+2024-04-05 18:41:20,910 [INFO]  
+========== done (1191.8894193172455 s) fit model
