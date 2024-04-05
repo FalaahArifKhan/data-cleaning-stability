@@ -36,9 +36,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
     """
     # Import datawig inside a function to avoid its installation to use other null imputers
     import datawig
-    import mxnet as mx
 
-    datawig.utils.set_stream_log_level("ERROR")
     os.environ['MXNET_LOG_LEVEL'] = 'ERROR'
     os.environ['MXNET_STORAGE_FALLBACK_LOG_VERBOSE'] = '0'
 
@@ -70,7 +68,6 @@ def complete(X_train_with_nulls: pd.DataFrame,
                             patience=5 if output_col in categorical_columns_with_nulls else 20,
                             # num_epochs=num_epochs,
                             num_epochs=10,
-                            ctx=[mx.gpu(0)],
                             batch_size=64,
                             calibrate=False)
 
