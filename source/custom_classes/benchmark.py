@@ -220,27 +220,27 @@ class Benchmark:
                                                                null_imputer_name=null_imputer_name,
                                                                null_imputer_params_dct=null_imputer_params_dct)
 
-        # Save performance metrics and tuned parameters of the null imputer in database
-        self.__db.write_pandas_df_into_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
-                                          df=train_imputation_metrics_df,
-                                          custom_tbl_fields_dct={
-                                              'session_uuid': DATASET_UUIDS[self.dataset_name][null_imputer_name],
-                                              'evaluation_scenario': evaluation_scenario,
-                                              'experiment_seed': experiment_seed,
-                                              'dataset_part': 'X_train_val',
-                                              'runtime_in_mins': imputation_runtime,
-                                              'record_create_date_time': datetime.now(timezone.utc),
-                                          })
-        self.__db.write_pandas_df_into_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
-                                          df=test_imputation_metrics_df,
-                                          custom_tbl_fields_dct={
-                                              'session_uuid': DATASET_UUIDS[self.dataset_name][null_imputer_name],
-                                              'evaluation_scenario': evaluation_scenario,
-                                              'experiment_seed': experiment_seed,
-                                              'dataset_part': 'X_test',
-                                              'runtime_in_mins': imputation_runtime,
-                                              'record_create_date_time': datetime.now(timezone.utc),
-                                          })
+        # # Save performance metrics and tuned parameters of the null imputer in database
+        # self.__db.write_pandas_df_into_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
+        #                                   df=train_imputation_metrics_df,
+        #                                   custom_tbl_fields_dct={
+        #                                       'session_uuid': DATASET_UUIDS[self.dataset_name][null_imputer_name],
+        #                                       'evaluation_scenario': evaluation_scenario,
+        #                                       'experiment_seed': experiment_seed,
+        #                                       'dataset_part': 'X_train_val',
+        #                                       'runtime_in_mins': imputation_runtime,
+        #                                       'record_create_date_time': datetime.now(timezone.utc),
+        #                                   })
+        # self.__db.write_pandas_df_into_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
+        #                                   df=test_imputation_metrics_df,
+        #                                   custom_tbl_fields_dct={
+        #                                       'session_uuid': DATASET_UUIDS[self.dataset_name][null_imputer_name],
+        #                                       'evaluation_scenario': evaluation_scenario,
+        #                                       'experiment_seed': experiment_seed,
+        #                                       'dataset_part': 'X_test',
+        #                                       'runtime_in_mins': imputation_runtime,
+        #                                       'record_create_date_time': datetime.now(timezone.utc),
+        #                                   })
         self.__logger.info("Performance metrics and tuned parameters of the null imputer are saved into a database")
 
         if save_imputed_datasets:
