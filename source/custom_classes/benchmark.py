@@ -132,7 +132,6 @@ class Benchmark:
                                          X_test_with_nulls=X_test_with_nulls,
                                          numeric_columns_with_nulls=train_numerical_null_columns,
                                          categorical_columns_with_nulls=train_categorical_null_columns,
-                                         categorical_columns=categorical_columns,
                                          hpo=False,
                                          output_path=output_path))
 
