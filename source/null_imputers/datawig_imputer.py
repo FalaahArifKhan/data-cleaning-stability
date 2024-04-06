@@ -49,7 +49,11 @@ def complete(X_train_with_nulls: pd.DataFrame,
     null_imputer_params = dict()
     for _ in range(iterations):
         for output_col in set(numeric_columns_with_nulls) | set(categorical_columns_with_nulls):
-            datawig.utils.set_stream_log_level('INFO')
+            # Reset logger handler
+            if datawig.utils.logger.hasHandlers():
+                datawig.utils.logger.handlers.clear()
+            datawig.utils.logger.addHandler(datawig.utils.consoleHandler)
+
             datawig.utils.logger.info(f'Start null imputation for the {output_col} column')
 
             # train on all input columns but the to-be-imputed one
