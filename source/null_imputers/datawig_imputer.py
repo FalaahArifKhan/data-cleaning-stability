@@ -40,7 +40,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
 
     os.environ['MXNET_LOG_LEVEL'] = 'ERROR'
     os.environ['MXNET_STORAGE_FALLBACK_LOG_VERBOSE'] = '0'
-    os.environ['USE_INT64_TENSOR_SIZE'] = '1'
+    os.environ['USE_INT64_TENSOR_SIZE'] = 1
 
     train_missing_mask = X_train_with_nulls.copy().isnull()
     test_missing_mask = X_test_with_nulls.copy().isnull()
