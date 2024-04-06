@@ -45,11 +45,6 @@ def complete(X_train_with_nulls: pd.DataFrame,
     test_missing_mask = X_test_with_nulls.copy().isnull()
     X_train_imputed = X_train_with_nulls.copy()
     X_test_imputed = X_test_with_nulls.copy()
-    print('X_train_imputed.dtypes -- ', X_train_imputed.dtypes)
-
-    # # Cast categorical columns to string to help datawig correctly identify column types
-    # X_train_imputed[categorical_columns] = X_train_imputed[categorical_columns].astype(str)
-    # X_test_imputed[categorical_columns] = X_test_imputed[categorical_columns].astype(str)
 
     col_set = set(X_train_imputed.columns)
     null_imputer_params = dict()
@@ -77,9 +72,9 @@ def complete(X_train_with_nulls: pd.DataFrame,
                             batch_size=64,
                             calibrate=False)
 
-            print('imputer.numeric_columns -- ', imputer.numeric_columns)
-            print('imputer.string_columns -- ', imputer.string_columns)
-            print('imputer.output_type -- ', imputer.output_type)
+            print('imputer.numeric_columns: ', imputer.numeric_columns)
+            print('imputer.string_columns: ', imputer.string_columns)
+            print('imputer.output_type: ', imputer.output_type)
 
             tmp_train = imputer.predict(X_train_imputed, precision_threshold=precision_threshold)
             X_train_imputed.loc[train_idx_missing, output_col] = tmp_train[output_col + "_imputed"]
