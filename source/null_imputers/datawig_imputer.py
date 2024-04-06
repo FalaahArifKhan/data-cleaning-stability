@@ -9,7 +9,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
              numeric_columns_with_nulls: list,
              categorical_columns_with_nulls: list,
              precision_threshold: float = 0.0,
-             hpo: bool = False,
+             hpo: bool = True,
              num_epochs: int = 100,
              iterations: int = 1,
              output_path: str = "."):
@@ -47,7 +47,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
     X_test_imputed = X_test_with_nulls.copy()
 
     col_set = set(X_train_imputed.columns)
-    null_imputer_params = dict()
+    null_imputer_params_dct = dict()
     for _ in range(iterations):
         for output_col in set(numeric_columns_with_nulls) | set(categorical_columns_with_nulls):
             # Reset logger handler
@@ -69,14 +69,15 @@ def complete(X_train_with_nulls: pd.DataFrame,
                                             output_path=os.path.join(output_path, output_col))
             if hpo:
                 imputer.fit_hpo(X_train_imputed.loc[~train_idx_missing, :],
-                                patience=5,
-                                num_epochs=1,
-                                # num_epochs=100,
-                                final_fc_hidden_units=[[10]])
-                                # final_fc_hidden_units=[[10], [50], [100]])
+                                num_evals=6,
+                                patience=3,
+                                num_epochs=100,
+                                batch_size=64,
+                                final_fc_hidden_units=[[10], [50], [100]])
             else:
+                # TODO: take params from a dict with tuned hyper-params
                 imputer.fit(X_train_imputed.loc[~train_idx_missing, :],
-                            patience=5,
+                            patience=3,
                             num_epochs=num_epochs,
                             batch_size=64,
                             calibrate=False)
@@ -95,20 +96,21 @@ def complete(X_train_with_nulls: pd.DataFrame,
 
             # Select hyper-params of the best model
             if imputer.hpo.results.shape[0] == 0:
-                null_imputer_params[output_col] = None
+                null_imputer_params_dct[output_col] = None
             else:
                 if imputer.output_type == 'numeric':
-                    best_model_idx = imputer.hpo.results['mse'].astype(float).idxmin()
+                    best_imputer_idx = imputer.hpo.results['mse'].astype(float).idxmin()
                 else:
-                    best_model_idx = imputer.hpo.results['precision_weighted'].astype(float).idxmax()
+                    best_imputer_idx = imputer.hpo.results['precision_weighted'].astype(float).idxmax()
 
-                print('best_model_idx -- ', best_model_idx, flush=True)
-                best_model_idx = int(best_model_idx)
-                null_imputer_params[output_col] = str(imputer.hpo.results.iloc[best_model_idx].to_dict())
+                best_imputer_idx = int(best_imputer_idx)
+                null_imputer_params = imputer.hpo.results.iloc[best_imputer_idx].to_dict()
+                null_imputer_params['best_imputer_idx'] = best_imputer_idx
+                null_imputer_params_dct[output_col] = str(null_imputer_params)
 
             # remove the directory with logfiles for this column
             shutil.rmtree(os.path.join(output_path, output_col))
 
             datawig.utils.logger.info(f'Successfully completed null imputation for the {output_col} column')
 
-    return X_train_imputed, X_test_imputed, null_imputer_params
+    return X_train_imputed, X_test_imputed, null_imputer_params_dct

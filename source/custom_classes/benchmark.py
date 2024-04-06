@@ -119,8 +119,8 @@ class Benchmark:
             X_train_imputed, X_test_imputed, null_imputer_params_dct = (
                 simple_imputer.impute_with_median_mode(X_train_with_nulls=X_train_with_nulls,
                                                        X_test_with_nulls=X_test_with_nulls,
-                                                       train_numerical_null_columns=train_numerical_null_columns,
-                                                       train_categorical_null_columns=train_categorical_null_columns))
+                                                       numeric_columns_with_nulls=train_numerical_null_columns,
+                                                       categorical_columns_with_nulls=train_categorical_null_columns))
 
         elif null_imputer_name == ErrorRepairMethod.datawig.value:
             output_path = (pathlib.Path(__file__).parent.parent.parent.joinpath('results')
@@ -132,7 +132,6 @@ class Benchmark:
                                          X_test_with_nulls=X_test_with_nulls,
                                          numeric_columns_with_nulls=train_numerical_null_columns,
                                          categorical_columns_with_nulls=train_categorical_null_columns,
-                                         hpo=True,
                                          output_path=output_path))
 
         else:
