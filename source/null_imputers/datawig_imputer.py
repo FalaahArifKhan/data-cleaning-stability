@@ -6,7 +6,8 @@ import pandas as pd
 def complete(X_train_with_nulls: pd.DataFrame,
              X_test_with_nulls: pd.DataFrame,
              numeric_columns_with_nulls: list,
-             categorical_columns_with_nulls : list,
+             categorical_columns_with_nulls: list,
+             categorical_columns: list,
              precision_threshold: float = 0.0,
              hpo: bool = False,
              num_epochs: int = 100,
@@ -45,6 +46,10 @@ def complete(X_train_with_nulls: pd.DataFrame,
     X_train_imputed = X_train_with_nulls.copy()
     X_test_imputed = X_test_with_nulls.copy()
 
+    # Cast categorical columns to string to help datawig correctly identify column types
+    X_train_imputed[categorical_columns] = X_train_imputed[categorical_columns].astype(str)
+    X_test_imputed[categorical_columns] = X_test_imputed[categorical_columns].astype(str)
+
     col_set = set(X_train_imputed.columns)
     null_imputer_params = dict()
     for _ in range(iterations):
@@ -66,10 +71,14 @@ def complete(X_train_with_nulls: pd.DataFrame,
             else:
                 imputer.fit(X_train_imputed.loc[~train_idx_missing, :],
                             patience=5 if output_col in categorical_columns_with_nulls else 20,
+                            num_epochs=1,
                             # num_epochs=num_epochs,
-                            num_epochs=10,
                             batch_size=64,
                             calibrate=False)
+
+            print('imputer.numeric_columns -- ', imputer.numeric_columns)
+            print('imputer.string_columns -- ', imputer.string_columns)
+            print('imputer.output_type -- ', imputer.output_type)
 
             tmp_train = imputer.predict(X_train_imputed, precision_threshold=precision_threshold)
             X_train_imputed.loc[train_idx_missing, output_col] = tmp_train[output_col + "_imputed"]
@@ -78,9 +87,13 @@ def complete(X_train_with_nulls: pd.DataFrame,
             tmp_test = imputer.predict(X_test_imputed, precision_threshold=precision_threshold)
             X_test_imputed.loc[test_idx_missing, output_col] = tmp_test[output_col + "_imputed"]
 
-            # TODO
-            # null_imputer_params[output_col] = {k: str(v) for k, v in imputer.__dict__.items() if k not in ['imputer']}
-            null_imputer_params[output_col] = None
+            # Select hyper-params of the best model
+            if imputer.output_type == 'numeric':
+                best_model_idx = imputer.hpo.results['mse'].astype(float).idxmin()
+            else:
+                best_model_idx = imputer.hpo.results['precision_weighted'].astype(float).idxmax()
+
+            null_imputer_params[output_col] = str(imputer.hpo.results.iloc[best_model_idx].to_dict())
 
             # remove the directory with logfiles for this column
             shutil.rmtree(os.path.join(output_path, output_col))

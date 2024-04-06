@@ -107,8 +107,8 @@ class Benchmark:
 
         return X_train_val_with_nulls, X_test_with_nulls
 
-    def _impute_nulls(self, X_train_with_nulls, X_test_with_nulls, null_imputer_name, experiment_seed,
-                      numerical_columns, categorical_columns):
+    def _impute_nulls(self, X_train_with_nulls, X_test_with_nulls, null_imputer_name, evaluation_scenario,
+                      experiment_seed, numerical_columns, categorical_columns):
         # TODO: Save a result imputed dataset in imputed_data_dict for each imputation technique
         train_set_cols_with_nulls = X_train_with_nulls.columns[X_train_with_nulls.isna().any()].tolist()
         train_numerical_null_columns = list(set(train_set_cols_with_nulls).intersection(numerical_columns))
@@ -123,14 +123,18 @@ class Benchmark:
                                                        train_categorical_null_columns=train_categorical_null_columns))
 
         elif null_imputer_name == ErrorRepairMethod.datawig.value:
+            output_path = (pathlib.Path(__file__).parent.parent.parent.joinpath('results')
+                               .joinpath(self.dataset_name).joinpath(ErrorRepairMethod.datawig.value)
+                               .joinpath(evaluation_scenario)
+                               .joinpath(str(experiment_seed)))
             X_train_imputed, X_test_imputed, null_imputer_params_dct = (
                 datawig_imputer.complete(X_train_with_nulls=X_train_with_nulls,
                                          X_test_with_nulls=X_test_with_nulls,
                                          numeric_columns_with_nulls=train_numerical_null_columns,
                                          categorical_columns_with_nulls=train_categorical_null_columns,
+                                         categorical_columns=categorical_columns,
                                          hpo=False,
-                                         num_epochs=50,
-                                         output_path=pathlib.Path(__file__).parent.parent.parent.joinpath('results').joinpath(self.dataset_name).joinpath(ErrorRepairMethod.datawig.value)))
+                                         output_path=output_path))
 
         else:
             raise ValueError(f'{null_imputer_name} null imputer is not implemented')
@@ -193,6 +197,7 @@ class Benchmark:
          imputation_runtime) = self._impute_nulls(X_train_with_nulls=X_train_val_with_nulls,
                                                   X_test_with_nulls=X_test_with_nulls,
                                                   null_imputer_name=null_imputer_name,
+                                                  evaluation_scenario=evaluation_scenario,
                                                   experiment_seed=experiment_seed,
                                                   categorical_columns=data_loader.categorical_columns,
                                                   numerical_columns=data_loader.numerical_columns)
