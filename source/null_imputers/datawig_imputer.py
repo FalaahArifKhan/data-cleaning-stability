@@ -45,6 +45,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
     test_missing_mask = X_test_with_nulls.copy().isnull()
     X_train_imputed = X_train_with_nulls.copy()
     X_test_imputed = X_test_with_nulls.copy()
+    print('X_train_imputed.dtypes -- ', X_train_imputed.dtypes)
 
     # # Cast categorical columns to string to help datawig correctly identify column types
     # X_train_imputed[categorical_columns] = X_train_imputed[categorical_columns].astype(str)
