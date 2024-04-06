@@ -101,6 +101,8 @@ def complete(X_train_with_nulls: pd.DataFrame,
                 else:
                     best_model_idx = imputer.hpo.results['precision_weighted'].astype(float).idxmax()
 
+                print('best_model_idx -- ', best_model_idx, flush=True)
+                best_model_idx = int(best_model_idx)
                 null_imputer_params[output_col] = str(imputer.hpo.results.iloc[best_model_idx].to_dict())
 
             # remove the directory with logfiles for this column
