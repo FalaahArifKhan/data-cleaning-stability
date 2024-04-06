@@ -37,7 +37,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
     # Import datawig inside a function to avoid its installation to use other null imputers
     import datawig
 
-    os.environ['MXNET_LOG_LEVEL'] = 'INFO'
+    os.environ['MXNET_LOG_LEVEL'] = 'ERROR'
     os.environ['MXNET_STORAGE_FALLBACK_LOG_VERBOSE'] = '0'
 
     train_missing_mask = X_train_with_nulls.copy().isnull()
@@ -49,6 +49,9 @@ def complete(X_train_with_nulls: pd.DataFrame,
     null_imputer_params = dict()
     for _ in range(iterations):
         for output_col in set(numeric_columns_with_nulls) | set(categorical_columns_with_nulls):
+            datawig.utils.set_stream_log_level('INFO')
+            datawig.utils.logger.info(f'Start null imputation for the {output_col} column')
+
             # train on all input columns but the to-be-imputed one
             input_cols = list(col_set - set([output_col]))
 
@@ -72,10 +75,9 @@ def complete(X_train_with_nulls: pd.DataFrame,
                             calibrate=False)
 
             print('output_col: ', output_col, flush=True)
+            print('imputer.output_type: ', imputer.output_type, flush=True)
             print('imputer.numeric_columns: ', imputer.numeric_columns, flush=True)
             print('imputer.string_columns: ', imputer.string_columns, flush=True)
-            print('imputer.output_type: ', imputer.output_type, flush=True)
-            print('\n', flush=True)
 
             tmp_train = imputer.predict(X_train_imputed, precision_threshold=precision_threshold)
             X_train_imputed.loc[train_idx_missing, output_col] = tmp_train[output_col + "_imputed"]
@@ -97,5 +99,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
 
             # remove the directory with logfiles for this column
             shutil.rmtree(os.path.join(output_path, output_col))
+
+            datawig.utils.logger.info(f'Successfully completed null imputation for the {output_col} column\n')
 
     return X_train_imputed, X_test_imputed, null_imputer_params
