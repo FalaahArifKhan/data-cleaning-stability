@@ -68,13 +68,13 @@ def complete(X_train_with_nulls: pd.DataFrame,
             if hpo:
                 imputer.fit_hpo(X_train_imputed.loc[~train_idx_missing, :],
                                 patience=5 if output_col in categorical_columns_with_nulls else 20,
-                                num_epochs=100,
+                                num_epochs=1,
+                                # num_epochs=100,
                                 final_fc_hidden_units=[[0], [10], [50], [100]])
             else:
                 imputer.fit(X_train_imputed.loc[~train_idx_missing, :],
                             patience=5 if output_col in categorical_columns_with_nulls else 20,
-                            num_epochs=1,
-                            # num_epochs=num_epochs,
+                            num_epochs=num_epochs,
                             batch_size=64,
                             calibrate=False)
 
@@ -103,7 +103,5 @@ def complete(X_train_with_nulls: pd.DataFrame,
 
             # remove the directory with logfiles for this column
             shutil.rmtree(os.path.join(output_path, output_col))
-
-            datawig.utils.logger.info(f'Successfully completed null imputation for the {output_col} column\n')
 
     return X_train_imputed, X_test_imputed, null_imputer_params
