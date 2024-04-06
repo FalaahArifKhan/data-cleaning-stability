@@ -46,9 +46,9 @@ def complete(X_train_with_nulls: pd.DataFrame,
     X_train_imputed = X_train_with_nulls.copy()
     X_test_imputed = X_test_with_nulls.copy()
 
-    # Cast categorical columns to string to help datawig correctly identify column types
-    X_train_imputed[categorical_columns] = X_train_imputed[categorical_columns].astype(str)
-    X_test_imputed[categorical_columns] = X_test_imputed[categorical_columns].astype(str)
+    # # Cast categorical columns to string to help datawig correctly identify column types
+    # X_train_imputed[categorical_columns] = X_train_imputed[categorical_columns].astype(str)
+    # X_test_imputed[categorical_columns] = X_test_imputed[categorical_columns].astype(str)
 
     col_set = set(X_train_imputed.columns)
     null_imputer_params = dict()
@@ -88,12 +88,15 @@ def complete(X_train_with_nulls: pd.DataFrame,
             X_test_imputed.loc[test_idx_missing, output_col] = tmp_test[output_col + "_imputed"]
 
             # Select hyper-params of the best model
-            if imputer.output_type == 'numeric':
-                best_model_idx = imputer.hpo.results['mse'].astype(float).idxmin()
+            if imputer.hpo.results.shape[0] == 0:
+                null_imputer_params[output_col] = None
             else:
-                best_model_idx = imputer.hpo.results['precision_weighted'].astype(float).idxmax()
+                if imputer.output_type == 'numeric':
+                    best_model_idx = imputer.hpo.results['mse'].astype(float).idxmin()
+                else:
+                    best_model_idx = imputer.hpo.results['precision_weighted'].astype(float).idxmax()
 
-            null_imputer_params[output_col] = str(imputer.hpo.results.iloc[best_model_idx].to_dict())
+                null_imputer_params[output_col] = str(imputer.hpo.results.iloc[best_model_idx].to_dict())
 
             # remove the directory with logfiles for this column
             shutil.rmtree(os.path.join(output_path, output_col))
