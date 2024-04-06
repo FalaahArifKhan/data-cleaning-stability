@@ -72,7 +72,8 @@ def complete(X_train_with_nulls: pd.DataFrame,
                                 patience=5,
                                 num_epochs=1,
                                 # num_epochs=100,
-                                final_fc_hidden_units=[[10], [50], [100]])
+                                final_fc_hidden_units=[[10]])
+                                # final_fc_hidden_units=[[10], [50], [100]])
             else:
                 imputer.fit(X_train_imputed.loc[~train_idx_missing, :],
                             patience=5,
