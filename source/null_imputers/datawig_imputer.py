@@ -53,6 +53,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
             if datawig.utils.logger.hasHandlers():
                 datawig.utils.logger.handlers.clear()
             datawig.utils.logger.addHandler(datawig.utils.consoleHandler)
+            datawig.utils.set_stream_log_level('DEBUG')
 
             datawig.utils.logger.info(f'Start null imputation for the {output_col} column')
 
@@ -103,5 +104,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
 
             # remove the directory with logfiles for this column
             shutil.rmtree(os.path.join(output_path, output_col))
+
+            datawig.utils.logger.info(f'Successfully completed null imputation for the {output_col} column')
 
     return X_train_imputed, X_test_imputed, null_imputer_params
