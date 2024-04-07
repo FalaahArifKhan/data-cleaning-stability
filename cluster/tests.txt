@@ -2,7 +2,9 @@ python ./scripts/evaluate_models.py \
     --dataset folk \
     --null_imputers \[\"median-mode\"\] \
     --models \[\"lr_clf\"\] \
-    --run_nums \[1\] \
+    --run_nums \[1,2\] \
+    --tune_imputers True \
+    --save_imputed_datasets True \
     --ml_impute True --evaluation_scenarios \[\"mcar_mcar1\"\]
 
 python ./scripts/impute_nulls_with_predictor.py \

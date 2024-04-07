@@ -262,7 +262,7 @@ class Benchmark:
         test_imputation_metrics_df['Imputation_Guid'] = test_imputation_metrics_df['Column_With_Nulls'].apply(
             lambda column_with_nulls: generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name,
                                                                            evaluation_scenario, experiment_seed,
-                                                                           'X_train_val', column_with_nulls])
+                                                                           'X_test', column_with_nulls])
         )
         self.__db.write_pandas_df_into_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                           df=test_imputation_metrics_df,
