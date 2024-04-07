@@ -35,13 +35,14 @@ def parse_input_args():
     parser.add_argument("--dataset", type=str, help="a dataset name", required=True)
     parser.add_argument("--null_imputers", type=str, help="a list of null imputers", required=True)
     parser.add_argument("--run_nums", type=str, help="a list of experiment run numbers", required=True)
+    parser.add_argument("--tune_imputers", type=bool, required=True,
+                        help="True -- tune null imputers, False -- take hyper-params of null imputers from configs/null_imputers_config.py")
     parser.add_argument("--save_imputed_datasets", type=bool, required=True,
                         help="True -- save imputed train and test sets, False -- do not save train and test sets")
     parser.add_argument("--evaluation_scenarios", type=str, help="a list of evaluation scenarios",
                         default=str(EVALUATION_SCENARIOS))
 
     args = parser.parse_args()
-    print('args.null_imputers -- ', args.null_imputers)
     args = validate_args(exp_config_obj=args, with_model_names=False)
 
     print(
@@ -64,6 +65,7 @@ if __name__ == '__main__':
                           model_names=[])
     benchmark.impute_nulls_with_multiple_technique(run_nums=args.run_nums,
                                                    evaluation_scenarios=args.evaluation_scenarios,
+                                                   tune_imputers=args.tune_imputers,
                                                    save_imputed_datasets=args.save_imputed_datasets)
 
     end_time = datetime.now()

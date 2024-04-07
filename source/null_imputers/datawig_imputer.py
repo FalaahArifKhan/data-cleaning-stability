@@ -8,39 +8,18 @@ def complete(X_train_with_nulls: pd.DataFrame,
              X_test_with_nulls: pd.DataFrame,
              numeric_columns_with_nulls: list,
              categorical_columns_with_nulls: list,
-             precision_threshold: float = 0.0,
-             hpo: bool = True,
-             num_epochs: int = 100,
-             iterations: int = 1,
-             output_path: str = "."):
-    """
-    Given a dataframe with missing values, this function detects all imputable columns, trains an imputation model
-    on all other columns and imputes values for each missing value.
-    Several imputation iterators can be run.
-    Imputable columns are either numeric columns or non-numeric categorical columns; for determining whether a
-        column is categorical (as opposed to a plain text column) we use the following heuristic:
-        a non-numeric categorical column should have least 10 times as many rows as there were unique values
-    If an imputation model did not reach the precision specified in the precision_threshold parameter for a given
-        imputation value, that value will not be imputed; thus depending on the precision_threshold, the returned
-        dataframe can still contain some missing values.
-    For numeric columns, we do not filter for accuracy.
-    :param data_frame: original dataframe
-    :param precision_threshold: precision threshold for categorical imputations (default: 0.0)
-    :param inplace: whether or not to perform imputations inplace (default: False)
-    :param hpo: whether or not to perform hyperparameter optimization (default: False)
-    :param verbose: verbosity level, values > 0 log to stdout (default: 0)
-    :param num_epochs: number of epochs for each imputation model training (default: 100)
-    :param iterations: number of iterations for iterative imputation (default: 1)
-    :param output_path: path to store model and metrics
-
-    :return: dataframe with imputations
-    """
+             hyperparams: dict,
+             output_path: str = ".",
+             **kwargs):
     # Import datawig inside a function to avoid its installation to use other null imputers
     import datawig
 
     os.environ['MXNET_LOG_LEVEL'] = 'ERROR'
     os.environ['MXNET_STORAGE_FALLBACK_LOG_VERBOSE'] = '0'
-    os.environ['USE_INT64_TENSOR_SIZE'] = 'ON'
+
+    precision_threshold = kwargs['precision_threshold']
+    num_epochs = kwargs['num_epochs']
+    iterations = kwargs['iterations']
 
     train_missing_mask = X_train_with_nulls.copy().isnull()
     test_missing_mask = X_test_with_nulls.copy().isnull()
@@ -68,16 +47,16 @@ def complete(X_train_with_nulls: pd.DataFrame,
             imputer = datawig.SimpleImputer(input_columns=input_cols,
                                             output_column=output_col,
                                             output_path=os.path.join(output_path, output_col))
-            if hpo:
+            if hyperparams is None:
                 imputer.fit_hpo(X_train_imputed.loc[~train_idx_missing, :],
                                 num_evals=6,
                                 patience=3,
-                                num_epochs=100,
+                                num_epochs=num_epochs,
                                 batch_size=64,
                                 final_fc_hidden_units=[[10], [50], [100]])
             else:
-                # TODO: take params from a dict with tuned hyper-params
                 imputer.fit(X_train_imputed.loc[~train_idx_missing, :],
+                            final_fc_hidden_units=hyperparams['final_fc_hidden_units'],
                             patience=3,
                             num_epochs=num_epochs,
                             batch_size=64,
