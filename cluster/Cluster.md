@@ -37,3 +37,5 @@ singularity exec --nv --overlay /scratch/dh3553/ml_life_cycle_project/vldb_env.e
 
 Singularity> source /ext3/env.sh
 ```
+
+python -c "import numpy as np; print(np.__version__)"
