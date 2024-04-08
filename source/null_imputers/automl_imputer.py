@@ -261,16 +261,19 @@ class AutoMLImputer(BaseImputer):
                 overwrite=True,
                 max_trials=self.max_trials,
                 tuner=self.tuner,
+                seed=self._seed,
                 directory="../models"
             )
             self._predictors[target_column].fit(
                 x=X.loc[~col_missing_mask, feature_cols],
                 y=X.loc[~col_missing_mask, target_column],
-                epochs=self.epochs
+                epochs=self.epochs,
+                verbose=0
             )
 
             # Reuse predictions to improve performance of training for the later columns with nulls
             X.loc[col_missing_mask, target_column] = self._predictors[target_column].predict(X.loc[col_missing_mask, feature_cols])[:, 0]
+            self.__logger.info(f'Fitting for {target_column} column was successfully completed')
 
         self._fitted = True
 
