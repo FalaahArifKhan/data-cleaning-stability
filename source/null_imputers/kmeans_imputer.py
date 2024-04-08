@@ -106,8 +106,7 @@ class KMeansImputer(AbstractNullImputer):
             for col in self.missing_columns_:
                 if col in self.missing_cat_columns_:
                     # calucate mode discarding nan and assign to missing values
-                    temp_df = pd.Series(X[cluster_indices, col])
-                    X[cluster_indices, col] = mode(X[:, col], axis=0, nan_policy='omit')[0]
+                    X[cluster_indices, col] = mode(X[cluster_indices, col], axis=0, nan_policy='omit')[0]
                 else:
                     X[cluster_indices, col] = np.nanmean(X[cluster_indices, col])
         
