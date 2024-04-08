@@ -198,7 +198,6 @@ class AutoMLImputer(BaseImputer):
         self.validation_split = validation_split
         self.tuner = tuner
 
-        self._statistics = dict()
         self._predictors: Dict[str, Model] = {}
         self.__logger = get_logger()
 
@@ -227,48 +226,25 @@ class AutoMLImputer(BaseImputer):
         # =============================================================================================================
         # 1) Make initial guess for missing values
         # =============================================================================================================
-        self._statistics['col_medians'] = np.nanmedian(X[:, self._numerical_columns], axis=0) \
-            if len(self._numerical_columns) >= 1 else None
-        self._statistics['col_modes'] = mode(X[:, self._categorical_columns], axis=0, nan_policy='omit')[0] \
-            if len(self._categorical_columns) >= 1 else None
-
-        # =============================================================================================================
-        # 2) Replace NaNs with median for numerica columns and modes for categorical columns
-        # =============================================================================================================
-        # Get col and row indices for missing
-        missing_rows, missing_cols = np.where(missing_mask)
-
         # Replace NaNs in numerical columns
         if self._numerical_columns is not None:
-            # Only keep indices for numerical vars
-            keep_idx_num = np.in1d(missing_cols, self._numerical_columns)
-            missing_num_rows = missing_rows[keep_idx_num]
-            missing_num_cols = missing_cols[keep_idx_num]
-
-            # Make initial guess for missing values
-            col_medians = np.full(X.shape[1], fill_value=np.nan)
-            col_medians[self._numerical_columns] = self._statistics['col_medians']
-            X.loc[missing_num_rows, missing_num_cols] = np.take(col_medians, missing_num_cols)
+            for column in self._numerical_columns:
+                median = X[column].median(skipna=True)
+                X[column].fillna(median, inplace=True)
 
         # Replace NaNs in categorical columns
         if self._categorical_columns is not None:
-            # Only keep indices for categorical vars
-            keep_idx_cat = np.in1d(missing_cols, self._categorical_columns)
-            missing_cat_rows = missing_rows[keep_idx_cat]
-            missing_cat_cols = missing_cols[keep_idx_cat]
-
-            # Make initial guess for missing values
-            col_modes = np.full(X.shape[1], fill_value=np.nan)
-            col_modes[self._categorical_columns] = self._statistics['col_modes']
-            X.loc[missing_cat_rows, missing_cat_cols] = np.take(col_modes, missing_cat_cols)
+            for column in self._categorical_columns:
+                mode_value = X[column].mode(dropna=True)[0]  # mode() returns a Series, [0] gets the mode value
+                X[column].fillna(mode_value, inplace=True)
 
         # =============================================================================================================
-        # 3) Create a list of column names sorted by the number of nulls in them
+        # 2) Create a list of column names sorted by the number of nulls in them
         # =============================================================================================================
         sorted_columns_names_by_nulls = get_columns_sorted_by_nulls(X[:, self._target_columns])
 
         # =============================================================================================================
-        # 4) Fit a predictor for each column with nulls. Start from the column with the smallest portion of nulls.
+        # 3) Fit a predictor for each column with nulls. Start from the column with the smallest portion of nulls.
         # =============================================================================================================
         for target_column in sorted_columns_names_by_nulls:
             col_missing_mask = missing_mask[target_column]
