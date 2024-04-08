@@ -28,7 +28,7 @@ from tensorflow.keras import Model
 from autokeras import StructuredDataClassifier, StructuredDataRegressor
 
 from source.utils.custom_logger import get_logger
-from source.utils.dataframe_utils import get_mask
+from source.utils.dataframe_utils import get_columns_sorted_by_nulls
 
 
 def set_seed(seed: int) -> None:
@@ -222,7 +222,7 @@ class AutoMLImputer(BaseImputer):
 
         # Casting categorical columns to strings fixes problems
         # where categories are integer values and treated as regression task
-        X = self._categorical_columns_to_string(X.copy())  # We don't want to change the input dataframe -> copy it
+        X = self._categorical_columns_to_string(X.copy(deep=True))  # We don't want to change the input dataframe -> copy it
 
         # =============================================================================================================
         # 1) Make initial guess for missing values
@@ -235,9 +235,6 @@ class AutoMLImputer(BaseImputer):
         # =============================================================================================================
         # 2) Replace NaNs with median for numerica columns and modes for categorical columns
         # =============================================================================================================
-        # Count missing per column
-        col_missing_count = missing_mask.sum(axis=0)
-
         # Get col and row indices for missing
         missing_rows, missing_cols = np.where(missing_mask)
 
@@ -266,49 +263,38 @@ class AutoMLImputer(BaseImputer):
             X.loc[missing_cat_rows, missing_cat_cols] = np.take(col_modes, missing_cat_cols)
 
         # =============================================================================================================
-        # 3) Create misscount_idx to sort indices of cols in X based on missing count
+        # 3) Create a list of column names sorted by the number of nulls in them
         # =============================================================================================================
-        misscount_idx = np.argsort(col_missing_count)
-        col_index = np.arange(X.shape[1])
+        sorted_columns_names_by_nulls = get_columns_sorted_by_nulls(X[:, self._target_columns])
 
         # =============================================================================================================
         # 4) Fit a predictor for each column with nulls. Start from the column with the smallest portion of nulls.
         # =============================================================================================================
-        for s in misscount_idx:
-            feature_cols = [c for c in self._categorical_columns + self._numerical_columns if c != s]
+        for target_column in sorted_columns_names_by_nulls:
+            col_missing_mask = missing_mask[target_column]
+            feature_cols = [c for c in self._categorical_columns + self._numerical_columns if c != target_column]
 
-            # Column indices other than the one being imputed
-            s_prime = np.delete(col_index, s)
-
-            # Get indices of rows where 's' is observed and missing
-            obs_rows = np.where(~missing_mask[:, s])[0]
-
-            # Get observed values of 's'
-            yobs = X[obs_rows, s]
-
-            # Get observed 'X'
-            xobs = X[np.ix_(obs_rows, s_prime)]
-
-            # 5) Fit a random forest over observed and predict the missing
-            if self._categorical_columns is not None and s in self._categorical_columns:
-                StructuredDataModelSearch = StructuredDataClassifier
-            else:
+            if target_column in self._numerical_columns:
                 StructuredDataModelSearch = StructuredDataRegressor
 
-            self._predictors[s] = StructuredDataModelSearch(
+            elif target_column in self._categorical_columns:
+                StructuredDataModelSearch = StructuredDataClassifier
+
+            self._predictors[target_column] = StructuredDataModelSearch(
                 column_names=feature_cols,
                 overwrite=True,
                 max_trials=self.max_trials,
                 tuner=self.tuner,
                 directory="../models"
             )
-
-            self._predictors[s].fit(
-                x=xobs,
-                y=yobs,
+            self._predictors[target_column].fit(
+                x=X.loc[~col_missing_mask, feature_cols],
+                y=X.loc[~col_missing_mask, target_column],
                 epochs=self.epochs
             )
-            # TODO: add predict
+
+            # Reuse predictions to improve performance of training for the later columns with nulls
+            X.loc[col_missing_mask, target_column] = self._predictors[target_column].predict(X.loc[col_missing_mask, feature_cols])[:, 0]
 
         self._fitted = True
 
@@ -328,37 +314,16 @@ class AutoMLImputer(BaseImputer):
 
         # Casting categorical columns to strings fixes problems
         # where categories are integer values and treated as regression task
-        X = self._categorical_columns_to_string(X.copy())  # We don't want to change the input dataframe -> copy it
+        X = self._categorical_columns_to_string(X.copy(deep=True))  # We don't want to change the input dataframe -> copy it
 
-        # Count missing per column
-        col_missing_count = missing_mask.sum(axis=0)
+        for target_column in self._target_columns:
+            feature_cols = [c for c in self._categorical_columns + self._numerical_columns if c != target_column]
+            col_missing_mask = missing_mask[target_column]
+            amount_missing_in_columns = col_missing_mask.sum()
 
-        # Create misscount_idx to sort indices of cols in X based on missing count
-        misscount_idx = np.argsort(col_missing_count)
-        col_index = np.arange(X.shape[1])
-
-        for s in misscount_idx:
-            predictor = self._predictors[s]
-
-            # Column indices other than the one being imputed
-            s_prime = np.delete(col_index, s)
-
-            # Get indices of rows where 's' is observed and missing
-            mis_rows = np.where(missing_mask[:, s])[0]
-
-            # If no missing, then skip
-            if len(mis_rows) == 0:
-                continue
-
-            # Get missing 'X'
-            xmis = X[np.ix_(mis_rows, s_prime)]
-
-            # Predict ymis(s) using xmis(x)
-            ymis = predictor.predict(xmis)[:, 0]
-            # Update imputed matrix using predicted matrix ymis(s)
-            X[mis_rows, s] = ymis
-
-            self.__logger.info(f'Imputed nulls in column {s}')
+            if amount_missing_in_columns > 0:
+                X.loc[col_missing_mask, target_column] = self._predictors[target_column].predict(X.loc[col_missing_mask, feature_cols])[:, 0]
+                self.__logger.info(f'Imputed {amount_missing_in_columns} values in column {target_column}')
 
         self._restore_dtype(X, dtypes)
 

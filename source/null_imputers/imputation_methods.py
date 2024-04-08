@@ -34,9 +34,6 @@ def impute_with_automl(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd.D
     X_train_imputed = X_train_with_nulls.copy()
     X_test_imputed = X_test_with_nulls.copy()
 
-    # During transform
-    # 1) apply the fitted predictors
-
     imputer = AutoMLImputer(max_trials=kwargs["max_trials"],
                             tuner=kwargs["tuner"],
                             validation_split=kwargs["validation_split"],
