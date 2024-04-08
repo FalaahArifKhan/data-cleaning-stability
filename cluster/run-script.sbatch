@@ -17,6 +17,7 @@ python ../scripts/impute_nulls_with_predictor.py \
     --dataset folk \
     --null_imputers [\"datawig\"] \
     --run_nums [1] \
+    --tune_imputers True \
     --save_imputed_datasets True \
     --evaluation_scenarios [\"mcar_mcar1\"]
 "

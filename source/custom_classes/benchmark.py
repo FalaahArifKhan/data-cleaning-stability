@@ -75,7 +75,7 @@ class Benchmark:
         self.__db.write_pandas_df_into_db(collection_name=MODEL_HYPER_PARAMS_COLLECTION_NAME,
                                           df=tuned_params_df,
                                           custom_tbl_fields_dct={
-                                              'header_guid': generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name, evaluation_scenario, experiment_seed]),
+                                              'exp_pipeline_guid': generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name, evaluation_scenario, experiment_seed]),
                                               'session_uuid': self._session_uuid,
                                               'null_imputer_name': null_imputer_name,
                                               'evaluation_scenario': evaluation_scenario,
@@ -250,7 +250,7 @@ class Benchmark:
         self.__db.write_pandas_df_into_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                           df=train_imputation_metrics_df,
                                           custom_tbl_fields_dct={
-                                              'header_guid': generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name, evaluation_scenario, experiment_seed]),
+                                              'exp_pipeline_guid': generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name, evaluation_scenario, experiment_seed]),
                                               'session_uuid': self._session_uuid,
                                               'evaluation_scenario': evaluation_scenario,
                                               'experiment_seed': experiment_seed,
@@ -267,7 +267,7 @@ class Benchmark:
         self.__db.write_pandas_df_into_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                           df=test_imputation_metrics_df,
                                           custom_tbl_fields_dct={
-                                              'header_guid': generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name, evaluation_scenario, experiment_seed]),
+                                              'exp_pipeline_guid': generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name, evaluation_scenario, experiment_seed]),
                                               'session_uuid': self._session_uuid,
                                               'evaluation_scenario': evaluation_scenario,
                                               'experiment_seed': experiment_seed,

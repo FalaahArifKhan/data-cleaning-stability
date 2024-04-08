@@ -51,7 +51,7 @@ class ErrorRepairMethod(Enum):
     miss_forest = 'miss_forest'
     k_means_clustering = 'k_means_clustering'
     datawig = 'datawig'
-    discriminative_dl = 'discriminative_dl'
+    automl = 'automl'
     boost_clean = 'boost_clean'
     cp_clean = 'cp_clean'
 
