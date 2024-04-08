@@ -1,4 +1,5 @@
-virny
+virny@git+https://github.com/DataResponsibly/Virny.git@feature/add_datasets_for_benchmark
+lightgbm==4.3.0
 numpy==1.23.5
 matplotlib~=3.6.2
 pandas~=1.5.2
