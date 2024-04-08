@@ -30,7 +30,6 @@ def impute_with_automl(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd.D
                        hyperparams: dict, **kwargs):
     target_columns = list(set(numeric_columns_with_nulls) | set(categorical_columns_with_nulls))
 
-    # TODO: install autokeras and tensorflow
     X_train_imputed = X_train_with_nulls.copy()
     X_test_imputed = X_test_with_nulls.copy()
 
@@ -44,6 +43,5 @@ def impute_with_automl(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd.D
     X_train_imputed = imputer.transform(X_train_imputed)
     X_test_imputed = imputer.transform(X_test_imputed)
 
-    # TODO: populate null_imputer_params_dct
-    null_imputer_params_dct = None
+    null_imputer_params_dct = str(imputer.get_best_hyperparameters())
     return X_train_imputed, X_test_imputed, null_imputer_params_dct

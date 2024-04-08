@@ -202,7 +202,6 @@ class AutoMLImputer(BaseImputer):
         self.__logger = get_logger()
 
     def get_best_hyperparameters(self):
-
         super().get_best_hyperparameters()
 
         return {
@@ -261,13 +260,13 @@ class AutoMLImputer(BaseImputer):
                 overwrite=True,
                 max_trials=self.max_trials,
                 tuner=self.tuner,
-                seed=self._seed,
                 directory="../models"
             )
             self._predictors[target_column].fit(
                 x=X.loc[~col_missing_mask, feature_cols],
                 y=X.loc[~col_missing_mask, target_column],
                 epochs=self.epochs,
+                verbose=0
             )
 
             # Reuse predictions to improve performance of training for the later columns with nulls
