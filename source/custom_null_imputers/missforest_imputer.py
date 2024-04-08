@@ -8,14 +8,7 @@ from sklearn.utils.validation import check_is_fitted, check_array
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 from .abstract_null_imputer import AbstractNullImputer
-
-
-def _get_mask(X, value_to_mask):
-    """Compute the boolean mask X == missing_values."""
-    if value_to_mask == "NaN" or np.isnan(value_to_mask):
-        return np.isnan(X)
-    else:
-        return X == value_to_mask
+from ..utils.dataframe_utils import _get_mask
     
     
 class MissForestImputer(BaseEstimator, AbstractNullImputer):
