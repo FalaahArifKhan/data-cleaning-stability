@@ -70,8 +70,8 @@ class BaseImputer(ABC):
             Tuple[List[str], List[str]]: Lists of categorical and numerical column names
         """
 
-        categorical_columns = [c for c in data.columns if pd.api.types.is_categorical_dtype(data[c])]
-        numerical_columns = [c for c in data.columns if pd.api.types.is_numeric_dtype(data[c]) and c not in categorical_columns]
+        numerical_columns = [c for c in data.columns if pd.api.types.is_numeric_dtype(data[c])]
+        categorical_columns = [c for c in data.columns if c not in numerical_columns]
         return categorical_columns, numerical_columns
 
     @staticmethod
