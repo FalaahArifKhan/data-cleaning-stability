@@ -229,6 +229,9 @@ class Benchmark:
                                                   numerical_columns=data_loader.numerical_columns,
                                                   tune_imputers=tune_imputers)
 
+        print("X_train_val_imputed['SCHL'].head(20):", X_train_val_imputed['SCHL'].head(20))
+        print("X_test_imputed['SCHL'].head(20):", X_test_imputed['SCHL'].head(20))
+
         # Evaluate imputation for train and test sets
         print('\n')
         self.__logger.info('Evaluating imputation for X_train_val...')

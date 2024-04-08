@@ -218,13 +218,10 @@ class AutoMLImputer(BaseImputer):
             return self
 
         super().fit(data=X, target_columns=target_columns)
-        print('self._numerical_columns:', self._numerical_columns)
-        print('self._categorical_columns:', self._categorical_columns)
-        print('X.dtypes:\n', X.dtypes)
+        print('Numerical columns:', self._numerical_columns)
+        print('Categorical columns:', self._categorical_columns)
 
-        # Casting categorical columns to strings fixes problems
-        # where categories are integer values and treated as regression task
-        X = self._categorical_columns_to_string(X.copy(deep=True))  # We don't want to change the input dataframe -> copy it
+        X = X.copy(deep=True)
 
         # =============================================================================================================
         # 1) Make initial guess for missing values
@@ -271,7 +268,6 @@ class AutoMLImputer(BaseImputer):
                 x=X.loc[~col_missing_mask, feature_cols],
                 y=X.loc[~col_missing_mask, target_column],
                 epochs=self.epochs,
-                verbose=0
             )
 
             # Reuse predictions to improve performance of training for the later columns with nulls
@@ -291,13 +287,7 @@ class AutoMLImputer(BaseImputer):
 
         super().transform(data=X)
 
-        # Save the original dtypes
-        dtypes = X.dtypes
-
-        # Casting categorical columns to strings fixes problems
-        # where categories are integer values and treated as regression task
-        X = self._categorical_columns_to_string(X.copy(deep=True))  # We don't want to change the input dataframe -> copy it
-
+        X = X.copy(deep=True)
         for target_column in self._target_columns:
             feature_cols = [c for c in self._categorical_columns + self._numerical_columns if c != target_column]
             col_missing_mask = missing_mask[target_column]
@@ -306,7 +296,5 @@ class AutoMLImputer(BaseImputer):
             if amount_missing_in_columns > 0:
                 X.loc[col_missing_mask, target_column] = self._predictors[target_column].predict(X.loc[col_missing_mask, feature_cols])[:, 0]
                 self.__logger.info(f'Imputed {amount_missing_in_columns} values in column {target_column}')
-
-        self._restore_dtype(X, dtypes)
 
         return X
