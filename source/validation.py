@@ -15,6 +15,11 @@ def is_in_enum(val, enum_obj):
     return val in enum_vals
 
 
+def parse_evaluation_scenario(evaluation_scenario: str):
+    train_injection_strategy, test_injection_strategy = evaluation_scenario[:-1].split('_')
+    return train_injection_strategy, test_injection_strategy
+
+
 def validate_args(exp_config_obj, with_model_names=True):
     """
     Validate parameter types and values in the exp_config_obj.

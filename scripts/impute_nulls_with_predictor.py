@@ -3,15 +3,19 @@ Script for repairing various errors in the datasets
 """
 import os
 import sys
+import warnings
 from pathlib import Path
 
+# Remove warnings
+warnings.filterwarnings('ignore')
+os.environ["PYTHONWARNINGS"] = "ignore"
+
 # Define a correct root path
-sys.path.append(str(Path(f"{__file__}").parent.parent))
+sys.path.append(str(Path(__file__).parent.parent))
 print('Current location: ', os.getcwd())
 
 # Import dependencies
 import argparse
-import warnings
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -21,9 +25,6 @@ from source.validation import validate_args
 
 
 def preconfigure_experiment(env_file_path='./configs/secrets.env'):
-    warnings.filterwarnings('ignore')
-    os.environ["PYTHONWARNINGS"] = "ignore"
-
     # Load env variables
     load_dotenv(env_file_path)
     print('\n\nDB_NAME secret:', os.getenv("DB_NAME"))
@@ -34,6 +35,8 @@ def parse_input_args():
     parser.add_argument("--dataset", type=str, help="a dataset name", required=True)
     parser.add_argument("--null_imputers", type=str, help="a list of null imputers", required=True)
     parser.add_argument("--run_nums", type=str, help="a list of experiment run numbers", required=True)
+    parser.add_argument("--tune_imputers", type=bool, required=True,
+                        help="True -- tune null imputers, False -- take hyper-params of null imputers from configs/null_imputers_config.py")
     parser.add_argument("--save_imputed_datasets", type=bool, required=True,
                         help="True -- save imputed train and test sets, False -- do not save train and test sets")
     parser.add_argument("--evaluation_scenarios", type=str, help="a list of evaluation scenarios",
@@ -62,6 +65,7 @@ if __name__ == '__main__':
                           model_names=[])
     benchmark.impute_nulls_with_multiple_technique(run_nums=args.run_nums,
                                                    evaluation_scenarios=args.evaluation_scenarios,
+                                                   tune_imputers=args.tune_imputers,
                                                    save_imputed_datasets=args.save_imputed_datasets)
 
     end_time = datetime.now()

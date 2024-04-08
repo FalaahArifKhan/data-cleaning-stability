@@ -44,6 +44,7 @@ class DatabaseClient:
 
         # Rename Pandas columns to lower case
         df.columns = df.columns.str.lower()
+        df['tag'] = 'OK'
 
         self.execute_write_query(df.to_dict('records'), collection_name)
         print('Dataframe is successfully written into a database')
