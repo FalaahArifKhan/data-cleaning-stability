@@ -4,7 +4,8 @@ python ./scripts/evaluate_models.py \
     --models \[\"lr_clf\"\] \
     --run_nums \[1,2\] \
     --tune_imputers True \
-    --ml_impute True --evaluation_scenarios \[\"mcar_mcar1\"\]
+    --ml_impute True \
+    --evaluation_scenarios \[\"mcar_mcar1\"\]
 
 python ./scripts/impute_nulls_with_predictor.py \
     --dataset folk \
