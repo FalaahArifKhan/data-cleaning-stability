@@ -3,7 +3,7 @@ import pandas as pd
 
 def get_columns_sorted_by_nulls(df):
     # Calculate the number of null values in each column
-    null_counts = df.isnull().sum()
+    null_counts = df.isna().sum()
 
     # Sort columns based on the number of null values
     sorted_columns = null_counts.sort_values(ascending=True)

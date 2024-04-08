@@ -24,7 +24,7 @@ from source.custom_classes.benchmark import Benchmark
 from source.validation import validate_args
 
 
-def preconfigure_experiment(env_file_path='./configs/secrets.env'):
+def preconfigure_experiment(env_file_path='../configs/secrets.env'):
     # Load env variables
     load_dotenv(env_file_path)
     print('\n\nDB_NAME secret:', os.getenv("DB_NAME"))

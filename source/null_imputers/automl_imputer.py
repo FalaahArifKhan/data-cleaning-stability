@@ -240,7 +240,7 @@ class AutoMLImputer(BaseImputer):
         # =============================================================================================================
         # 2) Create a list of column names sorted by the number of nulls in them
         # =============================================================================================================
-        print('X.isnull().sum():\n', X.isnull().sum())
+        print('X.isna().sum():\n', X.isna().sum())
         sorted_columns_names_by_nulls = get_columns_sorted_by_nulls(X[self._target_columns])
         print('sorted_columns_names_by_nulls -- ', sorted_columns_names_by_nulls)
 
