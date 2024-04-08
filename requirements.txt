@@ -1,5 +1,5 @@
 virny@git+https://github.com/DataResponsibly/Virny.git@development
-tensorflow==2.4.1
+tensorflow==2.5.0
 autokeras==1.0.12
 lightgbm==4.3.0
 numpy==1.23.5
