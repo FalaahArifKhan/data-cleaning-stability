@@ -214,7 +214,7 @@ class AutoMLImputer(BaseImputer):
     def fit(self, X: pd.DataFrame, target_columns: List[str]) -> BaseImputer:
         # Check if anything is actually missing and if not do not spend time on fitting
         missing_mask = X.isna()
-        if not missing_mask.sum() > 0:
+        if not missing_mask.values.any():
             self.__logger.warning("No missing value located; stop fitting.")
             return self
 
@@ -303,7 +303,7 @@ class AutoMLImputer(BaseImputer):
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         # Check if anything is actually missing and if not return original dataframe
         missing_mask = X.isna()
-        if not missing_mask.sum() > 0:
+        if not missing_mask.values.any():
             self.__logger.warning("No missing value located; stop fitting.")
             return X
 
