@@ -132,6 +132,10 @@ class Benchmark:
         imputation_method = NULL_IMPUTERS_CONFIG[null_imputer_name]["method"]
         imputation_kwargs = NULL_IMPUTERS_CONFIG[null_imputer_name]["kwargs"]
 
+        # Add the current seed to kwargs
+        if 'seed' not in imputation_kwargs:
+            imputation_kwargs['seed'] = experiment_seed
+
         # TODO: Save a result imputed dataset in imputed_data_dict for each imputation technique
         train_set_cols_with_nulls = X_train_with_nulls.columns[X_train_with_nulls.isna().any()].tolist()
         train_numerical_null_columns = list(set(train_set_cols_with_nulls).intersection(numerical_columns))
@@ -148,6 +152,7 @@ class Benchmark:
                                   X_test_with_nulls=X_test_with_nulls,
                                   numeric_columns_with_nulls=train_numerical_null_columns,
                                   categorical_columns_with_nulls=train_categorical_null_columns,
+                                  hyperparams=hyperparams,
                                   output_path=output_path,
                                   **imputation_kwargs))
 

@@ -2,6 +2,8 @@ import copy
 import pandas as pd
 from sklearn.impute import SimpleImputer
 
+from source.null_imputers.automl_imputer import AutoMLImputer
+
 
 def impute_with_simple_imputer(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd.DataFrame,
                                numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
@@ -19,5 +21,39 @@ def impute_with_simple_imputer(X_train_with_nulls: pd.DataFrame, X_test_with_nul
     X_train_imputed[categorical_columns_with_nulls] = mode_imputer.fit_transform(X_train_imputed[categorical_columns_with_nulls])
     X_test_imputed[categorical_columns_with_nulls] = mode_imputer.transform(X_test_imputed[categorical_columns_with_nulls])
 
+    null_imputer_params_dct = None
+    return X_train_imputed, X_test_imputed, null_imputer_params_dct
+
+
+def impute_with_automl(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd.DataFrame,
+                       numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
+                       hyperparams: dict, **kwargs):
+    target_columns = numeric_columns_with_nulls + categorical_columns_with_nulls
+
+    # TODO: install autokeras and tensorflow
+    X_train_imputed = X_train_with_nulls.copy()
+    X_test_imputed = X_test_with_nulls.copy()
+
+    # During fitting:
+    # 1) get missing vals mask
+    # 2) replace nulls using median and mode
+    # 3) fit predictors
+
+    # During transform
+    # 1) apply the fitted predictors
+
+    imputer = AutoMLImputer(max_trials=kwargs["max_trials"],
+                            tuner=kwargs["tuner"],
+                            validation_split=kwargs["validation_split"],
+                            epochs=kwargs["epochs"],
+                            seed=kwargs['seed'])
+    imputer.fit(X_train_imputed, target_columns)
+    print('imputer._numerical_columns:', imputer._numerical_columns)
+    print('imputer._categorical_columns:', imputer._categorical_columns)
+
+    X_train_imputed = imputer.transform(X_train_imputed)
+    X_test_imputed = imputer.transform(X_test_imputed)
+
+    # TODO: populate null_imputer_params_dct
     null_imputer_params_dct = None
     return X_train_imputed, X_test_imputed, null_imputer_params_dct
