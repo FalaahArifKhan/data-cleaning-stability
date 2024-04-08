@@ -1,12 +1,13 @@
 import pytest
 import numpy as np
-from virny.datasets.data_loaders import ACSIncomeDataset
+from virny.datasets import ACSIncomeDataset
 
-from source.custom_null_imputers.missforest_imputer import MissForestImputer
+from source.null_imputers.missforest_imputer import MissForestImputer
 from source.error_injectors.nulls_injector import NullsInjector
 from source.utils.dataframe_utils import get_object_columns_indexes
 
 SEED = 42
+
 
 # Fixture to load the dataset
 @pytest.fixture(scope="module")
@@ -20,6 +21,7 @@ def acs_income_dataset_categorical_columns_idxs():
 
     return injected_df, categorical_columns_idxs
 
+
 # Test if output of MissForestImputer does not contain nulls
 def test_miss_forest_imputer_no_nulls(acs_income_dataset_categorical_columns_idxs):
     injected_df, categorical_columns_idxs = acs_income_dataset_categorical_columns_idxs
@@ -31,7 +33,8 @@ def test_miss_forest_imputer_no_nulls(acs_income_dataset_categorical_columns_idx
 
     # Check if there are any nulls in the output
     assert not np.isnan(X_imputed).any(), "Output contains null values"
-    
+
+
 # Test if MissForestImputer returns same results with the same seed
 def test_miss_forest_imputer_same_seed(acs_income_dataset_categorical_columns_idxs):
     injected_df, categorical_columns_idxs = acs_income_dataset_categorical_columns_idxs
