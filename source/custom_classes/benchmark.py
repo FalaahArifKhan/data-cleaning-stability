@@ -52,6 +52,7 @@ class Benchmark:
         # Create a unique uuid per session to manipulate in the database
         # by all experimental results generated in this session
         self._session_uuid = str(uuid.uuid1())
+        print('Session UUID for all results of experiments in the current benchmark session:', self._session_uuid)
 
     def _tune_ML_models(self, model_names, base_flow_dataset, experiment_seed,
                         evaluation_scenario, null_imputer_name):
