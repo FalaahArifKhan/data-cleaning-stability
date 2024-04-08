@@ -28,16 +28,11 @@ def impute_with_simple_imputer(X_train_with_nulls: pd.DataFrame, X_test_with_nul
 def impute_with_automl(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd.DataFrame,
                        numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
                        hyperparams: dict, **kwargs):
-    target_columns = numeric_columns_with_nulls + categorical_columns_with_nulls
+    target_columns = list(set(numeric_columns_with_nulls) | set(categorical_columns_with_nulls))
 
     # TODO: install autokeras and tensorflow
     X_train_imputed = X_train_with_nulls.copy()
     X_test_imputed = X_test_with_nulls.copy()
-
-    # During fitting:
-    # 1) get missing vals mask
-    # 2) replace nulls using median and mode
-    # 3) fit predictors
 
     # During transform
     # 1) apply the fitted predictors

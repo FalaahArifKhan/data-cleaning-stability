@@ -21,12 +21,14 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 
-from tensorflow.keras import Model
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple
+from scipy.stats import mode
+from tensorflow.keras import Model
 from autokeras import StructuredDataClassifier, StructuredDataRegressor
 
 from source.utils.custom_logger import get_logger
+from source.utils.dataframe_utils import get_mask
 
 
 def set_seed(seed: int) -> None:
@@ -195,6 +197,8 @@ class AutoMLImputer(BaseImputer):
         self.epochs = epochs
         self.validation_split = validation_split
         self.tuner = tuner
+
+        self._statistics = dict()
         self._predictors: Dict[str, Model] = {}
         self.__logger = get_logger()
 
@@ -207,25 +211,91 @@ class AutoMLImputer(BaseImputer):
             for column in self._predictors.keys()
         }
 
-    def fit(self, data: pd.DataFrame, target_columns: List[str]) -> BaseImputer:
+    def fit(self, X: pd.DataFrame, target_columns: List[str]) -> BaseImputer:
+        # Check if anything is actually missing and if not do not spend time on fitting
+        missing_mask = X.isna()
+        if not missing_mask.sum() > 0:
+            self.__logger.warning("No missing value located; stop fitting.")
+            return self
 
-        super().fit(data=data, target_columns=target_columns)
+        super().fit(data=X, target_columns=target_columns)
 
-        # cast categorical columns to strings fixes problems where categories are integer values and treated as regression task
-        data = self._categorical_columns_to_string(data.copy())  # We don't want to change the input dataframe -> copy it
+        # Casting categorical columns to strings fixes problems
+        # where categories are integer values and treated as regression task
+        X = self._categorical_columns_to_string(X.copy())  # We don't want to change the input dataframe -> copy it
 
-        for target_column in self._target_columns:
+        # =============================================================================================================
+        # 1) Make initial guess for missing values
+        # =============================================================================================================
+        self._statistics['col_medians'] = np.nanmedian(X[:, self._numerical_columns], axis=0) \
+            if len(self._numerical_columns) >= 1 else None
+        self._statistics['col_modes'] = mode(X[:, self._categorical_columns], axis=0, nan_policy='omit')[0] \
+            if len(self._categorical_columns) >= 1 else None
 
-            missing_mask = data[target_column].isna()
-            feature_cols = [c for c in self._categorical_columns + self._numerical_columns if c != target_column]
+        # =============================================================================================================
+        # 2) Replace NaNs with median for numerica columns and modes for categorical columns
+        # =============================================================================================================
+        # Count missing per column
+        col_missing_count = missing_mask.sum(axis=0)
 
-            if target_column in self._numerical_columns:
+        # Get col and row indices for missing
+        missing_rows, missing_cols = np.where(missing_mask)
+
+        # Replace NaNs in numerical columns
+        if self._numerical_columns is not None:
+            # Only keep indices for numerical vars
+            keep_idx_num = np.in1d(missing_cols, self._numerical_columns)
+            missing_num_rows = missing_rows[keep_idx_num]
+            missing_num_cols = missing_cols[keep_idx_num]
+
+            # Make initial guess for missing values
+            col_medians = np.full(X.shape[1], fill_value=np.nan)
+            col_medians[self._numerical_columns] = self._statistics['col_medians']
+            X.loc[missing_num_rows, missing_num_cols] = np.take(col_medians, missing_num_cols)
+
+        # Replace NaNs in categorical columns
+        if self._categorical_columns is not None:
+            # Only keep indices for categorical vars
+            keep_idx_cat = np.in1d(missing_cols, self._categorical_columns)
+            missing_cat_rows = missing_rows[keep_idx_cat]
+            missing_cat_cols = missing_cols[keep_idx_cat]
+
+            # Make initial guess for missing values
+            col_modes = np.full(X.shape[1], fill_value=np.nan)
+            col_modes[self._categorical_columns] = self._statistics['col_modes']
+            X.loc[missing_cat_rows, missing_cat_cols] = np.take(col_modes, missing_cat_cols)
+
+        # =============================================================================================================
+        # 3) Create misscount_idx to sort indices of cols in X based on missing count
+        # =============================================================================================================
+        misscount_idx = np.argsort(col_missing_count)
+        col_index = np.arange(X.shape[1])
+
+        # =============================================================================================================
+        # 4) Fit a predictor for each column with nulls. Start from the column with the smallest portion of nulls.
+        # =============================================================================================================
+        for s in misscount_idx:
+            feature_cols = [c for c in self._categorical_columns + self._numerical_columns if c != s]
+
+            # Column indices other than the one being imputed
+            s_prime = np.delete(col_index, s)
+
+            # Get indices of rows where 's' is observed and missing
+            obs_rows = np.where(~missing_mask[:, s])[0]
+
+            # Get observed values of 's'
+            yobs = X[obs_rows, s]
+
+            # Get observed 'X'
+            xobs = X[np.ix_(obs_rows, s_prime)]
+
+            # 5) Fit a random forest over observed and predict the missing
+            if self._categorical_columns is not None and s in self._categorical_columns:
+                StructuredDataModelSearch = StructuredDataClassifier
+            else:
                 StructuredDataModelSearch = StructuredDataRegressor
 
-            elif target_column in self._categorical_columns:
-                StructuredDataModelSearch = StructuredDataClassifier
-
-            self._predictors[target_column] = StructuredDataModelSearch(
+            self._predictors[s] = StructuredDataModelSearch(
                 column_names=feature_cols,
                 overwrite=True,
                 max_trials=self.max_trials,
@@ -233,37 +303,63 @@ class AutoMLImputer(BaseImputer):
                 directory="../models"
             )
 
-            self._predictors[target_column].fit(
-                x=data.loc[~missing_mask, feature_cols],
-                y=data.loc[~missing_mask, target_column],
+            self._predictors[s].fit(
+                x=xobs,
+                y=yobs,
                 epochs=self.epochs
             )
+            # TODO: add predict
 
         self._fitted = True
 
         return self
 
-    def transform(self, data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        # Check if anything is actually missing and if not return original dataframe
+        missing_mask = X.isna()
+        if not missing_mask.sum() > 0:
+            self.__logger.warning("No missing value located; stop fitting.")
+            return X
 
-        super().transform(data=data)
+        super().transform(data=X)
 
-        imputed_mask = data[self._target_columns].isna()
+        # Save the original dtypes
+        dtypes = X.dtypes
 
-        # save the original dtypes because ..
-        dtypes = data.dtypes
+        # Casting categorical columns to strings fixes problems
+        # where categories are integer values and treated as regression task
+        X = self._categorical_columns_to_string(X.copy())  # We don't want to change the input dataframe -> copy it
 
-        # ... dtypes of data need to be same as for fitting
-        data = self._categorical_columns_to_string(data.copy())  # We don't want to change the input dataframe -> copy it
+        # Count missing per column
+        col_missing_count = missing_mask.sum(axis=0)
 
-        for target_column in self._target_columns:
-            feature_cols = [c for c in self._categorical_columns + self._numerical_columns if c != target_column]
-            missing_mask = data[target_column].isna()
-            amount_missing_in_columns = missing_mask.sum()
+        # Create misscount_idx to sort indices of cols in X based on missing count
+        misscount_idx = np.argsort(col_missing_count)
+        col_index = np.arange(X.shape[1])
 
-            if amount_missing_in_columns > 0:
-                data.loc[missing_mask, target_column] = self._predictors[target_column].predict(data.loc[missing_mask, feature_cols])[:, 0]
-                self.__logger.debug(f'Imputed {amount_missing_in_columns} values in column {target_column}')
+        for s in misscount_idx:
+            predictor = self._predictors[s]
 
-        self._restore_dtype(data, dtypes)
+            # Column indices other than the one being imputed
+            s_prime = np.delete(col_index, s)
 
-        return data, imputed_mask
+            # Get indices of rows where 's' is observed and missing
+            mis_rows = np.where(missing_mask[:, s])[0]
+
+            # If no missing, then skip
+            if len(mis_rows) == 0:
+                continue
+
+            # Get missing 'X'
+            xmis = X[np.ix_(mis_rows, s_prime)]
+
+            # Predict ymis(s) using xmis(x)
+            ymis = predictor.predict(xmis)[:, 0]
+            # Update imputed matrix using predicted matrix ymis(s)
+            X[mis_rows, s] = ymis
+
+            self.__logger.info(f'Imputed nulls in column {s}')
+
+        self._restore_dtype(X, dtypes)
+
+        return X
