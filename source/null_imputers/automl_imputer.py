@@ -241,7 +241,7 @@ class AutoMLImputer(BaseImputer):
         # =============================================================================================================
         # 2) Create a list of column names sorted by the number of nulls in them
         # =============================================================================================================
-        sorted_columns_names_by_nulls = get_columns_sorted_by_nulls(X[:, self._target_columns])
+        sorted_columns_names_by_nulls = get_columns_sorted_by_nulls(X[self._target_columns])
 
         # =============================================================================================================
         # 3) Fit a predictor for each column with nulls. Start from the column with the smallest portion of nulls.
