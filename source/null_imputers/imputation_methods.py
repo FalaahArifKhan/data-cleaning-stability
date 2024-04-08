@@ -43,5 +43,5 @@ def impute_with_automl(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd.D
     X_train_imputed = imputer.transform(X_train_imputed)
     X_test_imputed = imputer.transform(X_test_imputed)
 
-    null_imputer_params_dct = str(imputer.get_best_hyperparameters())
+    null_imputer_params_dct = imputer.get_best_hyperparameters()
     return X_train_imputed, X_test_imputed, null_imputer_params_dct
