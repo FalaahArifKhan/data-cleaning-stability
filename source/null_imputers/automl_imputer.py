@@ -218,6 +218,9 @@ class AutoMLImputer(BaseImputer):
             return self
 
         super().fit(data=X, target_columns=target_columns)
+        print('self._numerical_columns:', self._numerical_columns)
+        print('self._categorical_columns:', self._categorical_columns)
+        print('X.dtypes:\n', X.dtypes)
 
         # Casting categorical columns to strings fixes problems
         # where categories are integer values and treated as regression task

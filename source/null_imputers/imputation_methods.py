@@ -40,8 +40,6 @@ def impute_with_automl(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd.D
                             epochs=kwargs["epochs"],
                             seed=kwargs['seed'])
     imputer.fit(X_train_imputed, target_columns)
-    print('imputer._numerical_columns:', imputer._numerical_columns)
-    print('imputer._categorical_columns:', imputer._categorical_columns)
 
     X_train_imputed = imputer.transform(X_train_imputed)
     X_test_imputed = imputer.transform(X_test_imputed)
