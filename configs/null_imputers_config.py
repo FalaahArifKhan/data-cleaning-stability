@@ -13,7 +13,9 @@ NULL_IMPUTERS_CONFIG = {
 }
 
 NULL_IMPUTERS_HYPERPARAMS = {
-    ACS_INCOME_DATASET: {
-        ErrorInjectionStrategy.mcar.value: {}
-    },
+    ErrorRepairMethod.datawig.value: {
+        ACS_INCOME_DATASET: {
+            ErrorInjectionStrategy.mcar.value: {}
+        },
+    }
 }
