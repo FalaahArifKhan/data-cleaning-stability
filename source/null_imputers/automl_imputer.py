@@ -198,6 +198,7 @@ class AutoMLImputer(BaseImputer):
         self.validation_split = validation_split
         self.tuner = tuner
 
+        self._statistics = {'medians': dict(), 'modes': dict()}
         self._predictors: Dict[str, Model] = {}
         self.__logger = get_logger()
 
@@ -230,19 +231,19 @@ class AutoMLImputer(BaseImputer):
             for column in self._numerical_columns:
                 median = X[column].median(skipna=True)
                 X[column].fillna(median, inplace=True)
+                self._statistics['medians'][column] = median
 
         # Replace NaNs in categorical columns
         if self._categorical_columns is not None:
             for column in self._categorical_columns:
                 mode_value = X[column].mode(dropna=True)[0]  # mode() returns a Series, [0] gets the mode value
                 X[column].fillna(mode_value, inplace=True)
+                self._statistics['modes'][column] = mode_value
 
         # =============================================================================================================
         # 2) Create a list of column names sorted by the number of nulls in them
         # =============================================================================================================
-        print('missing_mask:\n', missing_mask.sum())
         sorted_columns_names_by_nulls = get_columns_sorted_by_nulls(missing_mask[self._target_columns])
-        print('sorted_columns_names_by_nulls -- ', sorted_columns_names_by_nulls)
 
         # =============================================================================================================
         # 3) Fit a predictor for each column with nulls. Start from the column with the smallest portion of nulls.
@@ -287,9 +288,23 @@ class AutoMLImputer(BaseImputer):
             return X
 
         super().transform(data=X)
-
         X = X.copy(deep=True)
-        for target_column in self._target_columns:
+
+        # Make initial guess for missing values using collected statistics during self.fit()
+        if self._numerical_columns is not None:
+            for column in self._numerical_columns:
+                median = self._statistics['medians'][column]
+                X[column].fillna(median, inplace=True)
+
+        if self._categorical_columns is not None:
+            for column in self._categorical_columns:
+                mode_value = self._statistics['modes'][column]
+                X[column].fillna(mode_value, inplace=True)
+
+        # Create a list of column names sorted by the number of nulls in them
+        sorted_columns_names_by_nulls = get_columns_sorted_by_nulls(missing_mask[self._target_columns])
+
+        for target_column in sorted_columns_names_by_nulls:
             feature_cols = [c for c in self._categorical_columns + self._numerical_columns if c != target_column]
             col_missing_mask = missing_mask[target_column]
             amount_missing_in_columns = col_missing_mask.sum()
