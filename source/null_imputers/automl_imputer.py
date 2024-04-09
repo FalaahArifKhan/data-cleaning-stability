@@ -21,6 +21,7 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 
+from datetime import datetime
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple
 from tensorflow.keras import Model
@@ -254,13 +255,15 @@ class AutoMLImputer(BaseImputer):
             col_missing_mask = missing_mask[target_column]
             feature_cols = [c for c in self._categorical_columns + self._numerical_columns if c != target_column]
 
+            datetime_now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
             if target_column in self._numerical_columns:
                 self._predictors[target_column] = StructuredDataRegressor(
                     column_names=feature_cols,
                     overwrite=True,
                     max_trials=self.max_trials,
                     tuner=self.tuner,
-                    directory="../models",
+                    project_name=target_column + datetime_now_str,
+                    directory=f"../results/automl/models_{target_column + datetime_now_str}",
                     seed=self._seed
                 )
 
@@ -271,7 +274,8 @@ class AutoMLImputer(BaseImputer):
                     overwrite=True,
                     max_trials=self.max_trials,
                     tuner=self.tuner,
-                    directory="../models",
+                    project_name=target_column + datetime_now_str,
+                    directory=f"../results/automl/models_{target_column + datetime_now_str}",
                     seed=self._seed
                 )
 
