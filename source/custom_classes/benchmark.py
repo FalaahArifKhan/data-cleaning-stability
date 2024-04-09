@@ -154,7 +154,7 @@ class Benchmark:
                                   **imputation_kwargs))
 
         else:
-            imputation_kwargs['X_train_val'] = X_train_val
+            imputation_kwargs['X_train_val'] = X_train_val # TODO: remove
             X_train_imputed, X_test_imputed, null_imputer_params_dct = (
                 imputation_method(X_train_with_nulls=X_train_with_nulls,
                                   X_test_with_nulls=X_test_with_nulls,

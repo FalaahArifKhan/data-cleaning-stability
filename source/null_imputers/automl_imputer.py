@@ -271,17 +271,27 @@ class AutoMLImputer(BaseImputer):
                 epochs=self.epochs,
                 verbose=verbose
             )
+            print('X.head(20):\n', X.head(20))
+            print('X_gt.head(20):\n', X_gt.head(20))
 
             # Reuse predictions to improve performance of training for the later columns with nulls
             X.loc[col_missing_mask, target_column] = self._predictors[target_column].predict(X.loc[col_missing_mask, feature_cols])[:, 0]
 
             pred = X.loc[col_missing_mask, target_column]
             true = X_gt.loc[col_missing_mask, target_column]
-            precision, recall, f1, _ = precision_recall_fscore_support(true, pred, average="micro")
-            print('Precision for {}: {:.2f}'.format(target_column, precision))
-            print('Recall for {}: {:.2f}'.format(target_column, recall))
-            print('F1 score for {}: {:.2f}'.format(target_column, f1))
-            print()
+            if target_column in self._categorical_columns:
+                print('pred.head(20):\n', pred.head(20))
+                print('true.head(20):\n', true.head(20))
+
+                precision, recall, f1, _ = precision_recall_fscore_support(true, pred, average="micro")
+                print('Precision for {}: {:.2f}'.format(target_column, precision))
+                print('Recall for {}: {:.2f}'.format(target_column, recall))
+                print('F1 score for {}: {:.2f}'.format(target_column, f1))
+                print()
+
+            else:
+                rmse = mean_squared_error(true, pred, squared=False)
+                print('RMSE for {}: {:.2f}'.format(target_column, rmse))
 
             self.__logger.info(f'Fitting for {target_column} column was successfully completed')
 
