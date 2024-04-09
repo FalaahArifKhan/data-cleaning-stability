@@ -210,7 +210,7 @@ class AutoMLImputer(BaseImputer):
             for column in self._predictors.keys()
         }
 
-    def fit(self, X: pd.DataFrame, target_columns: List[str]) -> BaseImputer:
+    def fit(self, X: pd.DataFrame, target_columns: List[str], verbose: int = 1) -> BaseImputer:
         # Check if anything is actually missing and if not do not spend time on fitting
         missing_mask = X.isna()
         if not missing_mask.values.any():
@@ -269,7 +269,7 @@ class AutoMLImputer(BaseImputer):
                 x=X.loc[~col_missing_mask, feature_cols],
                 y=X.loc[~col_missing_mask, target_column],
                 epochs=self.epochs,
-                verbose=0
+                verbose=verbose
             )
 
             # Reuse predictions to improve performance of training for the later columns with nulls
@@ -312,6 +312,7 @@ class AutoMLImputer(BaseImputer):
 
             if amount_missing_in_columns > 0:
                 X.loc[col_missing_mask, target_column] = self._predictors[target_column].predict(X.loc[col_missing_mask, feature_cols])[:, 0]
+                print(f'{target_column} column, X.loc[col_missing_mask, target_column]:\n{X.loc[col_missing_mask, target_column].head(20)}')
                 self.__logger.info(f'Imputed {amount_missing_in_columns} values in column {target_column}')
 
         return X

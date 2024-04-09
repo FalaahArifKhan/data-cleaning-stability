@@ -131,10 +131,7 @@ class Benchmark:
         # Use a method, kwargs, and hyperparams from NULL_IMPUTERS_CONFIG
         imputation_method = NULL_IMPUTERS_CONFIG[null_imputer_name]["method"]
         imputation_kwargs = NULL_IMPUTERS_CONFIG[null_imputer_name]["kwargs"]
-
-        # Add the current seed to kwargs
-        if 'seed' not in imputation_kwargs:
-            imputation_kwargs['seed'] = experiment_seed
+        imputation_kwargs.update({'experiment_seed': experiment_seed})
 
         # TODO: Save a result imputed dataset in imputed_data_dict for each imputation technique
         train_set_cols_with_nulls = X_train_with_nulls.columns[X_train_with_nulls.isna().any()].tolist()

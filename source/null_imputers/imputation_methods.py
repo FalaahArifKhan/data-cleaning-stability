@@ -30,15 +30,15 @@ def impute_with_automl(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd.D
                        hyperparams: dict, **kwargs):
     target_columns = list(set(numeric_columns_with_nulls) | set(categorical_columns_with_nulls))
 
-    X_train_imputed = X_train_with_nulls.copy()
-    X_test_imputed = X_test_with_nulls.copy()
+    X_train_imputed = copy.deepcopy(X_train_with_nulls)
+    X_test_imputed = copy.deepcopy(X_test_with_nulls)
 
     imputer = AutoMLImputer(max_trials=kwargs["max_trials"],
                             tuner=kwargs["tuner"],
                             validation_split=kwargs["validation_split"],
                             epochs=kwargs["epochs"],
-                            seed=kwargs['seed'])
-    imputer.fit(X_train_imputed, target_columns)
+                            seed=kwargs['experiment_seed'])
+    imputer.fit(X_train_imputed, target_columns, verbose=0)
 
     X_train_imputed = imputer.transform(X_train_imputed)
     X_test_imputed = imputer.transform(X_test_imputed)
