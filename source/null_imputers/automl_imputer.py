@@ -253,19 +253,24 @@ class AutoMLImputer(BaseImputer):
             feature_cols = [c for c in self._categorical_columns + self._numerical_columns if c != target_column]
 
             if target_column in self._numerical_columns:
-                StructuredDataModelSearch = StructuredDataRegressor
+                self._predictors[target_column] = StructuredDataRegressor(
+                    column_names=feature_cols,
+                    overwrite=True,
+                    max_trials=self.max_trials,
+                    tuner=self.tuner,
+                    directory="../models"
+                )
 
             elif target_column in self._categorical_columns:
-                StructuredDataModelSearch = StructuredDataClassifier
+                self._predictors[target_column] = StructuredDataClassifier(
+                    column_names=feature_cols,
+                    multi_label=True,
+                    overwrite=True,
+                    max_trials=self.max_trials,
+                    tuner=self.tuner,
+                    directory="../models"
+                )
 
-            self._predictors[target_column] = StructuredDataModelSearch(
-                column_names=feature_cols,
-                multi_label=True if target_column in self._categorical_columns else None,
-                overwrite=True,
-                max_trials=self.max_trials,
-                tuner=self.tuner,
-                directory="../models"
-            )
             self._predictors[target_column].fit(
                 x=X.loc[~col_missing_mask, feature_cols],
                 y=X.loc[~col_missing_mask, target_column],
@@ -274,8 +279,6 @@ class AutoMLImputer(BaseImputer):
             )
             print('X.head(20):\n', X.head(20))
             print('X_gt.head(20):\n', X_gt.head(20))
-
-            print('predictions:\n', self._predictors[target_column].predict(X.loc[col_missing_mask, feature_cols]))
 
             # Reuse predictions to improve performance of training for the later columns with nulls
             X.loc[col_missing_mask, target_column] = self._predictors[target_column].predict(X.loc[col_missing_mask, feature_cols])[:, 0]
