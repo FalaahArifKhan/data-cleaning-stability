@@ -1,7 +1,9 @@
 virny@git+https://github.com/DataResponsibly/Virny.git@development
+tensorflow~=2.8.0
+autokeras==1.0.20
 kmodes==0.12.2
-lightgbm==4.3.0
 numpy==1.23.5
+lightgbm==4.3.0
 matplotlib~=3.6.2
 pandas~=1.5.2
 altair~=4.2.0

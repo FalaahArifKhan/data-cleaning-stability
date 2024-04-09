@@ -20,7 +20,7 @@ from source.custom_classes.benchmark import Benchmark
 from source.validation import validate_args
 
 
-def preconfigure_experiment(env_file_path='./configs/secrets.env'):
+def preconfigure_experiment(env_file_path='../configs/secrets.env'):
     warnings.filterwarnings('ignore')
     os.environ["PYTHONWARNINGS"] = "ignore"
 
@@ -72,3 +72,4 @@ if __name__ == '__main__':
 
     end_time = datetime.now()
     print(f'The script is successfully executed. Run time: {end_time - start_time}')
+    print('Session UUID for all results:', benchmark._session_uuid)

@@ -141,7 +141,8 @@ class Benchmark:
         imputation_start_time = datetime.now()
         if null_imputer_name == ErrorRepairMethod.datawig.value:
             output_path = (pathlib.Path(__file__).parent.parent.parent.joinpath('results')
-                               .joinpath(self.dataset_name).joinpath(ErrorRepairMethod.datawig.value)
+                               .joinpath(null_imputer_name)
+                               .joinpath(self.dataset_name)
                                .joinpath(evaluation_scenario)
                                .joinpath(str(experiment_seed)))
             X_train_imputed, X_test_imputed, null_imputer_params_dct = (
@@ -149,6 +150,23 @@ class Benchmark:
                                   X_test_with_nulls=X_test_with_nulls,
                                   numeric_columns_with_nulls=train_numerical_null_columns,
                                   categorical_columns_with_nulls=train_categorical_null_columns,
+                                  hyperparams=hyperparams,
+                                  output_path=output_path,
+                                  **imputation_kwargs))
+
+        elif null_imputer_name == ErrorRepairMethod.automl.value:
+            output_path = (pathlib.Path(__file__).parent.parent.parent.joinpath('results')
+                           .joinpath(null_imputer_name)
+                           .joinpath(self.dataset_name)
+                           .joinpath(evaluation_scenario)
+                           .joinpath(str(experiment_seed)))
+            imputation_kwargs.update({'directory': output_path})
+            X_train_imputed, X_test_imputed, null_imputer_params_dct = (
+                imputation_method(X_train_with_nulls=X_train_with_nulls,
+                                  X_test_with_nulls=X_test_with_nulls,
+                                  numeric_columns_with_nulls=train_numerical_null_columns,
+                                  categorical_columns_with_nulls=train_categorical_null_columns,
+                                  hyperparams=hyperparams,
                                   output_path=output_path,
                                   **imputation_kwargs))
 
