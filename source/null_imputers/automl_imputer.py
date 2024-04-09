@@ -16,6 +16,7 @@ The below code is based on this work:
 	ABSTRACT={With the increasing importance and complexity of data pipelines, data quality became one of the key challenges in modern software applications. The importance of data quality has been recognized beyond the field of data engineering and database management systems (DBMSs). Also, for machine learning (ML) applications, high data quality standards are crucial to ensure robust predictive performance and responsible usage of automated decision making. One of the most frequent data quality problems is missing values. Incomplete datasets can break data pipelines and can have a devastating impact on downstream ML applications when not detected. While statisticians and, more recently, ML researchers have introduced a variety of approaches to impute missing values, comprehensive benchmarks comparing classical and modern imputation approaches under fair and realistic conditions are underrepresented. Here, we aim to fill this gap. We conduct a comprehensive suite of experiments on a large number of datasets with heterogeneous data and realistic missingness conditions, comparing both novel deep learning approaches and classical ML imputation methods when either only test or train and test data are affected by missing data. Each imputation method is evaluated regarding the imputation quality and the impact imputation has on a downstream ML task. Our results provide valuable insights into the performance of a variety of imputation methods under realistic conditions. We hope that our results help researchers and engineers to guide their data preprocessing method selection for automated data quality improvement.}
 }
 """
+import uuid
 import random
 import pandas as pd
 import numpy as np
@@ -26,7 +27,6 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple
 from tensorflow.keras import Model
 from autokeras import StructuredDataClassifier, StructuredDataRegressor
-from sklearn.metrics import mean_squared_error, precision_recall_fscore_support
 
 from source.utils.custom_logger import get_logger
 from source.utils.dataframe_utils import get_columns_sorted_by_nulls
@@ -177,6 +177,7 @@ class AutoMLImputer(BaseImputer):
             tuner: Optional[str] = None,
             validation_split: Optional[float] = 0.2,
             epochs: Optional[int] = 10,
+            directory: str = None,
             seed: Optional[int] = None
     ):
         """
@@ -187,6 +188,7 @@ class AutoMLImputer(BaseImputer):
             tuner (Optional[str], optional): AutoKeras hyperparameter tuning strategy. Defaults to None.
             validation_split (Optional[float], optional): validation split for AutoKeras fit. Defaults to 0.2.
             epochs (Optional[int], optional): number of epochs for AutoKeras fit. Defaults to 10.
+            directory (str): directory to save predictors. Defaults to None.
             seed (Optional[int], optional): Seed to make behavior deterministic. Defaults to None.
         """
 
@@ -198,6 +200,7 @@ class AutoMLImputer(BaseImputer):
         self.epochs = epochs
         self.validation_split = validation_split
         self.tuner = tuner
+        self.directory = directory
 
         self._statistics = {'medians': dict(), 'modes': dict()}
         self._predictors: Dict[str, Model] = {}
@@ -211,9 +214,7 @@ class AutoMLImputer(BaseImputer):
             for column in self._predictors.keys()
         }
 
-    def fit(self, X: pd.DataFrame, target_columns: List[str], X_gt: pd.DataFrame = None, verbose: int = 1) -> BaseImputer:
-        print('Init X.head(20):\n', X.head(20))
-
+    def fit(self, X: pd.DataFrame, target_columns: List[str], verbose: int = 1) -> BaseImputer:
         # Check if anything is actually missing and if not do not spend time on fitting
         missing_mask = X.isna()
         if not missing_mask.values.any():
@@ -262,8 +263,8 @@ class AutoMLImputer(BaseImputer):
                     overwrite=True,
                     max_trials=self.max_trials,
                     tuner=self.tuner,
-                    project_name=target_column + datetime_now_str,
-                    directory=f"../results/automl/models_{target_column + datetime_now_str}",
+                    project_name=f'{target_column}_{datetime_now_str}_{str(uuid.uuid1())}',
+                    directory=f"{self.directory}/models_{target_column}",
                     seed=self._seed
                 )
 
@@ -274,8 +275,8 @@ class AutoMLImputer(BaseImputer):
                     overwrite=True,
                     max_trials=self.max_trials,
                     tuner=self.tuner,
-                    project_name=target_column + datetime_now_str,
-                    directory=f"../results/automl/models_{target_column + datetime_now_str}",
+                    project_name=f'{target_column}_{datetime_now_str}_{str(uuid.uuid1())}',
+                    directory=f"{self.directory}/models_{target_column}",
                     seed=self._seed
                 )
 
@@ -285,29 +286,9 @@ class AutoMLImputer(BaseImputer):
                 epochs=self.epochs,
                 verbose=verbose,
             )
-            print('X.head(20):\n', X.head(20))
-            print('X_gt.head(20):\n', X_gt.head(20))
 
             # Reuse predictions to improve performance of training for the later columns with nulls
-            print('X.loc[col_missing_mask, feature_cols]:\n', X.loc[col_missing_mask, feature_cols])
             X.loc[col_missing_mask, target_column] = self._predictors[target_column].predict(X.loc[col_missing_mask, feature_cols])[:, 0]
-
-            pred = X.loc[col_missing_mask, target_column]
-            true = X_gt.loc[col_missing_mask, target_column]
-            if target_column in self._categorical_columns:
-                print('pred.head(20):\n', pred.head(20))
-                print('true.head(20):\n', true.head(20))
-
-                precision, recall, f1, _ = precision_recall_fscore_support(true, pred, average="micro")
-                print('Precision for {}: {:.2f}'.format(target_column, precision))
-                print('Recall for {}: {:.2f}'.format(target_column, recall))
-                print('F1 score for {}: {:.2f}'.format(target_column, f1))
-                print()
-
-            else:
-                rmse = mean_squared_error(true, pred, squared=False)
-                print('RMSE for {}: {:.2f}'.format(target_column, rmse))
-
             self.__logger.info(f'Fitting for {target_column} column was successfully completed')
 
         self._fitted = True
@@ -315,11 +296,8 @@ class AutoMLImputer(BaseImputer):
         return self
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        print('Init X.head(20):\n', X.head(20))
-
         # Check if anything is actually missing and if not return original dataframe
         missing_mask = X.isna()
-        print('missing_mask.sum():\n', missing_mask.sum())
         if not missing_mask.values.any():
             self.__logger.warning("No missing value located; stop fitting.")
             return X
@@ -340,7 +318,6 @@ class AutoMLImputer(BaseImputer):
 
         # Create a list of column names sorted by the number of nulls in them
         sorted_columns_names_by_nulls = get_columns_sorted_by_nulls(missing_mask[self._target_columns])
-        print('2 X.isna().sum():\n', X.isna().sum())
 
         for target_column in sorted_columns_names_by_nulls:
             feature_cols = [c for c in self._categorical_columns + self._numerical_columns if c != target_column]
@@ -348,9 +325,7 @@ class AutoMLImputer(BaseImputer):
             amount_missing_in_columns = col_missing_mask.sum()
 
             if amount_missing_in_columns > 0:
-                print('X.loc[col_missing_mask, feature_cols]:\n', X.loc[col_missing_mask, feature_cols])
                 X.loc[col_missing_mask, target_column] = self._predictors[target_column].predict(X.loc[col_missing_mask, feature_cols])[:, 0]
-                print(f'{target_column} column, X.loc[col_missing_mask, target_column]:\n{X.loc[col_missing_mask, target_column].head(20)}')
                 self.__logger.info(f'Imputed {amount_missing_in_columns} values in column {target_column}')
 
         return X

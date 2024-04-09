@@ -10,7 +10,7 @@ NULL_IMPUTERS_CONFIG = {
     ErrorRepairMethod.median_mode.value: {"method": impute_with_simple_imputer, "kwargs": {"num": "median", "cat": "most_frequent"}},
     ErrorRepairMethod.datawig.value: {"method": datawig_imputer.complete, "kwargs": {"precision_threshold": 0.0, "num_epochs": 100, "iterations": 1}},
     # ErrorRepairMethod.automl.value: {"method": impute_with_automl, "kwargs": {"max_trials": 50, "tuner": None, "validation_split": 0.2, "epochs": 50}},
-    ErrorRepairMethod.automl.value: {"method": impute_with_automl, "kwargs": {"max_trials": 1, "tuner": None, "validation_split": 0.2, "epochs": 50}},
+    ErrorRepairMethod.automl.value: {"method": impute_with_automl, "kwargs": {"max_trials": 2, "tuner": None, "validation_split": 0.2, "epochs": 50}},
 }
 
 NULL_IMPUTERS_HYPERPARAMS = {

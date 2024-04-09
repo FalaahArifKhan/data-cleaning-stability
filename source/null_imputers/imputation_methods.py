@@ -28,8 +28,7 @@ def impute_with_simple_imputer(X_train_with_nulls: pd.DataFrame, X_test_with_nul
 def impute_with_automl(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd.DataFrame,
                        numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
                        hyperparams: dict, **kwargs):
-    X_train_val = kwargs['X_train_val']
-
+    directory = kwargs['directory']
     target_columns = list(set(numeric_columns_with_nulls) | set(categorical_columns_with_nulls))
 
     X_train_imputed = copy.deepcopy(X_train_with_nulls)
@@ -39,9 +38,9 @@ def impute_with_automl(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd.D
                             tuner=kwargs["tuner"],
                             validation_split=kwargs["validation_split"],
                             epochs=kwargs["epochs"],
-                            seed=kwargs['experiment_seed'])
+                            seed=kwargs['experiment_seed'],
+                            directory=directory)
     imputer.fit(X=X_train_imputed,
-                X_gt=X_train_val,
                 target_columns=target_columns,
                 verbose=0)
 

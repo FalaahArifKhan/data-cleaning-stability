@@ -117,7 +117,7 @@ class Benchmark:
 
         return X_train_val_with_nulls, X_test_with_nulls
 
-    def _impute_nulls(self, X_train_with_nulls, X_test_with_nulls, X_train_val, null_imputer_name, evaluation_scenario,
+    def _impute_nulls(self, X_train_with_nulls, X_test_with_nulls, null_imputer_name, evaluation_scenario,
                       experiment_seed, numerical_columns, categorical_columns, tune_imputers):
         if not is_in_enum(null_imputer_name, ErrorRepairMethod) or null_imputer_name not in NULL_IMPUTERS_CONFIG.keys():
             raise ValueError(f'{null_imputer_name} null imputer is not implemented')
@@ -141,7 +141,8 @@ class Benchmark:
         imputation_start_time = datetime.now()
         if null_imputer_name == ErrorRepairMethod.datawig.value:
             output_path = (pathlib.Path(__file__).parent.parent.parent.joinpath('results')
-                               .joinpath(self.dataset_name).joinpath(ErrorRepairMethod.datawig.value)
+                               .joinpath(null_imputer_name)
+                               .joinpath(self.dataset_name)
                                .joinpath(evaluation_scenario)
                                .joinpath(str(experiment_seed)))
             X_train_imputed, X_test_imputed, null_imputer_params_dct = (
@@ -153,8 +154,23 @@ class Benchmark:
                                   output_path=output_path,
                                   **imputation_kwargs))
 
+        elif null_imputer_name == ErrorRepairMethod.automl.value:
+            output_path = (pathlib.Path(__file__).parent.parent.parent.joinpath('results')
+                           .joinpath(null_imputer_name)
+                           .joinpath(self.dataset_name)
+                           .joinpath(evaluation_scenario)
+                           .joinpath(str(experiment_seed)))
+            imputation_kwargs.update({'directory': output_path})
+            X_train_imputed, X_test_imputed, null_imputer_params_dct = (
+                imputation_method(X_train_with_nulls=X_train_with_nulls,
+                                  X_test_with_nulls=X_test_with_nulls,
+                                  numeric_columns_with_nulls=train_numerical_null_columns,
+                                  categorical_columns_with_nulls=train_categorical_null_columns,
+                                  hyperparams=hyperparams,
+                                  output_path=output_path,
+                                  **imputation_kwargs))
+
         else:
-            imputation_kwargs['X_train_val'] = X_train_val # TODO: remove
             X_train_imputed, X_test_imputed, null_imputer_params_dct = (
                 imputation_method(X_train_with_nulls=X_train_with_nulls,
                                   X_test_with_nulls=X_test_with_nulls,
@@ -220,7 +236,6 @@ class Benchmark:
         (X_train_val_imputed, X_test_imputed, null_imputer_params_dct,
          imputation_runtime) = self._impute_nulls(X_train_with_nulls=X_train_val_with_nulls,
                                                   X_test_with_nulls=X_test_with_nulls,
-                                                  X_train_val=X_train_val, # TODO: remove
                                                   null_imputer_name=null_imputer_name,
                                                   evaluation_scenario=evaluation_scenario,
                                                   experiment_seed=experiment_seed,
