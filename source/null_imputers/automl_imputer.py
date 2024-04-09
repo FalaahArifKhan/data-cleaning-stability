@@ -211,6 +211,8 @@ class AutoMLImputer(BaseImputer):
         }
 
     def fit(self, X: pd.DataFrame, target_columns: List[str], X_gt: pd.DataFrame = None, verbose: int = 1) -> BaseImputer:
+        print('Init X.head(20):\n', X.head(20))
+
         # Check if anything is actually missing and if not do not spend time on fitting
         missing_mask = X.isna()
         if not missing_mask.values.any():
@@ -275,12 +277,14 @@ class AutoMLImputer(BaseImputer):
                 x=X.loc[~col_missing_mask, feature_cols],
                 y=X.loc[~col_missing_mask, target_column],
                 epochs=self.epochs,
-                verbose=verbose
+                verbose=verbose,
+                seed=self._seed
             )
             print('X.head(20):\n', X.head(20))
             print('X_gt.head(20):\n', X_gt.head(20))
 
             # Reuse predictions to improve performance of training for the later columns with nulls
+            print('X.loc[col_missing_mask, feature_cols]:\n', X.loc[col_missing_mask, feature_cols])
             X.loc[col_missing_mask, target_column] = self._predictors[target_column].predict(X.loc[col_missing_mask, feature_cols])[:, 0]
 
             pred = X.loc[col_missing_mask, target_column]
@@ -306,6 +310,8 @@ class AutoMLImputer(BaseImputer):
         return self
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        print('Init X.head(20):\n', X.head(20))
+
         # Check if anything is actually missing and if not return original dataframe
         missing_mask = X.isna()
         print('missing_mask.sum():\n', missing_mask.sum())
@@ -337,6 +343,7 @@ class AutoMLImputer(BaseImputer):
             amount_missing_in_columns = col_missing_mask.sum()
 
             if amount_missing_in_columns > 0:
+                print('X.loc[col_missing_mask, feature_cols]:\n', X.loc[col_missing_mask, feature_cols])
                 X.loc[col_missing_mask, target_column] = self._predictors[target_column].predict(X.loc[col_missing_mask, feature_cols])[:, 0]
                 print(f'{target_column} column, X.loc[col_missing_mask, target_column]:\n{X.loc[col_missing_mask, target_column].head(20)}')
                 self.__logger.info(f'Imputed {amount_missing_in_columns} values in column {target_column}')
