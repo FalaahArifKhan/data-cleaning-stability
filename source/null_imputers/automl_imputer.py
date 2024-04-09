@@ -260,7 +260,8 @@ class AutoMLImputer(BaseImputer):
                     overwrite=True,
                     max_trials=self.max_trials,
                     tuner=self.tuner,
-                    directory="../models"
+                    directory="../models",
+                    seed=self._seed
                 )
 
             elif target_column in self._categorical_columns:
@@ -270,7 +271,8 @@ class AutoMLImputer(BaseImputer):
                     overwrite=True,
                     max_trials=self.max_trials,
                     tuner=self.tuner,
-                    directory="../models"
+                    directory="../models",
+                    seed=self._seed
                 )
 
             self._predictors[target_column].fit(
@@ -278,7 +280,6 @@ class AutoMLImputer(BaseImputer):
                 y=X.loc[~col_missing_mask, target_column],
                 epochs=self.epochs,
                 verbose=verbose,
-                seed=self._seed
             )
             print('X.head(20):\n', X.head(20))
             print('X_gt.head(20):\n', X_gt.head(20))
