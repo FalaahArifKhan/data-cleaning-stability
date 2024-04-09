@@ -1,7 +1,10 @@
 import os
+import uuid
 import shutil
 import logging
 import pandas as pd
+
+from datetime import datetime
 
 
 def complete(X_train_with_nulls: pd.DataFrame,
@@ -30,6 +33,9 @@ def complete(X_train_with_nulls: pd.DataFrame,
     null_imputer_params_dct = dict()
     for _ in range(iterations):
         for output_col in set(numeric_columns_with_nulls) | set(categorical_columns_with_nulls):
+            datetime_now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+            column_output_path = os.path.join(output_path, f'{output_col}_{datetime_now_str}_{str(uuid.uuid1())}')
+
             # Reset logger handler
             if datawig.utils.logger.hasHandlers():
                 datawig.utils.logger.handlers.clear()
@@ -46,7 +52,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
 
             imputer = datawig.SimpleImputer(input_columns=input_cols,
                                             output_column=output_col,
-                                            output_path=os.path.join(output_path, output_col))
+                                            output_path=column_output_path)
             if hyperparams is None:
                 imputer.fit_hpo(X_train_imputed.loc[~train_idx_missing, :],
                                 num_evals=6,
@@ -89,7 +95,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
                 null_imputer_params_dct[output_col] = str(null_imputer_params)
 
             # remove the directory with logfiles for this column
-            shutil.rmtree(os.path.join(output_path, output_col))
+            shutil.rmtree(column_output_path)
 
             datawig.utils.logger.info(f'Successfully completed null imputation for the {output_col} column')
 
