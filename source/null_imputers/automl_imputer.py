@@ -23,9 +23,9 @@ import tensorflow as tf
 
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple
-from scipy.stats import mode
 from tensorflow.keras import Model
 from autokeras import StructuredDataClassifier, StructuredDataRegressor
+from sklearn.metrics import mean_squared_error, precision_recall_fscore_support
 
 from source.utils.custom_logger import get_logger
 from source.utils.dataframe_utils import get_columns_sorted_by_nulls
@@ -210,7 +210,7 @@ class AutoMLImputer(BaseImputer):
             for column in self._predictors.keys()
         }
 
-    def fit(self, X: pd.DataFrame, target_columns: List[str], verbose: int = 1) -> BaseImputer:
+    def fit(self, X: pd.DataFrame, target_columns: List[str], X_gt: pd.DataFrame = None, verbose: int = 1) -> BaseImputer:
         # Check if anything is actually missing and if not do not spend time on fitting
         missing_mask = X.isna()
         if not missing_mask.values.any():
@@ -274,6 +274,15 @@ class AutoMLImputer(BaseImputer):
 
             # Reuse predictions to improve performance of training for the later columns with nulls
             X.loc[col_missing_mask, target_column] = self._predictors[target_column].predict(X.loc[col_missing_mask, feature_cols])[:, 0]
+
+            pred = X.loc[col_missing_mask, target_column]
+            true = X_gt.loc[col_missing_mask, target_column]
+            precision, recall, f1, _ = precision_recall_fscore_support(true, pred, average="micro")
+            print('Precision for {}: {:.2f}'.format(target_column, precision))
+            print('Recall for {}: {:.2f}'.format(target_column, recall))
+            print('F1 score for {}: {:.2f}'.format(target_column, f1))
+            print()
+
             self.__logger.info(f'Fitting for {target_column} column was successfully completed')
 
         self._fitted = True
@@ -304,6 +313,7 @@ class AutoMLImputer(BaseImputer):
 
         # Create a list of column names sorted by the number of nulls in them
         sorted_columns_names_by_nulls = get_columns_sorted_by_nulls(missing_mask[self._target_columns])
+        print('2 X.isna().sum():\n', X.isna().sum())
 
         for target_column in sorted_columns_names_by_nulls:
             feature_cols = [c for c in self._categorical_columns + self._numerical_columns if c != target_column]

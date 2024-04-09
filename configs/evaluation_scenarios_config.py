@@ -6,7 +6,8 @@ EVALUATION_SCENARIOS_CONFIG = {
     ACS_INCOME_DATASET: {
         "MCAR": [
             {
-                'missing_features': ['AGEP', 'SCHL', 'MAR', 'COW'],
+                # 'missing_features': ['AGEP', 'SCHL', 'MAR', 'COW'],
+                'missing_features': ['AGEP', 'SCHL', 'COW'],
                 'setting': {'error_rates': [0.1, 0.5, 0.9]},
             },
         ],

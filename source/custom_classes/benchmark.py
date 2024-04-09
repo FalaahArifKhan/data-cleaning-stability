@@ -117,7 +117,7 @@ class Benchmark:
 
         return X_train_val_with_nulls, X_test_with_nulls
 
-    def _impute_nulls(self, X_train_with_nulls, X_test_with_nulls, null_imputer_name, evaluation_scenario,
+    def _impute_nulls(self, X_train_with_nulls, X_test_with_nulls, X_train_val, null_imputer_name, evaluation_scenario,
                       experiment_seed, numerical_columns, categorical_columns, tune_imputers):
         if not is_in_enum(null_imputer_name, ErrorRepairMethod) or null_imputer_name not in NULL_IMPUTERS_CONFIG.keys():
             raise ValueError(f'{null_imputer_name} null imputer is not implemented')
@@ -154,6 +154,7 @@ class Benchmark:
                                   **imputation_kwargs))
 
         else:
+            imputation_kwargs['X_train_val'] = X_train_val
             X_train_imputed, X_test_imputed, null_imputer_params_dct = (
                 imputation_method(X_train_with_nulls=X_train_with_nulls,
                                   X_test_with_nulls=X_test_with_nulls,
@@ -219,6 +220,7 @@ class Benchmark:
         (X_train_val_imputed, X_test_imputed, null_imputer_params_dct,
          imputation_runtime) = self._impute_nulls(X_train_with_nulls=X_train_val_with_nulls,
                                                   X_test_with_nulls=X_test_with_nulls,
+                                                  X_train_val=X_train_val, # TODO: remove
                                                   null_imputer_name=null_imputer_name,
                                                   evaluation_scenario=evaluation_scenario,
                                                   experiment_seed=experiment_seed,
