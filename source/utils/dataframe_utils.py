@@ -1,5 +1,15 @@
 import numpy as np
-import pandas as pd
+
+from source.preprocessing import get_simple_preprocessor
+
+
+def preprocess_base_flow_dataset(base_flow_dataset):
+    column_transformer = get_simple_preprocessor(base_flow_dataset)
+    column_transformer = column_transformer.set_output(transform="pandas")  # Set transformer output to a pandas df
+    base_flow_dataset.X_train_val = column_transformer.fit_transform(base_flow_dataset.X_train_val)
+    base_flow_dataset.X_test = column_transformer.transform(base_flow_dataset.X_test)
+
+    return base_flow_dataset
 
 
 def get_object_columns_indexes(df):
@@ -24,7 +34,8 @@ def _get_mask(X, value_to_mask):
         return np.isnan(X)
     else:
         return X == value_to_mask
-      
+
+
 def get_columns_sorted_by_nulls(mask):
     # Calculate the number of null values in each column
     null_counts = mask.sum()
