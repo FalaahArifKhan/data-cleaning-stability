@@ -227,37 +227,46 @@ class Benchmark:
         X_train_val, X_test, y_train_val, y_test = train_test_split(data_loader.X_data, data_loader.y_data,
                                                                     test_size=self.test_set_fraction,
                                                                     random_state=experiment_seed)
-        # Inject nulls
+        # Inject nulls not into sensitive attributes
         X_train_val_with_nulls, X_test_with_nulls = self._inject_nulls(X_train_val=X_train_val,
                                                                        X_test=X_test,
                                                                        evaluation_scenario=evaluation_scenario,
                                                                        experiment_seed=experiment_seed)
+
+        # Remove sensitive attributes from train and test sets with nulls to avoid their usage during imputation
+        X_train_val_with_nulls_wo_sensitive_attrs = X_train_val_with_nulls.drop(self.dataset_sensitive_attrs, axis=1)
+        X_test_with_nulls_wo_sensitive_attrs = X_test_with_nulls.drop(self.dataset_sensitive_attrs, axis=1)
+        numerical_columns_wo_sensitive_attrs = [col for col in data_loader.numerical_columns if col not in self.dataset_sensitive_attrs]
+        categorical_columns_wo_sensitive_attrs = [col for col in data_loader.categorical_columns if col not in self.dataset_sensitive_attrs]
+        print('X_test_with_nulls_wo_sensitive_attrs.columns -- ', X_test_with_nulls_wo_sensitive_attrs.columns)
+
         # Impute nulls
-        (X_train_val_imputed, X_test_imputed, null_imputer_params_dct,
-         imputation_runtime) = self._impute_nulls(X_train_with_nulls=X_train_val_with_nulls,
-                                                  X_test_with_nulls=X_test_with_nulls,
+        (X_train_val_imputed_wo_sensitive_attrs, X_test_imputed_wo_sensitive_attrs, null_imputer_params_dct,
+         imputation_runtime) = self._impute_nulls(X_train_with_nulls=X_train_val_with_nulls_wo_sensitive_attrs,
+                                                  X_test_with_nulls=X_test_with_nulls_wo_sensitive_attrs,
                                                   null_imputer_name=null_imputer_name,
                                                   evaluation_scenario=evaluation_scenario,
                                                   experiment_seed=experiment_seed,
-                                                  categorical_columns=data_loader.categorical_columns,
-                                                  numerical_columns=data_loader.numerical_columns,
+                                                  categorical_columns=categorical_columns_wo_sensitive_attrs,
+                                                  numerical_columns=numerical_columns_wo_sensitive_attrs,
                                                   tune_imputers=tune_imputers)
+        print('X_test_imputed_wo_sensitive_attrs.columns -- ', X_test_imputed_wo_sensitive_attrs.columns)
 
         # Evaluate imputation for train and test sets
         print('\n')
         self.__logger.info('Evaluating imputation for X_train_val...')
         train_imputation_metrics_df = self._evaluate_imputation(real=X_train_val,
-                                                                corrupted=X_train_val_with_nulls,
-                                                                imputed=X_train_val_imputed,
-                                                                numerical_columns=data_loader.numerical_columns,
+                                                                corrupted=X_train_val_with_nulls_wo_sensitive_attrs,
+                                                                imputed=X_train_val_imputed_wo_sensitive_attrs,
+                                                                numerical_columns=numerical_columns_wo_sensitive_attrs,
                                                                 null_imputer_name=null_imputer_name,
                                                                 null_imputer_params_dct=null_imputer_params_dct)
         print('\n')
         self.__logger.info('Evaluating imputation for X_test...')
         test_imputation_metrics_df = self._evaluate_imputation(real=X_test,
-                                                               corrupted=X_test_with_nulls,
-                                                               imputed=X_test_imputed,
-                                                               numerical_columns=data_loader.numerical_columns,
+                                                               corrupted=X_test_with_nulls_wo_sensitive_attrs,
+                                                               imputed=X_test_imputed_wo_sensitive_attrs,
+                                                               numerical_columns=numerical_columns_wo_sensitive_attrs,
                                                                null_imputer_name=null_imputer_name,
                                                                null_imputer_params_dct=null_imputer_params_dct)
 
@@ -301,27 +310,28 @@ class Benchmark:
             save_sets_dir_path = pathlib.Path(__file__).parent.parent.parent.joinpath('results').joinpath(self.dataset_name).joinpath(null_imputer_name)
             os.makedirs(save_sets_dir_path, exist_ok=True)
 
-            train_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_train_val.csv'
-            X_train_val_imputed.to_csv(os.path.join(save_sets_dir_path, train_set_filename),
-                                       sep=",",
-                                       columns=X_train_val_imputed.columns,
-                                       index=False)
+            datetime_now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+            train_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_train_val_{datetime_now_str}.csv'
+            X_train_val_imputed_wo_sensitive_attrs.to_csv(os.path.join(save_sets_dir_path, train_set_filename),
+                                                          sep=",",
+                                                          columns=X_train_val_imputed_wo_sensitive_attrs.columns,
+                                                          index=False)
 
-            test_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_test.csv'
-            X_test_imputed.to_csv(os.path.join(save_sets_dir_path, test_set_filename),
-                                  sep=",",
-                                  columns=X_test_imputed.columns,
-                                  index=False)
+            test_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_test_{datetime_now_str}.csv'
+            X_test_imputed_wo_sensitive_attrs.to_csv(os.path.join(save_sets_dir_path, test_set_filename),
+                                                     sep=",",
+                                                     columns=X_test_imputed_wo_sensitive_attrs.columns,
+                                                     index=False)
             self.__logger.info("Imputed train and test sets are saved locally")
 
         return BaseFlowDataset(init_features_df=data_loader.full_df[self.dataset_sensitive_attrs],  # keep only sensitive attributes with original indexes to compute group metrics
-                               X_train_val=X_train_val_imputed,
-                               X_test=X_test_imputed,
+                               X_train_val=X_train_val_imputed_wo_sensitive_attrs,
+                               X_test=X_test_imputed_wo_sensitive_attrs,
                                y_train_val=y_train_val,
                                y_test=y_test,
                                target=data_loader.target,
-                               numerical_columns=data_loader.numerical_columns,
-                               categorical_columns=data_loader.categorical_columns)
+                               numerical_columns=numerical_columns_wo_sensitive_attrs,
+                               categorical_columns=categorical_columns_wo_sensitive_attrs)
 
     def _run_exp_iter(self, init_data_loader, run_num, evaluation_scenario, null_imputer_name,
                       model_names, tune_imputers, ml_impute):
@@ -347,6 +357,7 @@ class Benchmark:
         print('\n', flush=True)
 
         if ml_impute:
+            # TODO: remove sensitive attributes after null injection
             base_flow_dataset = self.inject_and_impute_nulls(data_loader=data_loader,
                                                              null_imputer_name=null_imputer_name,
                                                              evaluation_scenario=evaluation_scenario,
@@ -355,12 +366,6 @@ class Benchmark:
         else:
             # TODO: extract train and test sets from AWS S3
             base_flow_dataset = None
-
-        # Remove sensitive attributes to create a blind estimator
-        base_flow_dataset.categorical_columns = [col for col in base_flow_dataset.categorical_columns if col not in self.dataset_sensitive_attrs]
-        base_flow_dataset.numerical_columns = [col for col in base_flow_dataset.numerical_columns if col not in self.dataset_sensitive_attrs]
-        base_flow_dataset.X_train_val = base_flow_dataset.X_train_val.drop(self.dataset_sensitive_attrs, axis=1)
-        base_flow_dataset.X_test = base_flow_dataset.X_test.drop(self.dataset_sensitive_attrs, axis=1)
 
         # Preprocess the dataset using the defined preprocessor
         column_transformer = get_simple_preprocessor(base_flow_dataset)

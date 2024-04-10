@@ -1,5 +1,5 @@
 """
-The below code is based on this work:
+The below code is an extension of this work:
 - GitHub: https://github.com/se-jaeger/data-imputation-paper
 
 - Citation:
