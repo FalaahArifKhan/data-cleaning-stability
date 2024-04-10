@@ -347,9 +347,9 @@ class Benchmark:
         sensitive_attrs_df = data_loader.full_df[self.dataset_sensitive_attrs]
 
         # Ensure correctness of indexes in X and sensitive_attrs sets
-        assert X_train_val_imputed_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all() is True, \
+        assert X_train_val_imputed_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all(), \
             "Not all indexes of X_train_val_imputed_wo_sensitive_attrs are present in sensitive_attrs_df"
-        assert X_test_imputed_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all() is True, \
+        assert X_test_imputed_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all(), \
             "Not all indexes of X_test_imputed_wo_sensitive_attrs are present in sensitive_attrs_df"
 
         # Ensure correctness of indexes in X and y sets
