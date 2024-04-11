@@ -1,6 +1,11 @@
 # =======================================================================================
 # Local
 # =======================================================================================
+python ./scripts/evaluate_baseline.py \
+    --dataset folk \
+    --models \[\"lr_clf\"\] \
+    --run_nums \[1,2\]
+
 python ./scripts/evaluate_models.py \
     --dataset folk \
     --null_imputers \[\"median-mode\"\] \
