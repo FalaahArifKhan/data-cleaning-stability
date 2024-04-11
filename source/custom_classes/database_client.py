@@ -38,6 +38,10 @@ class DatabaseClient:
         return records
 
     def write_pandas_df_into_db(self, collection_name: str, df: pd.DataFrame, custom_tbl_fields_dct: dict = None):
+        if df.shape[0] == 0:
+            print('Dataframe is empty. Skip writing to a database...')
+            return
+
         # Append custom fields to the df
         for column, value in custom_tbl_fields_dct.items():
             df[column] = value

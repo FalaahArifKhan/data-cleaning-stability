@@ -8,6 +8,26 @@ from source.null_imputers.kmeans_imputer import KMeansImputer
 from source.utils.dataframe_utils import get_object_columns_indexes
 
 
+def impute_with_deletion(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd.DataFrame,
+                         numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
+                         hyperparams: dict, **kwargs):
+    X_train_imputed = copy.deepcopy(X_train_with_nulls)
+    X_test_imputed = copy.deepcopy(X_test_with_nulls)
+
+    # Apply deletion for a train set
+    X_train_imputed = X_train_imputed.dropna()
+
+    # Apply median-mode for a test set
+    num_imputer = SimpleImputer(strategy='median')
+    X_test_imputed[numeric_columns_with_nulls] = num_imputer.transform(X_test_imputed[numeric_columns_with_nulls])
+
+    cat_imputer = SimpleImputer(strategy='most_frequent')
+    X_test_imputed[categorical_columns_with_nulls] = cat_imputer.transform(X_test_imputed[categorical_columns_with_nulls])
+
+    null_imputer_params_dct = None
+    return X_train_imputed, X_test_imputed, null_imputer_params_dct
+
+
 def impute_with_simple_imputer(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd.DataFrame,
                                numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
                                hyperparams: dict, **kwargs):

@@ -310,15 +310,19 @@ class Benchmark:
                                                   tune_imputers=tune_imputers)
         print('X_test_imputed_wo_sensitive_attrs.columns -- ', X_test_imputed_wo_sensitive_attrs.columns)
 
-        # Evaluate imputation for train and test sets
-        print('\n')
-        self.__logger.info('Evaluating imputation for X_train_val...')
-        train_imputation_metrics_df = self._evaluate_imputation(real=X_train_val,
-                                                                corrupted=X_train_val_with_nulls_wo_sensitive_attrs,
-                                                                imputed=X_train_val_imputed_wo_sensitive_attrs,
-                                                                numerical_columns=numerical_columns_wo_sensitive_attrs,
-                                                                null_imputer_name=null_imputer_name,
-                                                                null_imputer_params_dct=null_imputer_params_dct)
+        if null_imputer_name == ErrorRepairMethod.deletion.value:
+            # Skip evaluation of an imputed train set for the deletion null imputer
+            train_imputation_metrics_df = pd.DataFrame(columns=['Column_With_Nulls'])
+        else:
+            # Evaluate imputation for train and test sets
+            print('\n')
+            self.__logger.info('Evaluating imputation for X_train_val...')
+            train_imputation_metrics_df = self._evaluate_imputation(real=X_train_val,
+                                                                    corrupted=X_train_val_with_nulls_wo_sensitive_attrs,
+                                                                    imputed=X_train_val_imputed_wo_sensitive_attrs,
+                                                                    numerical_columns=numerical_columns_wo_sensitive_attrs,
+                                                                    null_imputer_name=null_imputer_name,
+                                                                    null_imputer_params_dct=null_imputer_params_dct)
         print('\n')
         self.__logger.info('Evaluating imputation for X_test...')
         test_imputation_metrics_df = self._evaluate_imputation(real=X_test,
