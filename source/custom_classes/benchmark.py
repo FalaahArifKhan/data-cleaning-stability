@@ -68,7 +68,7 @@ class Benchmark:
 
         # Save tunes parameters in database
         date_time_str = datetime.now(timezone.utc)
-        tuned_params_df['Model_Best_Params'] = tuned_params_df['Model_Best_Params'].astype(str)
+        tuned_params_df['Model_Best_Params'] = tuned_params_df['Model_Best_Params']
         tuned_params_df['Model_Tuning_Guid'] = tuned_params_df['Model_Name'].apply(
             lambda model_name: generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name,
                                                                     evaluation_scenario, experiment_seed, model_name])
@@ -313,6 +313,9 @@ class Benchmark:
         if null_imputer_name == ErrorRepairMethod.deletion.value:
             # Skip evaluation of an imputed train set for the deletion null imputer
             train_imputation_metrics_df = pd.DataFrame(columns=['Column_With_Nulls'])
+            # Subset y_train_val to align with X_train_val_imputed_wo_sensitive_attrs
+            y_train_val = y_train_val.loc[X_train_val_imputed_wo_sensitive_attrs.index]
+
         else:
             # Evaluate imputation for train and test sets
             print('\n')

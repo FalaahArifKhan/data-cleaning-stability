@@ -92,7 +92,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
                 best_imputer_idx = int(best_imputer_idx)
                 null_imputer_params = imputer.hpo.results.iloc[best_imputer_idx].to_dict()
                 null_imputer_params['best_imputer_idx'] = best_imputer_idx
-                null_imputer_params_dct[output_col] = str(null_imputer_params)
+                null_imputer_params_dct[output_col] = null_imputer_params
 
             # remove the directory with logfiles for this column
             shutil.rmtree(column_output_path)

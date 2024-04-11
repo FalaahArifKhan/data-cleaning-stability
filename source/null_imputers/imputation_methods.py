@@ -19,9 +19,11 @@ def impute_with_deletion(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd
 
     # Apply median-mode for a test set
     num_imputer = SimpleImputer(strategy='median')
+    num_imputer.fit(X_train_imputed[numeric_columns_with_nulls])
     X_test_imputed[numeric_columns_with_nulls] = num_imputer.transform(X_test_imputed[numeric_columns_with_nulls])
 
     cat_imputer = SimpleImputer(strategy='most_frequent')
+    cat_imputer.fit(X_train_imputed[categorical_columns_with_nulls])
     X_test_imputed[categorical_columns_with_nulls] = cat_imputer.transform(X_test_imputed[categorical_columns_with_nulls])
 
     null_imputer_params_dct = None
