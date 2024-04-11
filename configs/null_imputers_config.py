@@ -8,6 +8,7 @@ from source.null_imputers.imputation_methods import impute_with_simple_imputer, 
 
 NULL_IMPUTERS_CONFIG = {
     ErrorRepairMethod.median_mode.value: {"method": impute_with_simple_imputer, "kwargs": {"num": "median", "cat": "most_frequent"}},
+    ErrorRepairMethod.median_dummy.value: {"method": impute_with_simple_imputer, "kwargs": {"num": "median", "cat": "constant"}},
     ErrorRepairMethod.datawig.value: {"method": datawig_imputer.complete, "kwargs": {"precision_threshold": 0.0, "num_epochs": 100, "iterations": 1}},
     # ErrorRepairMethod.automl.value: {"method": impute_with_automl, "kwargs": {"max_trials": 50, "tuner": None, "validation_split": 0.2, "epochs": 50}},
     ErrorRepairMethod.automl.value: {"method": impute_with_automl, "kwargs": {"max_trials": 3, "tuner": None, "validation_split": 0.2, "epochs": 100}},
