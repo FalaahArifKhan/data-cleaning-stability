@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 from source.custom_classes.benchmark import Benchmark
 
 
-def preconfigure_experiment(env_file_path='../configs/secrets.env'):
+def preconfigure_experiment(env_file_path: str = Path(__file__).parent.joinpath('..', 'configs', 'secrets.env')):
     warnings.filterwarnings('ignore')
     os.environ["PYTHONWARNINGS"] = "ignore"
 
