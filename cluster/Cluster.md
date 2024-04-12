@@ -25,6 +25,7 @@ Singularity> source /ext3/env.sh
 
 Find location of a python package to change source files:
 ```shell
+# /ext3/miniconda3/lib/python3.9/site-packages/datawig/__init__.py
 python -c "import datawig; print(datawig.__file__)"
 ```
 
