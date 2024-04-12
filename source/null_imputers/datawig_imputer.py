@@ -5,7 +5,7 @@ import logging
 import pandas as pd
 
 from datetime import datetime
-from datawig.utils import set_stream_log_level
+from datawig.utils import logger
 
 
 def complete(X_train_with_nulls: pd.DataFrame,
@@ -22,7 +22,6 @@ def complete(X_train_with_nulls: pd.DataFrame,
 
     os.environ['MXNET_LOG_LEVEL'] = 'ERROR'
     os.environ['MXNET_STORAGE_FALLBACK_LOG_VERBOSE'] = '0'
-    set_stream_log_level("ERROR")
 
     precision_threshold = kwargs['precision_threshold']
     num_epochs = kwargs['num_epochs']
@@ -54,7 +53,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
             if datawig.utils.logger.hasHandlers():
                 datawig.utils.logger.handlers.clear()
             datawig.utils.logger.addHandler(datawig.utils.consoleHandler)
-            datawig.utils.set_stream_log_level(logging.DEBUG)
+            datawig.utils.set_stream_log_level(logging.ERROR)
 
             datawig.utils.logger.info(f'Start null imputation for the {output_col} column')
 
