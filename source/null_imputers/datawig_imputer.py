@@ -5,6 +5,7 @@ import logging
 import pandas as pd
 
 from datetime import datetime
+from datawig.utils import set_stream_log_level
 
 
 def complete(X_train_with_nulls: pd.DataFrame,
@@ -21,6 +22,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
 
     os.environ['MXNET_LOG_LEVEL'] = 'ERROR'
     os.environ['MXNET_STORAGE_FALLBACK_LOG_VERBOSE'] = '0'
+    set_stream_log_level("ERROR")
 
     precision_threshold = kwargs['precision_threshold']
     num_epochs = kwargs['num_epochs']
