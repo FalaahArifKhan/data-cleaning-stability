@@ -34,7 +34,7 @@ python ../scripts/impute_nulls_with_predictor.py \
 # =======================================================================================
 python ../scripts/impute_nulls_with_predictor.py \
     --dataset folk \
-    --null_imputers [\"automl\"] \
+    --null_imputers [\"datawig\"] \
     --run_nums [1] \
     --tune_imputers True \
     --save_imputed_datasets True \
