@@ -18,7 +18,7 @@ def is_in_enum(val, enum_obj):
 
 def parse_evaluation_scenario(evaluation_scenario: str):
     train_injection_strategy, test_injection_strategy = evaluation_scenario[:-1].split('_')
-    return train_injection_strategy, test_injection_strategy
+    return train_injection_strategy.upper(), test_injection_strategy.upper()
 
 
 def str2bool(v):

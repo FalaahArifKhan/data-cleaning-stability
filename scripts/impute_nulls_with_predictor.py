@@ -44,7 +44,6 @@ def parse_input_args():
 
     args = parser.parse_args()
     args = validate_args(exp_config_obj=args, with_model_names=False)
-    print('args.tune_imputers -- ', args.tune_imputers)
 
     print(
         f"Dataset name: {args.dataset}\n"

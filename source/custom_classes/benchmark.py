@@ -126,6 +126,9 @@ class Benchmark:
             hyperparams = None
         else:
             train_injection_strategy, _ = parse_evaluation_scenario(evaluation_scenario)
+            print('null_imputer_name -- ', null_imputer_name)
+            print('self.dataset_name -- ', self.dataset_name)
+            print('train_injection_strategy -- ', train_injection_strategy)
             hyperparams = NULL_IMPUTERS_HYPERPARAMS.get(null_imputer_name, {}).get(self.dataset_name, {}).get(train_injection_strategy, {})
 
         print('tune_imputers -- ', tune_imputers)
