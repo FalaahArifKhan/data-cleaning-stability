@@ -34,9 +34,11 @@ def complete(X_train_with_nulls: pd.DataFrame,
     # Define column types for each feature column in X dataframe
     hps = dict()
     for numeric_column_name in all_numeric_columns:
+        hps[numeric_column_name] = dict()
         hps[numeric_column_name]['type'] = ['numeric']
 
     for categorical_column_name in all_categorical_columns:
+        hps[categorical_column_name] = dict()
         hps[categorical_column_name]['type'] = ['categorical']
 
     col_set = set(X_train_imputed.columns)
