@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 
 from configs.constants import EVALUATION_SCENARIOS
 from source.custom_classes.benchmark import Benchmark
-from source.validation import validate_args
+from source.validation import validate_args, str2bool
 
 
 def preconfigure_experiment(env_file_path: str = Path(__file__).parent.joinpath('..', 'configs', 'secrets.env')):
@@ -35,9 +35,9 @@ def parse_input_args():
     parser.add_argument("--dataset", type=str, help="a dataset name", required=True)
     parser.add_argument("--null_imputers", type=str, help="a list of null imputers", required=True)
     parser.add_argument("--run_nums", type=str, help="a list of experiment run numbers", required=True)
-    parser.add_argument("--tune_imputers", type=bool, required=True,
+    parser.add_argument("--tune_imputers", type=str2bool, required=True,
                         help="True -- tune null imputers, False -- take hyper-params of null imputers from configs/null_imputers_config.py")
-    parser.add_argument("--save_imputed_datasets", type=bool, required=True,
+    parser.add_argument("--save_imputed_datasets", type=str2bool, required=True,
                         help="True -- save imputed train and test sets, False -- do not save train and test sets")
     parser.add_argument("--evaluation_scenarios", type=str, help="a list of evaluation scenarios",
                         default=str(EVALUATION_SCENARIOS))
