@@ -126,13 +126,7 @@ class Benchmark:
             hyperparams = None
         else:
             train_injection_strategy, _ = parse_evaluation_scenario(evaluation_scenario)
-            print('null_imputer_name -- ', null_imputer_name)
-            print('self.dataset_name -- ', self.dataset_name)
-            print('train_injection_strategy -- ', train_injection_strategy)
             hyperparams = NULL_IMPUTERS_HYPERPARAMS.get(null_imputer_name, {}).get(self.dataset_name, {}).get(train_injection_strategy, {})
-
-        print('tune_imputers -- ', tune_imputers)
-        print('hyperparams -- ', hyperparams)
 
         # Use a method, kwargs, and hyperparams from NULL_IMPUTERS_CONFIG
         imputation_method = NULL_IMPUTERS_CONFIG[null_imputer_name]["method"]
@@ -156,6 +150,8 @@ class Benchmark:
                                   X_test_with_nulls=X_test_with_nulls,
                                   numeric_columns_with_nulls=train_numerical_null_columns,
                                   categorical_columns_with_nulls=train_categorical_null_columns,
+                                  all_numeric_columns=numerical_columns,
+                                  all_categorical_columns=categorical_columns,
                                   hyperparams=hyperparams,
                                   output_path=output_path,
                                   **imputation_kwargs))

@@ -23,6 +23,11 @@ singularity exec --overlay /scratch/dh3553/ml_life_cycle_project/vldb_env.ext3:r
 Singularity> source /ext3/env.sh
 ```
 
+Find location of a python package to change source files:
+```shell
+python -c "import datawig; print(datawig.__file__)"
+```
+
 
 ## Setup
 

@@ -11,6 +11,8 @@ def complete(X_train_with_nulls: pd.DataFrame,
              X_test_with_nulls: pd.DataFrame,
              numeric_columns_with_nulls: list,
              categorical_columns_with_nulls: list,
+             all_numeric_columns: list,
+             all_categorical_columns: list,
              hyperparams: dict,
              output_path: str = ".",
              **kwargs):
@@ -28,6 +30,14 @@ def complete(X_train_with_nulls: pd.DataFrame,
     test_missing_mask = X_test_with_nulls.copy().isnull()
     X_train_imputed = X_train_with_nulls.copy()
     X_test_imputed = X_test_with_nulls.copy()
+
+    # Define column types for each feature column in X dataframe
+    hps = dict()
+    for numeric_column_name in all_numeric_columns:
+        hps[numeric_column_name]['type'] = ['numeric']
+
+    for categorical_column_name in all_categorical_columns:
+        hps[categorical_column_name]['type'] = ['categorical']
 
     col_set = set(X_train_imputed.columns)
     null_imputer_params_dct = dict()
@@ -55,10 +65,11 @@ def complete(X_train_with_nulls: pd.DataFrame,
                                             output_path=column_output_path)
             if hyperparams is None:
                 imputer.fit_hpo(X_train_imputed.loc[~train_idx_missing, :],
+                                hps=hps,
                                 num_evals=6,
                                 patience=3,
                                 num_epochs=num_epochs,
-                                batch_size=16,
+                                batch_size=64,
                                 final_fc_hidden_units=[[10], [50], [100]])
             else:
                 imputer.fit(X_train_imputed.loc[~train_idx_missing, :],
