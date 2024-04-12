@@ -69,14 +69,14 @@ def complete(X_train_with_nulls: pd.DataFrame,
             if hyperparams is None:
                 imputer.fit_hpo(X_train_imputed.loc[~train_idx_missing, :],
                                 hps=hps,
-                                patience=5,
+                                patience=5 if output_col in categorical_columns_with_nulls else 20,
                                 num_epochs=num_epochs,
                                 batch_size=64,
-                                final_fc_hidden_units=[[0], [10], [50], [100]])
+                                final_fc_hidden_units=[[1], [10], [50], [100]])
             else:
                 imputer.fit(X_train_imputed.loc[~train_idx_missing, :],
                             final_fc_hidden_units=hyperparams['final_fc_hidden_units'],
-                            patience=5,
+                            patience=5 if output_col in categorical_columns_with_nulls else 20,
                             num_epochs=num_epochs,
                             batch_size=64,
                             calibrate=False)
