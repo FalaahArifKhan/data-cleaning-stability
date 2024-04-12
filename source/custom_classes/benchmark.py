@@ -128,6 +128,7 @@ class Benchmark:
             train_injection_strategy, _ = parse_evaluation_scenario(evaluation_scenario)
             hyperparams = NULL_IMPUTERS_HYPERPARAMS.get(null_imputer_name, {}).get(self.dataset_name, {}).get(train_injection_strategy, {})
 
+        print('tune_imputers -- ', tune_imputers)
         print('hyperparams -- ', hyperparams)
 
         # Use a method, kwargs, and hyperparams from NULL_IMPUTERS_CONFIG
