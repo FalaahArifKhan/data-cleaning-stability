@@ -4,6 +4,7 @@ import pathlib
 import source.null_imputers.datawig_imputer as datawig_imputer
 from source.validation import parse_evaluation_scenario
 from configs.datasets_config import ACS_INCOME_DATASET
+from configs.constants import ErrorRepairMethod
 from configs.null_imputers_config import NULL_IMPUTERS_HYPERPARAMS
 
 from tests import assert_nested_dicts_equal
@@ -11,12 +12,12 @@ from tests import assert_nested_dicts_equal
 
 @pytest.fixture(scope="function")
 def null_imputer_name():
-    return 'datawig'
+    return ErrorRepairMethod.datawig.value
 
 
 @pytest.fixture(scope="function")
 def datawig_kwargs():
-    return {"precision_threshold": 0.0, "num_epochs": 1, "iterations": 1}
+    return {"precision_threshold": 0.0, "num_epochs": 3, "iterations": 1}
 
 
 # Test if output of datawig does not contain nulls
@@ -37,6 +38,7 @@ def test_datawig_imputer_no_nulls(acs_income_dataset_params, null_imputer_name,
 
     # Apply datawig
     output_path = (pathlib.Path(__file__).parent.parent.parent.joinpath('results')
+                       .joinpath("tests")
                        .joinpath(null_imputer_name)
                        .joinpath(dataset_name)
                        .joinpath(evaluation_scenario)
@@ -77,6 +79,7 @@ def test_datawig_imputer_same_seed(acs_income_dataset_params, null_imputer_name,
 
     # Apply datawig
     output_path = (pathlib.Path(__file__).parent.parent.parent.joinpath('results')
+                       .joinpath("tests")
                        .joinpath(null_imputer_name)
                        .joinpath(dataset_name)
                        .joinpath(evaluation_scenario)
@@ -131,6 +134,7 @@ def test_datawig_imputer_diff_seed(acs_income_dataset_params, null_imputer_name,
 
     # Apply datawig
     output_path = (pathlib.Path(__file__).parent.parent.parent.joinpath('results')
+                   .joinpath("tests")
                    .joinpath(null_imputer_name)
                    .joinpath(dataset_name)
                    .joinpath(evaluation_scenario)
