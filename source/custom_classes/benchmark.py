@@ -169,7 +169,6 @@ class Benchmark:
                                   numeric_columns_with_nulls=train_numerical_null_columns,
                                   categorical_columns_with_nulls=train_categorical_null_columns,
                                   hyperparams=hyperparams,
-                                  output_path=output_path,
                                   **imputation_kwargs))
 
         else:
@@ -470,6 +469,7 @@ class Benchmark:
 
         # Compute metrics for tuned models
         # TODO: use multiple test sets interface
+        # TODO: set Virny seed
         compute_metrics_with_db_writer(dataset=base_flow_dataset,
                                        config=self.virny_config,
                                        models_config=models_config,
