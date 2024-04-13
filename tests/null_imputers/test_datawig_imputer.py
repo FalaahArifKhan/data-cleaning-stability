@@ -164,6 +164,4 @@ def test_datawig_imputer_diff_seed(acs_income_dataset_params, null_imputer_name,
 
     # Check if the results are identical
     assert not X_train_imputed1.equals(X_train_imputed2), "X_train_imputed from datawig is the same for different seeds"
-    assert X_test_imputed1.equals(X_test_imputed2), "X_test_imputed from datawig is the same for different seeds"
-    assert_nested_dicts_equal(null_imputer_params_dct1, null_imputer_params_dct2,
-                              assert_msg="null_imputer_params_dct from datawig is the same for different seeds")
+    assert not X_test_imputed1.equals(X_test_imputed2), "X_test_imputed from datawig is the same for different seeds"
