@@ -23,18 +23,6 @@ def datawig_kwargs():
 # Test if output of datawig does not contain nulls
 def test_datawig_imputer_no_nulls(acs_income_dataset_params, null_imputer_name,
                                   mcar_mar_evaluation_scenario, common_seed, datawig_kwargs):
-    import tensorflow as tf
-
-    # Check if GPU support is available
-    gpu_available = tf.config.list_physical_devices('GPU')
-
-    if gpu_available:
-        # Get the number of available GPUs
-        num_gpus = len(gpu_available)
-        print(f"GPU is available with {num_gpus} device(s)!")
-    else:
-        print("GPU is not available.")
-
     # Init function variables
     dataset_name = ACS_INCOME_DATASET
     evaluation_scenario = mcar_mar_evaluation_scenario
