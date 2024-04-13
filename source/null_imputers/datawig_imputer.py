@@ -1,11 +1,12 @@
 import os
 import uuid
 import shutil
+import random
 import logging
+import numpy as np
 import pandas as pd
 
 from datetime import datetime
-from datawig.utils import logger
 
 
 def complete(X_train_with_nulls: pd.DataFrame,
@@ -17,8 +18,9 @@ def complete(X_train_with_nulls: pd.DataFrame,
              hyperparams: dict,
              output_path: str = ".",
              **kwargs):
-    # Import datawig inside a function to avoid its installation to use other null imputers
+    # Import datawig dependencies inside a function to avoid its installation to use other null imputers
     import datawig
+    import mxnet as mx
 
     os.environ['MXNET_LOG_LEVEL'] = 'ERROR'
     os.environ['MXNET_STORAGE_FALLBACK_LOG_VERBOSE'] = '0'
@@ -41,6 +43,11 @@ def complete(X_train_with_nulls: pd.DataFrame,
     for categorical_column_name in all_categorical_columns:
         hps[categorical_column_name] = dict()
         hps[categorical_column_name]['type'] = ['categorical']
+
+    # Reset datawig seed
+    random.seed(kwargs['experiment_seed'])
+    np.random.seed(kwargs['experiment_seed'])
+    mx.random.seed(kwargs['experiment_seed'])
 
     col_set = set(X_train_imputed.columns)
     null_imputer_params_dct = dict()

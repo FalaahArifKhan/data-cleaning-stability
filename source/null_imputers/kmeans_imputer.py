@@ -30,8 +30,7 @@ class KMeansImputer(AbstractNullImputer):
         
     def _validate_input(self, df=None):
         # Check data integrity and calling arguments
-        force_all_finite = False if self.missing_values in ["NaN",
-                                                            np.nan] else True
+        force_all_finite = False if self.missing_values in ["NaN", np.nan] else True
         
         X = check_array(df, accept_sparse=False, dtype=np.float64,
                         force_all_finite=force_all_finite, copy=True)
@@ -90,7 +89,6 @@ class KMeansImputer(AbstractNullImputer):
         self.kprototypes.fit(X_observed, categorical=self.cat_vars_)
         
         return self
-        
     
     def transform(self, X, y=None):
         # Confirm whether fit() has been called
@@ -111,8 +109,6 @@ class KMeansImputer(AbstractNullImputer):
                     X[cluster_indices, col] = np.nanmean(X[cluster_indices, col])
         
         return X
-    
-    
+
     def fit_transform(self, df, target_column: str = None, **fit_params):
         return self.fit(df, **fit_params).transform(df)
-        
