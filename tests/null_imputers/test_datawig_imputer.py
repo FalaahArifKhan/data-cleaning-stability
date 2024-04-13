@@ -56,8 +56,8 @@ def test_datawig_imputer_no_nulls(acs_income_dataset_params, null_imputer_name,
                                  **imputation_kwargs))
 
     # Check if there are any nulls in the output
-    assert not X_train_imputed.isnull().any(), "X_train_imputed contains null values"
-    assert not X_test_imputed.isnull().any(), "X_test_imputed contains null values"
+    assert not X_train_imputed.isnull().any().any(), "X_train_imputed contains null values"
+    assert not X_test_imputed.isnull().any().any(), "X_test_imputed contains null values"
 
 
 # # Test if datawig returns same results with the same seed
