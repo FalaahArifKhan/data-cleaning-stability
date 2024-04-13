@@ -23,8 +23,8 @@ from configs.evaluation_scenarios_config import EVALUATION_SCENARIOS_CONFIG
 from source.utils.custom_logger import get_logger
 from source.utils.model_tuning_utils import tune_ML_models
 from source.utils.common_helpers import generate_guid
+from source.utils.dataframe_utils import preprocess_base_flow_dataset
 from source.custom_classes.database_client import DatabaseClient
-from source.preprocessing import get_simple_preprocessor
 from source.error_injectors.nulls_injector import NullsInjector
 from source.validation import is_in_enum, parse_evaluation_scenario
 
@@ -68,7 +68,7 @@ class Benchmark:
 
         # Save tunes parameters in database
         date_time_str = datetime.now(timezone.utc)
-        tuned_params_df['Model_Best_Params'] = tuned_params_df['Model_Best_Params'].astype(str)
+        tuned_params_df['Model_Best_Params'] = tuned_params_df['Model_Best_Params']
         tuned_params_df['Model_Tuning_Guid'] = tuned_params_df['Model_Name'].apply(
             lambda model_name: generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name,
                                                                     evaluation_scenario, experiment_seed, model_name])
@@ -150,6 +150,8 @@ class Benchmark:
                                   X_test_with_nulls=X_test_with_nulls,
                                   numeric_columns_with_nulls=train_numerical_null_columns,
                                   categorical_columns_with_nulls=train_categorical_null_columns,
+                                  all_numeric_columns=numerical_columns,
+                                  all_categorical_columns=categorical_columns,
                                   hyperparams=hyperparams,
                                   output_path=output_path,
                                   **imputation_kwargs))
@@ -218,50 +220,8 @@ class Benchmark:
 
         return metrics_df
 
-    def inject_and_impute_nulls(self, data_loader, null_imputer_name: str, evaluation_scenario: str,
-                                experiment_seed: int, tune_imputers: bool = True, save_imputed_datasets: bool = False):
-        if self.test_set_fraction < 0.0 or self.test_set_fraction > 1.0:
-            raise ValueError("test_set_fraction must be a float in the [0.0-1.0] range")
-
-        # Split and preprocess the dataset
-        X_train_val, X_test, y_train_val, y_test = train_test_split(data_loader.X_data, data_loader.y_data,
-                                                                    test_size=self.test_set_fraction,
-                                                                    random_state=experiment_seed)
-        # Inject nulls
-        X_train_val_with_nulls, X_test_with_nulls = self._inject_nulls(X_train_val=X_train_val,
-                                                                       X_test=X_test,
-                                                                       evaluation_scenario=evaluation_scenario,
-                                                                       experiment_seed=experiment_seed)
-        # Impute nulls
-        (X_train_val_imputed, X_test_imputed, null_imputer_params_dct,
-         imputation_runtime) = self._impute_nulls(X_train_with_nulls=X_train_val_with_nulls,
-                                                  X_test_with_nulls=X_test_with_nulls,
-                                                  null_imputer_name=null_imputer_name,
-                                                  evaluation_scenario=evaluation_scenario,
-                                                  experiment_seed=experiment_seed,
-                                                  categorical_columns=data_loader.categorical_columns,
-                                                  numerical_columns=data_loader.numerical_columns,
-                                                  tune_imputers=tune_imputers)
-
-        # Evaluate imputation for train and test sets
-        print('\n')
-        self.__logger.info('Evaluating imputation for X_train_val...')
-        train_imputation_metrics_df = self._evaluate_imputation(real=X_train_val,
-                                                                corrupted=X_train_val_with_nulls,
-                                                                imputed=X_train_val_imputed,
-                                                                numerical_columns=data_loader.numerical_columns,
-                                                                null_imputer_name=null_imputer_name,
-                                                                null_imputer_params_dct=null_imputer_params_dct)
-        print('\n')
-        self.__logger.info('Evaluating imputation for X_test...')
-        test_imputation_metrics_df = self._evaluate_imputation(real=X_test,
-                                                               corrupted=X_test_with_nulls,
-                                                               imputed=X_test_imputed,
-                                                               numerical_columns=data_loader.numerical_columns,
-                                                               null_imputer_name=null_imputer_name,
-                                                               null_imputer_params_dct=null_imputer_params_dct)
-
-        # Save performance metrics and tuned parameters of the null imputer in database
+    def _save_imputation_metrics_to_db(self, train_imputation_metrics_df: pd.DataFrame, test_imputation_metrics_df: pd.DataFrame,
+                                       imputation_runtime: float, null_imputer_name: str, evaluation_scenario: str, experiment_seed: int):
         train_imputation_metrics_df['Imputation_Guid'] = train_imputation_metrics_df['Column_With_Nulls'].apply(
             lambda column_with_nulls: generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name,
                                                                            evaluation_scenario, experiment_seed,
@@ -297,31 +257,170 @@ class Benchmark:
                                           })
         self.__logger.info("Performance metrics and tuned parameters of the null imputer are saved into a database")
 
+    def _save_imputed_datasets_to_fs(self, X_train_val: pd.DataFrame, X_test: pd.DataFrame,
+                                     null_imputer_name: str, evaluation_scenario: str, experiment_seed: int):
+        save_sets_dir_path = (pathlib.Path(__file__).parent.parent.parent
+                              .joinpath('results')
+                              .joinpath(self.dataset_name)
+                              .joinpath(null_imputer_name))
+        os.makedirs(save_sets_dir_path, exist_ok=True)
+
+        train_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_train_val.csv'
+        X_train_val.to_csv(os.path.join(save_sets_dir_path, train_set_filename),
+                           sep=",",
+                           columns=X_train_val.columns,
+                           index=False)
+
+        test_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_test.csv'
+        X_test.to_csv(os.path.join(save_sets_dir_path, test_set_filename),
+                      sep=",",
+                      columns=X_test.columns,
+                      index=False)
+        self.__logger.info("Imputed train and test sets are saved locally")
+
+    def inject_and_impute_nulls(self, data_loader, null_imputer_name: str, evaluation_scenario: str,
+                                experiment_seed: int, tune_imputers: bool = True, save_imputed_datasets: bool = False):
+        if self.test_set_fraction < 0.0 or self.test_set_fraction > 1.0:
+            raise ValueError("test_set_fraction must be a float in the [0.0-1.0] range")
+
+        # Split the dataset
+        X_train_val, X_test, y_train_val, y_test = train_test_split(data_loader.X_data, data_loader.y_data,
+                                                                    test_size=self.test_set_fraction,
+                                                                    random_state=experiment_seed)
+        # Inject nulls not into sensitive attributes
+        X_train_val_with_nulls, X_test_with_nulls = self._inject_nulls(X_train_val=X_train_val,
+                                                                       X_test=X_test,
+                                                                       evaluation_scenario=evaluation_scenario,
+                                                                       experiment_seed=experiment_seed)
+
+        # Remove sensitive attributes from train and test sets with nulls to avoid their usage during imputation
+        X_train_val_with_nulls_wo_sensitive_attrs = X_train_val_with_nulls.drop(self.dataset_sensitive_attrs, axis=1)
+        X_test_with_nulls_wo_sensitive_attrs = X_test_with_nulls.drop(self.dataset_sensitive_attrs, axis=1)
+        numerical_columns_wo_sensitive_attrs = [col for col in data_loader.numerical_columns if col not in self.dataset_sensitive_attrs]
+        categorical_columns_wo_sensitive_attrs = [col for col in data_loader.categorical_columns if col not in self.dataset_sensitive_attrs]
+        print('X_test_with_nulls_wo_sensitive_attrs.columns -- ', X_test_with_nulls_wo_sensitive_attrs.columns)
+
+        # Impute nulls
+        (X_train_val_imputed_wo_sensitive_attrs, X_test_imputed_wo_sensitive_attrs, null_imputer_params_dct,
+         imputation_runtime) = self._impute_nulls(X_train_with_nulls=X_train_val_with_nulls_wo_sensitive_attrs,
+                                                  X_test_with_nulls=X_test_with_nulls_wo_sensitive_attrs,
+                                                  null_imputer_name=null_imputer_name,
+                                                  evaluation_scenario=evaluation_scenario,
+                                                  experiment_seed=experiment_seed,
+                                                  categorical_columns=categorical_columns_wo_sensitive_attrs,
+                                                  numerical_columns=numerical_columns_wo_sensitive_attrs,
+                                                  tune_imputers=tune_imputers)
+        print('X_test_imputed_wo_sensitive_attrs.columns -- ', X_test_imputed_wo_sensitive_attrs.columns)
+
+        if null_imputer_name == ErrorRepairMethod.deletion.value:
+            # Skip evaluation of an imputed train set for the deletion null imputer
+            train_imputation_metrics_df = pd.DataFrame(columns=['Column_With_Nulls'])
+            # Subset y_train_val to align with X_train_val_imputed_wo_sensitive_attrs
+            y_train_val = y_train_val.loc[X_train_val_imputed_wo_sensitive_attrs.index]
+
+        else:
+            # Evaluate imputation for train and test sets
+            print('\n')
+            self.__logger.info('Evaluating imputation for X_train_val...')
+            train_imputation_metrics_df = self._evaluate_imputation(real=X_train_val,
+                                                                    corrupted=X_train_val_with_nulls_wo_sensitive_attrs,
+                                                                    imputed=X_train_val_imputed_wo_sensitive_attrs,
+                                                                    numerical_columns=numerical_columns_wo_sensitive_attrs,
+                                                                    null_imputer_name=null_imputer_name,
+                                                                    null_imputer_params_dct=null_imputer_params_dct)
+        print('\n')
+        self.__logger.info('Evaluating imputation for X_test...')
+        test_imputation_metrics_df = self._evaluate_imputation(real=X_test,
+                                                               corrupted=X_test_with_nulls_wo_sensitive_attrs,
+                                                               imputed=X_test_imputed_wo_sensitive_attrs,
+                                                               numerical_columns=numerical_columns_wo_sensitive_attrs,
+                                                               null_imputer_name=null_imputer_name,
+                                                               null_imputer_params_dct=null_imputer_params_dct)
+
+        # Save performance metrics and tuned parameters of the null imputer in database
+        self._save_imputation_metrics_to_db(train_imputation_metrics_df=train_imputation_metrics_df,
+                                            test_imputation_metrics_df=test_imputation_metrics_df,
+                                            imputation_runtime=imputation_runtime,
+                                            null_imputer_name=null_imputer_name,
+                                            evaluation_scenario=evaluation_scenario,
+                                            experiment_seed=experiment_seed)
+
         if save_imputed_datasets:
-            save_sets_dir_path = pathlib.Path(__file__).parent.parent.parent.joinpath('results').joinpath(self.dataset_name).joinpath(null_imputer_name)
-            os.makedirs(save_sets_dir_path, exist_ok=True)
+            self._save_imputed_datasets_to_fs(X_train_val=X_train_val_imputed_wo_sensitive_attrs,
+                                              X_test=X_test_imputed_wo_sensitive_attrs,
+                                              null_imputer_name=null_imputer_name,
+                                              evaluation_scenario=evaluation_scenario,
+                                              experiment_seed=experiment_seed)
 
-            train_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_train_val.csv'
-            X_train_val_imputed.to_csv(os.path.join(save_sets_dir_path, train_set_filename),
-                                       sep=",",
-                                       columns=X_train_val_imputed.columns,
-                                       index=False)
+        # Create a dataframe with sensitive attributes and initial dataset indexes
+        sensitive_attrs_df = data_loader.full_df[self.dataset_sensitive_attrs]
 
-            test_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_test.csv'
-            X_test_imputed.to_csv(os.path.join(save_sets_dir_path, test_set_filename),
-                                  sep=",",
-                                  columns=X_test_imputed.columns,
-                                  index=False)
-            self.__logger.info("Imputed train and test sets are saved locally")
+        # Ensure correctness of indexes in X and sensitive_attrs sets
+        assert X_train_val_imputed_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all(), \
+            "Not all indexes of X_train_val_imputed_wo_sensitive_attrs are present in sensitive_attrs_df"
+        assert X_test_imputed_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all(), \
+            "Not all indexes of X_test_imputed_wo_sensitive_attrs are present in sensitive_attrs_df"
 
-        return BaseFlowDataset(init_features_df=data_loader.full_df[self.dataset_sensitive_attrs],  # keep only sensitive attributes with original indexes to compute group metrics
-                               X_train_val=X_train_val_imputed,
-                               X_test=X_test_imputed,
+        # Ensure correctness of indexes in X and y sets
+        assert X_train_val_imputed_wo_sensitive_attrs.index.equals(y_train_val.index) is True, \
+            "Indexes of X_train_val_imputed_wo_sensitive_attrs and y_train_val are different"
+        assert X_test_imputed_wo_sensitive_attrs.index.equals(y_test.index) is True, \
+            "Indexes of X_test_imputed_wo_sensitive_attrs and y_test are different"
+
+        return BaseFlowDataset(init_features_df=sensitive_attrs_df,  # keep only sensitive attributes with original indexes to compute group metrics
+                               X_train_val=X_train_val_imputed_wo_sensitive_attrs,
+                               X_test=X_test_imputed_wo_sensitive_attrs,
                                y_train_val=y_train_val,
                                y_test=y_test,
                                target=data_loader.target,
-                               numerical_columns=data_loader.numerical_columns,
-                               categorical_columns=data_loader.categorical_columns)
+                               numerical_columns=numerical_columns_wo_sensitive_attrs,
+                               categorical_columns=categorical_columns_wo_sensitive_attrs)
+
+    def load_imputed_train_test_sets(self, data_loader, null_imputer_name: str, evaluation_scenario: str,
+                                     experiment_seed: int):
+        if self.test_set_fraction < 0.0 or self.test_set_fraction > 1.0:
+            raise ValueError("test_set_fraction must be a float in the [0.0-1.0] range")
+
+        # Split the dataset
+        y_train_val, y_test = train_test_split(data_loader.y_data,
+                                               test_size=self.test_set_fraction,
+                                               random_state=experiment_seed)
+
+        # Read imputed train and test sets from save_sets_dir_path
+        save_sets_dir_path = (pathlib.Path(__file__).parent.parent.parent
+                                  .joinpath('results')
+                                  .joinpath(self.dataset_name)
+                                  .joinpath(null_imputer_name))
+
+        train_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_train_val.csv'
+        X_train_val_imputed_wo_sensitive_attrs = pd.read_csv(os.path.join(save_sets_dir_path, train_set_filename), header=0)
+
+        test_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_test.csv'
+        X_test_imputed_wo_sensitive_attrs = pd.read_csv(os.path.join(save_sets_dir_path, test_set_filename), header=0)
+
+        # Create a dataframe with sensitive attributes and initial dataset indexes
+        sensitive_attrs_df = data_loader.full_df[self.dataset_sensitive_attrs]
+
+        # Ensure correctness of indexes in X and sensitive_attrs sets
+        assert X_train_val_imputed_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all() is True, \
+            "Not all indexes of X_train_val_imputed_wo_sensitive_attrs are present in sensitive_attrs_df"
+        assert X_test_imputed_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all() is True, \
+            "Not all indexes of X_test_imputed_wo_sensitive_attrs are present in sensitive_attrs_df"
+
+        # Ensure correctness of indexes in X and y sets
+        assert X_train_val_imputed_wo_sensitive_attrs.index.equals(y_train_val.index) is True, \
+            "Indexes of X_train_val_imputed_wo_sensitive_attrs and y_train_val are different"
+        assert X_test_imputed_wo_sensitive_attrs.index.equals(y_test.index) is True, \
+            "Indexes of X_test_imputed_wo_sensitive_attrs and y_test are different"
+
+        return BaseFlowDataset(init_features_df=sensitive_attrs_df,  # keep only sensitive attributes with original indexes to compute group metrics
+                               X_train_val=X_train_val_imputed_wo_sensitive_attrs,
+                               X_test=X_test_imputed_wo_sensitive_attrs,
+                               y_train_val=y_train_val,
+                               y_test=y_test,
+                               target=data_loader.target,
+                               numerical_columns=[col for col in data_loader.numerical_columns if col not in self.dataset_sensitive_attrs],
+                               categorical_columns=[col for col in data_loader.categorical_columns if col not in self.dataset_sensitive_attrs])
 
     def _run_exp_iter(self, init_data_loader, run_num, evaluation_scenario, null_imputer_name,
                       model_names, tune_imputers, ml_impute):
@@ -354,19 +453,13 @@ class Benchmark:
                                                              experiment_seed=experiment_seed)
         else:
             # TODO: extract train and test sets from AWS S3
-            base_flow_dataset = None
-
-        # Remove sensitive attributes to create a blind estimator
-        base_flow_dataset.categorical_columns = [col for col in base_flow_dataset.categorical_columns if col not in self.dataset_sensitive_attrs]
-        base_flow_dataset.numerical_columns = [col for col in base_flow_dataset.numerical_columns if col not in self.dataset_sensitive_attrs]
-        base_flow_dataset.X_train_val = base_flow_dataset.X_train_val.drop(self.dataset_sensitive_attrs, axis=1)
-        base_flow_dataset.X_test = base_flow_dataset.X_test.drop(self.dataset_sensitive_attrs, axis=1)
+            base_flow_dataset = self.load_imputed_train_test_sets(data_loader=data_loader,
+                                                                  null_imputer_name=null_imputer_name,
+                                                                  evaluation_scenario=evaluation_scenario,
+                                                                  experiment_seed=experiment_seed)
 
         # Preprocess the dataset using the defined preprocessor
-        column_transformer = get_simple_preprocessor(base_flow_dataset)
-        column_transformer = column_transformer.set_output(transform="pandas")  # Set transformer output to a pandas df
-        base_flow_dataset.X_train_val = column_transformer.fit_transform(base_flow_dataset.X_train_val)
-        base_flow_dataset.X_test = column_transformer.transform(base_flow_dataset.X_test)
+        base_flow_dataset = preprocess_base_flow_dataset(base_flow_dataset)
 
         # Tune ML models
         models_config = self._tune_ML_models(model_names=model_names,
@@ -384,6 +477,34 @@ class Benchmark:
                                        db_writer_func=self.__db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
                                        notebook_logs_stdout=False,
                                        verbose=0)
+
+    def run_experiment(self, run_nums: list, evaluation_scenarios: list, model_names: list, tune_imputers: bool, ml_impute: bool):
+        self.__db.connect()
+
+        total_iterations = len(self.null_imputers) * len(evaluation_scenarios) * len(run_nums)
+        with tqdm.tqdm(total=total_iterations, desc="Experiment Progress") as pbar:
+            for null_imputer_idx, null_imputer_name in enumerate(self.null_imputers):
+                for evaluation_scenario_idx, evaluation_scenario in enumerate(evaluation_scenarios):
+                    for run_idx, run_num in enumerate(run_nums):
+                        self.__logger.info(f"{'=' * 30} NEW EXPERIMENT RUN {'=' * 30}")
+                        print('Configs for a new experiment run:')
+                        print(
+                            f"Null imputer: {null_imputer_name} ({null_imputer_idx + 1} out of {len(self.null_imputers)})\n"
+                            f"Evaluation scenario: {evaluation_scenario} ({evaluation_scenario_idx + 1} out of {len(evaluation_scenarios)})\n"
+                            f"Run num: {run_num} ({run_idx + 1} out of {len(run_nums)})\n"
+                        )
+                        self._run_exp_iter(init_data_loader=self.init_data_loader,
+                                           run_num=run_num,
+                                           evaluation_scenario=evaluation_scenario,
+                                           null_imputer_name=null_imputer_name,
+                                           model_names=model_names,
+                                           tune_imputers=tune_imputers,
+                                           ml_impute=ml_impute)
+                        pbar.update(1)
+                        print('\n\n\n\n', flush=True)
+
+        self.__db.close()
+        self.__logger.info("Experimental results were successfully saved!")
 
     def _run_null_imputation_iter(self, init_data_loader, run_num, evaluation_scenario, null_imputer_name,
                                   tune_imputers, save_imputed_datasets):
@@ -424,30 +545,102 @@ class Benchmark:
         self.__db.close()
         self.__logger.info("Experimental results were successfully saved!")
 
-    def run_experiment(self, run_nums: list, evaluation_scenarios: list, model_names: list, tune_imputers: bool, ml_impute: bool):
+    def _prepare_baseline_dataset(self, data_loader, experiment_seed: int):
+        if self.test_set_fraction < 0.0 or self.test_set_fraction > 1.0:
+            raise ValueError("test_set_fraction must be a float in the [0.0-1.0] range")
+
+        # Split the dataset
+        X_train_val, X_test, y_train_val, y_test = train_test_split(data_loader.X_data, data_loader.y_data,
+                                                                    test_size=self.test_set_fraction,
+                                                                    random_state=experiment_seed)
+
+        # Remove sensitive attributes from train and test sets with nulls to avoid their usage during model training
+        X_train_val_wo_sensitive_attrs = X_train_val.drop(self.dataset_sensitive_attrs, axis=1)
+        X_test_wo_sensitive_attrs = X_test.drop(self.dataset_sensitive_attrs, axis=1)
+        numerical_columns_wo_sensitive_attrs = [col for col in data_loader.numerical_columns if col not in self.dataset_sensitive_attrs]
+        categorical_columns_wo_sensitive_attrs = [col for col in data_loader.categorical_columns if col not in self.dataset_sensitive_attrs]
+        print('X_test_wo_sensitive_attrs.columns -- ', X_test_wo_sensitive_attrs.columns)
+
+        # Create a dataframe with sensitive attributes and initial dataset indexes
+        sensitive_attrs_df = data_loader.full_df[self.dataset_sensitive_attrs]
+
+        # Ensure correctness of indexes in X and sensitive_attrs sets
+        assert X_train_val_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all(), \
+            "Not all indexes of X_train_val_wo_sensitive_attrs are present in sensitive_attrs_df"
+        assert X_test_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all(), \
+            "Not all indexes of X_test_wo_sensitive_attrs are present in sensitive_attrs_df"
+
+        return BaseFlowDataset(init_features_df=sensitive_attrs_df,  # keep only sensitive attributes with original indexes to compute group metrics
+                               X_train_val=X_train_val_wo_sensitive_attrs,
+                               X_test=X_test_wo_sensitive_attrs,
+                               y_train_val=y_train_val,
+                               y_test=y_test,
+                               target=data_loader.target,
+                               numerical_columns=numerical_columns_wo_sensitive_attrs,
+                               categorical_columns=categorical_columns_wo_sensitive_attrs)
+
+    def _run_baseline_evaluation_iter(self, init_data_loader, run_num: int, model_names: list):
+        null_imputer_name = 'baseline'
+        evaluation_scenario = 'baseline'
+        data_loader = copy.deepcopy(init_data_loader)
+
+        custom_table_fields_dct = dict()
+        experiment_seed = EXPERIMENT_RUN_SEEDS[run_num - 1]
+        custom_table_fields_dct['session_uuid'] = self._session_uuid
+        custom_table_fields_dct['null_imputer_name'] = null_imputer_name
+        custom_table_fields_dct['evaluation_scenario'] = evaluation_scenario
+        custom_table_fields_dct['experiment_iteration'] = f'exp_iter_{run_num}'
+        custom_table_fields_dct['dataset_split_seed'] = experiment_seed
+        custom_table_fields_dct['model_init_seed'] = experiment_seed
+
+        # Create exp_pipeline_guid to define a row level of granularity.
+        # concat(exp_pipeline_guid, model_name, subgroup, metric) can be used to check duplicates of results
+        # for the same experimental pipeline.
+        custom_table_fields_dct['exp_pipeline_guid'] = (
+            generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name, evaluation_scenario, experiment_seed]))
+
+        self.__logger.info("Start an experiment iteration for the following custom params:")
+        pprint(custom_table_fields_dct)
+        print('\n', flush=True)
+
+        # Prepare and preprocess the dataset using the defined preprocessor
+        base_flow_dataset = self._prepare_baseline_dataset(data_loader, experiment_seed)
+        base_flow_dataset = preprocess_base_flow_dataset(base_flow_dataset)
+
+        # Tune ML models
+        models_config = self._tune_ML_models(model_names=model_names,
+                                             base_flow_dataset=base_flow_dataset,
+                                             experiment_seed=experiment_seed,
+                                             evaluation_scenario=evaluation_scenario,
+                                             null_imputer_name=null_imputer_name)
+
+        # Compute metrics for tuned models
+        # TODO: use multiple test sets interface
+        compute_metrics_with_db_writer(dataset=base_flow_dataset,
+                                       config=self.virny_config,
+                                       models_config=models_config,
+                                       custom_tbl_fields_dct=custom_table_fields_dct,
+                                       db_writer_func=self.__db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
+                                       notebook_logs_stdout=False,
+                                       verbose=0)
+
+    def evaluate_baselines(self, run_nums: list, model_names: list):
         self.__db.connect()
 
-        total_iterations = len(self.null_imputers) * len(evaluation_scenarios) * len(run_nums)
-        with tqdm.tqdm(total=total_iterations, desc="Experiment Progress") as pbar:
-            for null_imputer_idx, null_imputer_name in enumerate(self.null_imputers):
-                for evaluation_scenario_idx, evaluation_scenario in enumerate(evaluation_scenarios):
-                    for run_idx, run_num in enumerate(run_nums):
-                        self.__logger.info(f"{'=' * 30} NEW EXPERIMENT RUN {'=' * 30}")
-                        print('Configs for a new experiment run:')
-                        print(
-                            f"Null imputer: {null_imputer_name} ({null_imputer_idx + 1} out of {len(self.null_imputers)})\n"
-                            f"Evaluation scenario: {evaluation_scenario} ({evaluation_scenario_idx + 1} out of {len(evaluation_scenarios)})\n"
-                            f"Run num: {run_num} ({run_idx + 1} out of {len(run_nums)})\n"
-                        )
-                        self._run_exp_iter(init_data_loader=self.init_data_loader,
-                                           run_num=run_num,
-                                           evaluation_scenario=evaluation_scenario,
-                                           null_imputer_name=null_imputer_name,
-                                           model_names=model_names,
-                                           tune_imputers=tune_imputers,
-                                           ml_impute=ml_impute)
-                        pbar.update(1)
-                        print('\n\n\n\n', flush=True)
+        total_iterations = len(run_nums)
+        with tqdm.tqdm(total=total_iterations, desc="Baseline Evaluation Progress") as pbar:
+            for run_idx, run_num in enumerate(run_nums):
+                self.__logger.info(f"{'=' * 30} NEW BASELINE EVALUATION RUN {'=' * 30}")
+                print('Configs for a new baseline evaluation run:')
+                print(
+                    f"Models: {model_names})\n"
+                    f"Run num: {run_num} ({run_idx + 1} out of {len(run_nums)})\n"
+                )
+                self._run_baseline_evaluation_iter(init_data_loader=self.init_data_loader,
+                                                   run_num=run_num,
+                                                   model_names=model_names)
+                pbar.update(1)
+                print('\n\n\n\n', flush=True)
 
         self.__db.close()
-        self.__logger.info("Experimental results were successfully saved!")
+        self.__logger.info("Performance metrics of the baselines were successfully saved!")

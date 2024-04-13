@@ -17,10 +17,10 @@ from dotenv import load_dotenv
 
 from configs.constants import EVALUATION_SCENARIOS
 from source.custom_classes.benchmark import Benchmark
-from source.validation import validate_args
+from source.validation import validate_args, str2bool
 
 
-def preconfigure_experiment(env_file_path='../configs/secrets.env'):
+def preconfigure_experiment(env_file_path: str = Path(__file__).parent.joinpath('..', 'configs', 'secrets.env')):
     warnings.filterwarnings('ignore')
     os.environ["PYTHONWARNINGS"] = "ignore"
 
@@ -35,9 +35,9 @@ def parse_input_args():
     parser.add_argument("--null_imputers", type=str, help="a list of null imputers", required=True)
     parser.add_argument("--models", type=str, help="a list of model names", required=True)
     parser.add_argument("--run_nums", type=str, help="a list of experiment run numbers", required=True)
-    parser.add_argument("--tune_imputers", type=bool, required=True,
+    parser.add_argument("--tune_imputers", type=str2bool, required=True,
                         help="True -- tune null imputers, False -- take hyper-params of null imputers from configs/null_imputers_config.py")
-    parser.add_argument("--ml_impute", type=bool, required=True,
+    parser.add_argument("--ml_impute", type=str2bool, required=True,
                         help="True -- apply ML-oriented imputers, False -- use pre-computed imputed datasets")
     parser.add_argument("--evaluation_scenarios", type=str, help="a list of evaluation scenarios",
                         default=str(EVALUATION_SCENARIOS))

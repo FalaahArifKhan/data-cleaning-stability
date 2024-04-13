@@ -1,5 +1,5 @@
 """
-The below code is based on this work:
+The below code is an extension of this work:
 - GitHub: https://github.com/se-jaeger/data-imputation-paper
 
 - Citation:
@@ -20,19 +20,18 @@ import uuid
 import random
 import pandas as pd
 import numpy as np
-import tensorflow as tf
 
 from datetime import datetime
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple
-from tensorflow.keras import Model
-from autokeras import StructuredDataClassifier, StructuredDataRegressor
+from typing import List, Optional, Tuple
 
 from source.utils.custom_logger import get_logger
 from source.utils.dataframe_utils import get_columns_sorted_by_nulls
 
 
 def set_seed(seed: int) -> None:
+    import tensorflow as tf
+
     if seed:
         tf.random.set_seed(seed)
         random.seed(seed)
@@ -203,7 +202,7 @@ class AutoMLImputer(BaseImputer):
         self.directory = directory
 
         self._statistics = {'medians': dict(), 'modes': dict()}
-        self._predictors: Dict[str, Model] = {}
+        self._predictors = dict()
         self.__logger = get_logger()
 
     def get_best_hyperparameters(self):
@@ -215,6 +214,9 @@ class AutoMLImputer(BaseImputer):
         }
 
     def fit(self, X: pd.DataFrame, target_columns: List[str], verbose: int = 1) -> BaseImputer:
+        # Hide a heavy dependency to avoid its installation when working with other null imputers
+        from autokeras import StructuredDataClassifier, StructuredDataRegressor
+
         # Check if anything is actually missing and if not do not spend time on fitting
         missing_mask = X.isna()
         if not missing_mask.values.any():

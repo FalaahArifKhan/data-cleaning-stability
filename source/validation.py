@@ -1,4 +1,5 @@
 import ast
+import argparse
 
 from configs.constants import ErrorRepairMethod, MLModels, EVALUATION_SCENARIOS
 from configs.datasets_config import DATASET_CONFIG
@@ -17,7 +18,18 @@ def is_in_enum(val, enum_obj):
 
 def parse_evaluation_scenario(evaluation_scenario: str):
     train_injection_strategy, test_injection_strategy = evaluation_scenario[:-1].split('_')
-    return train_injection_strategy, test_injection_strategy
+    return train_injection_strategy.upper(), test_injection_strategy.upper()
+
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
 def validate_args(exp_config_obj, with_model_names=True):

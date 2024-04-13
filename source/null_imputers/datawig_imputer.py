@@ -5,12 +5,15 @@ import logging
 import pandas as pd
 
 from datetime import datetime
+from datawig.utils import logger
 
 
 def complete(X_train_with_nulls: pd.DataFrame,
              X_test_with_nulls: pd.DataFrame,
              numeric_columns_with_nulls: list,
              categorical_columns_with_nulls: list,
+             all_numeric_columns: list,
+             all_categorical_columns: list,
              hyperparams: dict,
              output_path: str = ".",
              **kwargs):
@@ -29,6 +32,16 @@ def complete(X_train_with_nulls: pd.DataFrame,
     X_train_imputed = X_train_with_nulls.copy()
     X_test_imputed = X_test_with_nulls.copy()
 
+    # Define column types for each feature column in X dataframe
+    hps = dict()
+    for numeric_column_name in all_numeric_columns:
+        hps[numeric_column_name] = dict()
+        hps[numeric_column_name]['type'] = ['numeric']
+
+    for categorical_column_name in all_categorical_columns:
+        hps[categorical_column_name] = dict()
+        hps[categorical_column_name]['type'] = ['categorical']
+
     col_set = set(X_train_imputed.columns)
     null_imputer_params_dct = dict()
     for _ in range(iterations):
@@ -40,7 +53,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
             if datawig.utils.logger.hasHandlers():
                 datawig.utils.logger.handlers.clear()
             datawig.utils.logger.addHandler(datawig.utils.consoleHandler)
-            datawig.utils.set_stream_log_level(logging.DEBUG)
+            datawig.utils.set_stream_log_level(logging.INFO)
 
             datawig.utils.logger.info(f'Start null imputation for the {output_col} column')
 
@@ -55,15 +68,15 @@ def complete(X_train_with_nulls: pd.DataFrame,
                                             output_path=column_output_path)
             if hyperparams is None:
                 imputer.fit_hpo(X_train_imputed.loc[~train_idx_missing, :],
-                                num_evals=6,
-                                patience=3,
+                                hps=hps,
+                                patience=5 if output_col in categorical_columns_with_nulls else 20,
                                 num_epochs=num_epochs,
                                 batch_size=64,
-                                final_fc_hidden_units=[[10], [50], [100]])
+                                final_fc_hidden_units=[[1], [10], [50], [100]])
             else:
                 imputer.fit(X_train_imputed.loc[~train_idx_missing, :],
                             final_fc_hidden_units=hyperparams['final_fc_hidden_units'],
-                            patience=3,
+                            patience=5 if output_col in categorical_columns_with_nulls else 20,
                             num_epochs=num_epochs,
                             batch_size=64,
                             calibrate=False)
@@ -92,7 +105,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
                 best_imputer_idx = int(best_imputer_idx)
                 null_imputer_params = imputer.hpo.results.iloc[best_imputer_idx].to_dict()
                 null_imputer_params['best_imputer_idx'] = best_imputer_idx
-                null_imputer_params_dct[output_col] = str(null_imputer_params)
+                null_imputer_params_dct[output_col] = null_imputer_params
 
             # remove the directory with logfiles for this column
             shutil.rmtree(column_output_path)

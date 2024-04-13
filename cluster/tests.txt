@@ -1,27 +1,32 @@
 # =======================================================================================
 # Local
 # =======================================================================================
+python ./scripts/evaluate_baseline.py \
+    --dataset folk \
+    --models \[\"lr_clf\"\] \
+    --run_nums \[1,2\]
+
 python ./scripts/evaluate_models.py \
     --dataset folk \
     --null_imputers \[\"median-mode\"\] \
     --models \[\"lr_clf\"\] \
     --run_nums \[1,2\] \
-    --tune_imputers True \
-    --ml_impute True \
+    --tune_imputers true \
+    --ml_impute true \
     --evaluation_scenarios \[\"mcar_mcar1\"\]
 
 python ./scripts/impute_nulls_with_predictor.py \
     --dataset folk \
     --null_imputers \[\"median-mode\"\] \
     --run_nums \[1,2\] \
-    --save_imputed_datasets True --evaluation_scenarios \[\"mcar_mcar1\",\"mcar_mar1\"\]
+    --save_imputed_datasets true --evaluation_scenarios \[\"mcar_mcar1\",\"mcar_mar1\"\]
 
 python ../scripts/impute_nulls_with_predictor.py \
     --dataset folk \
     --null_imputers \[\"datawig\"\] \
     --run_nums \[1\] \
-    --tune_imputers True \
-    --save_imputed_datasets True \
+    --tune_imputers true \
+    --save_imputed_datasets true \
     --evaluation_scenarios \[\"mcar_mcar1\"\]
 
 # =======================================================================================
@@ -29,10 +34,10 @@ python ../scripts/impute_nulls_with_predictor.py \
 # =======================================================================================
 python ../scripts/impute_nulls_with_predictor.py \
     --dataset folk \
-    --null_imputers [\"automl\"] \
+    --null_imputers [\"datawig\"] \
     --run_nums [1] \
-    --tune_imputers True \
-    --save_imputed_datasets True \
+    --tune_imputers true \
+    --save_imputed_datasets true \
     --evaluation_scenarios [\"mcar_mcar1\"]
 
 
