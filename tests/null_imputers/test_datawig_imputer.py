@@ -1,6 +1,7 @@
 import pytest
 import pathlib
 import numpy as np
+from numba import jit, cuda
 
 import source.null_imputers.datawig_imputer as datawig_imputer
 from source.validation import parse_evaluation_scenario
@@ -21,6 +22,7 @@ def datawig_kwargs():
 
 
 # Test if output of datawig does not contain nulls
+@jit(target_backend='cuda')
 def test_datawig_imputer_no_nulls(acs_income_dataset_params, null_imputer_name,
                                   mcar_mar_evaluation_scenario, common_seed, datawig_kwargs):
     # Init function variables
@@ -61,6 +63,7 @@ def test_datawig_imputer_no_nulls(acs_income_dataset_params, null_imputer_name,
 
 
 # Test if datawig returns same results with the same seed
+@jit(target_backend='cuda')
 def test_datawig_imputer_same_seed(acs_income_dataset_params, null_imputer_name,
                                    mcar_mar_evaluation_scenario, common_seed, datawig_kwargs):
     # Init function variables
