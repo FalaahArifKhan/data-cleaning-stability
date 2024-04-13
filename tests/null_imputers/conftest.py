@@ -44,7 +44,7 @@ def acs_income_dataset_params(common_seed, mcar_mar_evaluation_scenario):
                           null_imputers=[],
                           model_names=[])
     benchmark.init_data_loader = ACSIncomeDataset(state=['GA'], year=2018, with_nulls=False,
-                                                  subsample_size=1_000, subsample_seed=common_seed)
+                                                  subsample_size=1_000, subsample_seed=experiment_seed)
 
     # Split the dataset
     X_train_val, X_test, y_train_val, y_test = train_test_split(benchmark.init_data_loader.X_data,
