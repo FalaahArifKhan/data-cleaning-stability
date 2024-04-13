@@ -36,8 +36,8 @@ def test_kmeans_imputer_same_seed(acs_income_dataset_categorical_columns_idxs, c
         X_imputed1, X_imputed2, 
         atol=1e-9, rtol=1e-9, err_msg="Results from KMeansImputer are not identical"
     )
-    
-    
+
+
 # Run the tests
 if __name__ == "__main__":
     pytest.main([__file__])

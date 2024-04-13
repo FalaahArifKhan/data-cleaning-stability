@@ -16,7 +16,8 @@ from virny.user_interfaces.multiple_models_with_db_writer_api import compute_met
 
 from configs.models_config_for_tuning import get_models_params_for_tuning
 from configs.null_imputers_config import NULL_IMPUTERS_CONFIG, NULL_IMPUTERS_HYPERPARAMS
-from configs.constants import (EXP_COLLECTION_NAME, MODEL_HYPER_PARAMS_COLLECTION_NAME, IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
+from configs.constants import (EXP_COLLECTION_NAME, MODEL_HYPER_PARAMS_COLLECTION_NAME,
+                               IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                EXPERIMENT_RUN_SEEDS, NUM_FOLDS_FOR_TUNING, ErrorRepairMethod, ErrorInjectionStrategy)
 from configs.datasets_config import DATASET_CONFIG
 from configs.evaluation_scenarios_config import EVALUATION_SCENARIOS_CONFIG
@@ -101,7 +102,6 @@ class Benchmark:
         return df
 
     def _inject_nulls(self, X_train_val: pd.DataFrame, X_test: pd.DataFrame, evaluation_scenario: str, experiment_seed: int):
-        evaluation_scenario = evaluation_scenario.upper()
         error_rate_idx = int(evaluation_scenario[-1]) - 1
         train_injection_strategy, test_injection_strategy = parse_evaluation_scenario(evaluation_scenario)
 
