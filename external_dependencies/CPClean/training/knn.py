@@ -29,6 +29,7 @@ class KNN(object):
         top_K_idx = order[:, :self.K]
         top_K = self.y_train[top_K_idx]
         pred = np.array([majority_vote(top) for top in top_K])
+
         return pred
 
     def score(self, X_test, y_test):

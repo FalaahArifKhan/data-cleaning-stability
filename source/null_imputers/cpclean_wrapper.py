@@ -30,6 +30,8 @@ class CPCleanWrapper(BaseInprocessingWrapper):
                                n_jobs=self.n_jobs,
                                random_state=self.random_state)
 
+        self.preprocessor = None  # will be created during fitting
+
     def __copy__(self):
         return CPCleanWrapper(X_train_full=self.X_train_full.copy(deep=False),
                               X_val=self.X_val.copy(deep=False),
@@ -59,7 +61,6 @@ class CPCleanWrapper(BaseInprocessingWrapper):
             "X_train_dirty": X_train_with_nulls, "indicator": ind_mv,
             "X_full": None, "y_full": None,
             "X_val": self.X_val, "y_val": self.y_val,
-            "X_test": None, "y_test": None,  # we do not need test sets for fitting
         }
 
         return data_dct
@@ -88,7 +89,7 @@ class CPCleanWrapper(BaseInprocessingWrapper):
         data_dct["X_train_repairs"] = repair(data_dct["X_train_dirty"], save_dir=None)
 
         # Preprocess train and test sets
-        data_dct = preprocess(data_dct)
+        data_dct, self.preprocessor = preprocess(data_dct)
 
         # Fit CPClean
         cp_result = self._fit_cp_clean(data=data_dct,
@@ -102,4 +103,5 @@ class CPCleanWrapper(BaseInprocessingWrapper):
         pass
 
     def predict(self, X):
-        return self.cleaner.predict(X)
+        X_preprocessed, _ = self.preprocessor.transform(X_test=X)
+        return self.cleaner.predict(X_preprocessed)
