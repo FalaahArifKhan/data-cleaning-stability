@@ -1,6 +1,5 @@
 from .imputers import *
-import os
-import utils
+import external_dependencies.CPClean.utils as utils
 
 num_imputers = {
     "em": EMImputer(),

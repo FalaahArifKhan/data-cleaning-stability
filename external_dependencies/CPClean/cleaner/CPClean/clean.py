@@ -2,9 +2,8 @@
 import numpy as np
 from copy import deepcopy
 import time
-import utils
 from .query import Querier
-from training.knn import KNN
+from external_dependencies.CPClean.training.knn import KNN
 import os
 import pandas as pd
 
@@ -83,6 +82,9 @@ class CPClean(object):
     def score(self, X_test, y_test):
         return self.classifier.score(X_test, y_test)
 
+    def predict(self, X_test):
+        pred = self.classifier.predict(X_test)
+        return pd.DataFrame(pred, index=X_test.index)
 
     def restore_results(self, S_val_pruned, MM, debugger, gt_indices):
         saved_results = pd.read_csv(os.path.join(debugger.debug_dir, "details_restore.csv"))

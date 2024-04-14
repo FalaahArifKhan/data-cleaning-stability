@@ -3,8 +3,8 @@ import pandas as pd
 import time
 from collections import Counter
 from .utils import product, majority_vote
-from utils import Pool
 from functools import partial
+
 
 def min_max(mm, y, K):
     """MinMax algorithm. Given a similarity matrix, return whether it is CP or not and the 
@@ -39,6 +39,7 @@ def min_max(mm, y, K):
     is_cc = len(pred_set) == 1
 
     return is_cc, best_scenarios, list(pred_set)
+
 
 def min_max_val(MM, y, K):
     q1_results = []

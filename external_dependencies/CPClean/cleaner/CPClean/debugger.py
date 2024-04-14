@@ -2,7 +2,8 @@ import numpy as np
 from copy import deepcopy
 import pandas as pd
 from .knn_evaluator import KNNEvaluator
-import utils
+import external_dependencies.CPClean.utils as utils
+
 
 class Debugger(object):
     """docstring for Debugger"""
@@ -60,6 +61,3 @@ class Debugger(object):
 
         self.percent_clean = percent_clean
         self.save_log()
-
-
-

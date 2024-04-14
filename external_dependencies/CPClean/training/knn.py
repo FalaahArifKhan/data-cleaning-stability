@@ -1,5 +1,7 @@
 import numpy as np
 from collections import Counter
+from sklearn.metrics import precision_recall_fscore_support
+
 
 def compute_distances(X_train, X_test):
     dists = np.array([np.sqrt(np.sum((X_train - x_test)**2, axis=1)) for x_test in X_test])
@@ -30,6 +32,8 @@ class KNN(object):
         return pred
 
     def score(self, X_test, y_test):
-        pred = self.predict(X_test)
-        acc = np.mean(pred == y_test)
-        return acc
+        y_pred_test = self.predict(X_test)
+        acc = np.mean(y_pred_test == y_test)
+        p, r, f1, _ = precision_recall_fscore_support(y_test, y_pred_test, average='binary')
+
+        return acc, p, r, f1

@@ -15,6 +15,7 @@ from sklearn.preprocessing import OrdinalEncoder
 import numpy as np
 from collections import Counter
 
+
 class SimpleImputer(object):
     def __init__(self, num="mean", cat="most_frequent"):
         self.num_imputer = sklearnSimpleImputer(strategy=num)

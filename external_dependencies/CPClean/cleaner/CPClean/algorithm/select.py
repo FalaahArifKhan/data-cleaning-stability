@@ -4,10 +4,12 @@ from collections import Counter, defaultdict
 from .utils import compute_entropy_by_counts, compute_entropy_by_labels
 from multiprocessing import Pool
 
+
 def random_select(dirty_rows):
     """Random select one from dirty rows"""
     sel = np.random.choice(dirty_rows)
     return sel
+
 
 def compute_avg_dirty_entropies(after_entropies, dirty_rows):
     avg_entropies = []
@@ -17,6 +19,7 @@ def compute_avg_dirty_entropies(after_entropies, dirty_rows):
         else:
             avg_entropies.append(sum(after_entropies[i]) / len(after_entropies[i]))
     return np.array(avg_entropies)
+
 
 def min_entropy_expected(after_entropy_val, dirty_rows, before_entropies_val, n_jobs=4): #already checked
     """ 
