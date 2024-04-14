@@ -1,19 +1,9 @@
-import random
-
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler, OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
 import numpy as np
 import pandas as pd
-#import utils
-import os
-import json
-import pickle
-from collections import Counter
-import time
-from itertools import product
+
 
 class Preprocessor(object):
     """docstring for Preprocessor"""
@@ -23,7 +13,7 @@ class Preprocessor(object):
             ('imputer', SimpleImputer(strategy=num_strategy)),
             ('scaler', MinMaxScaler())
         ])
-        self.feature_enc = OneHotEncoder(sparse=False, handle_unknown='ignore')
+        self.feature_enc = OneHotEncoder(sparse_output=False, handle_unknown='ignore')
         self.cat_imputer = SimpleImputer(strategy="constant", fill_value="missing")
         self.label_enc = LabelEncoder()
 

@@ -55,6 +55,52 @@ class Benchmark:
         self._session_uuid = str(uuid.uuid1())
         print('Session UUID for all results of experiments in the current benchmark session:', self._session_uuid)
 
+    def _split_dataset(self, data_loader, experiment_seed: int):
+        if self.test_set_fraction < 0.0 or self.test_set_fraction > 1.0:
+            raise ValueError("test_set_fraction must be a float in the [0.0-1.0] range")
+
+        X_train_val, X_test, y_train_val, y_test = train_test_split(data_loader.X_data, data_loader.y_data,
+                                                                    test_size=self.test_set_fraction,
+                                                                    random_state=experiment_seed)
+        return X_train_val, X_test, y_train_val, y_test
+
+    def _remove_sensitive_attrs(self, X_train_val: pd.DataFrame, X_test: pd.DataFrame, data_loader):
+        X_train_val_wo_sensitive_attrs = X_train_val.drop(self.dataset_sensitive_attrs, axis=1)
+        X_test_wo_sensitive_attrs = X_test.drop(self.dataset_sensitive_attrs, axis=1)
+        numerical_columns_wo_sensitive_attrs = [col for col in data_loader.numerical_columns if col not in self.dataset_sensitive_attrs]
+        categorical_columns_wo_sensitive_attrs = [col for col in data_loader.categorical_columns if col not in self.dataset_sensitive_attrs]
+        print('X_test_wo_sensitive_attrs.columns -- ', X_test_wo_sensitive_attrs.columns)
+
+        return (X_train_val_wo_sensitive_attrs, X_test_wo_sensitive_attrs,
+                numerical_columns_wo_sensitive_attrs, categorical_columns_wo_sensitive_attrs)
+
+    def _create_virny_base_flow_dataset(self, data_loader, X_train_val_wo_sensitive_attrs, X_test_wo_sensitive_attrs,
+                                        y_train_val, y_test, numerical_columns_wo_sensitive_attrs,
+                                        categorical_columns_wo_sensitive_attrs):
+        # Create a dataframe with sensitive attributes and initial dataset indexes
+        sensitive_attrs_df = data_loader.full_df[self.dataset_sensitive_attrs]
+
+        # Ensure correctness of indexes in X and sensitive_attrs sets
+        assert X_train_val_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all(), \
+            "Not all indexes of X_train_val_wo_sensitive_attrs are present in sensitive_attrs_df"
+        assert X_test_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all(), \
+            "Not all indexes of X_test_wo_sensitive_attrs are present in sensitive_attrs_df"
+
+        # Ensure correctness of indexes in X and y sets
+        assert X_train_val_wo_sensitive_attrs.index.equals(y_train_val.index) is True, \
+            "Indexes of X_train_val_wo_sensitive_attrs and y_train_val are different"
+        assert X_test_wo_sensitive_attrs.index.equals(y_test.index) is True, \
+            "Indexes of X_test_wo_sensitive_attrs and y_test are different"
+
+        return BaseFlowDataset(init_features_df=sensitive_attrs_df,  # keep only sensitive attributes with original indexes to compute group metrics
+                               X_train_val=X_train_val_wo_sensitive_attrs,
+                               X_test=X_test_wo_sensitive_attrs,
+                               y_train_val=y_train_val,
+                               y_test=y_test,
+                               target=data_loader.target,
+                               numerical_columns=numerical_columns_wo_sensitive_attrs,
+                               categorical_columns=categorical_columns_wo_sensitive_attrs)
+
     def _tune_ML_models(self, model_names, base_flow_dataset, experiment_seed,
                         evaluation_scenario, null_imputer_name):
         # Get hyper-parameters for tuning. Each time reinitialize an init model and its hyper-params for tuning.
@@ -279,13 +325,9 @@ class Benchmark:
 
     def inject_and_impute_nulls(self, data_loader, null_imputer_name: str, evaluation_scenario: str,
                                 experiment_seed: int, tune_imputers: bool = True, save_imputed_datasets: bool = False):
-        if self.test_set_fraction < 0.0 or self.test_set_fraction > 1.0:
-            raise ValueError("test_set_fraction must be a float in the [0.0-1.0] range")
-
         # Split the dataset
-        X_train_val, X_test, y_train_val, y_test = train_test_split(data_loader.X_data, data_loader.y_data,
-                                                                    test_size=self.test_set_fraction,
-                                                                    random_state=experiment_seed)
+        X_train_val, X_test, y_train_val, y_test = self._split_dataset(data_loader, experiment_seed)
+
         # Inject nulls not into sensitive attributes
         X_train_val_with_nulls, X_test_with_nulls = self._inject_nulls(X_train_val=X_train_val,
                                                                        X_test=X_test,
@@ -293,11 +335,12 @@ class Benchmark:
                                                                        experiment_seed=experiment_seed)
 
         # Remove sensitive attributes from train and test sets with nulls to avoid their usage during imputation
-        X_train_val_with_nulls_wo_sensitive_attrs = X_train_val_with_nulls.drop(self.dataset_sensitive_attrs, axis=1)
-        X_test_with_nulls_wo_sensitive_attrs = X_test_with_nulls.drop(self.dataset_sensitive_attrs, axis=1)
-        numerical_columns_wo_sensitive_attrs = [col for col in data_loader.numerical_columns if col not in self.dataset_sensitive_attrs]
-        categorical_columns_wo_sensitive_attrs = [col for col in data_loader.categorical_columns if col not in self.dataset_sensitive_attrs]
-        print('X_test_with_nulls_wo_sensitive_attrs.columns -- ', X_test_with_nulls_wo_sensitive_attrs.columns)
+        (X_train_val_with_nulls_wo_sensitive_attrs,
+         X_test_with_nulls_wo_sensitive_attrs,
+         numerical_columns_wo_sensitive_attrs,
+         categorical_columns_wo_sensitive_attrs) = self._remove_sensitive_attrs(X_train_val=X_train_val_with_nulls,
+                                                                                X_test=X_test_with_nulls,
+                                                                                data_loader=data_loader)
 
         # Impute nulls
         (X_train_val_imputed_wo_sensitive_attrs, X_test_imputed_wo_sensitive_attrs, null_imputer_params_dct,
@@ -351,29 +394,16 @@ class Benchmark:
                                               evaluation_scenario=evaluation_scenario,
                                               experiment_seed=experiment_seed)
 
-        # Create a dataframe with sensitive attributes and initial dataset indexes
-        sensitive_attrs_df = data_loader.full_df[self.dataset_sensitive_attrs]
+        # Create a base flow dataset for Virny to compute metrics
+        base_flow_dataset = self._create_virny_base_flow_dataset(data_loader=data_loader,
+                                                                 X_train_val_wo_sensitive_attrs=X_train_val_imputed_wo_sensitive_attrs,
+                                                                 X_test_wo_sensitive_attrs=X_test_imputed_wo_sensitive_attrs,
+                                                                 y_train_val=y_train_val,
+                                                                 y_test=y_test,
+                                                                 numerical_columns_wo_sensitive_attrs=numerical_columns_wo_sensitive_attrs,
+                                                                 categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs)
 
-        # Ensure correctness of indexes in X and sensitive_attrs sets
-        assert X_train_val_imputed_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all(), \
-            "Not all indexes of X_train_val_imputed_wo_sensitive_attrs are present in sensitive_attrs_df"
-        assert X_test_imputed_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all(), \
-            "Not all indexes of X_test_imputed_wo_sensitive_attrs are present in sensitive_attrs_df"
-
-        # Ensure correctness of indexes in X and y sets
-        assert X_train_val_imputed_wo_sensitive_attrs.index.equals(y_train_val.index) is True, \
-            "Indexes of X_train_val_imputed_wo_sensitive_attrs and y_train_val are different"
-        assert X_test_imputed_wo_sensitive_attrs.index.equals(y_test.index) is True, \
-            "Indexes of X_test_imputed_wo_sensitive_attrs and y_test are different"
-
-        return BaseFlowDataset(init_features_df=sensitive_attrs_df,  # keep only sensitive attributes with original indexes to compute group metrics
-                               X_train_val=X_train_val_imputed_wo_sensitive_attrs,
-                               X_test=X_test_imputed_wo_sensitive_attrs,
-                               y_train_val=y_train_val,
-                               y_test=y_test,
-                               target=data_loader.target,
-                               numerical_columns=numerical_columns_wo_sensitive_attrs,
-                               categorical_columns=categorical_columns_wo_sensitive_attrs)
+        return base_flow_dataset
 
     def load_imputed_train_test_sets(self, data_loader, null_imputer_name: str, evaluation_scenario: str,
                                      experiment_seed: int):
@@ -397,53 +427,69 @@ class Benchmark:
         test_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_test.csv'
         X_test_imputed_wo_sensitive_attrs = pd.read_csv(os.path.join(save_sets_dir_path, test_set_filename), header=0)
 
-        # Create a dataframe with sensitive attributes and initial dataset indexes
-        sensitive_attrs_df = data_loader.full_df[self.dataset_sensitive_attrs]
+        # Create a base flow dataset for Virny to compute metrics
+        numerical_columns_wo_sensitive_attrs = [col for col in data_loader.numerical_columns if col not in self.dataset_sensitive_attrs]
+        categorical_columns_wo_sensitive_attrs = [col for col in data_loader.categorical_columns if col not in self.dataset_sensitive_attrs]
+        base_flow_dataset = self._create_virny_base_flow_dataset(data_loader=data_loader,
+                                                                 X_train_val_wo_sensitive_attrs=X_train_val_imputed_wo_sensitive_attrs,
+                                                                 X_test_wo_sensitive_attrs=X_test_imputed_wo_sensitive_attrs,
+                                                                 y_train_val=y_train_val,
+                                                                 y_test=y_test,
+                                                                 numerical_columns_wo_sensitive_attrs=numerical_columns_wo_sensitive_attrs,
+                                                                 categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs)
 
-        # Ensure correctness of indexes in X and sensitive_attrs sets
-        assert X_train_val_imputed_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all() is True, \
-            "Not all indexes of X_train_val_imputed_wo_sensitive_attrs are present in sensitive_attrs_df"
-        assert X_test_imputed_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all() is True, \
-            "Not all indexes of X_test_imputed_wo_sensitive_attrs are present in sensitive_attrs_df"
+        return base_flow_dataset
 
-        # Ensure correctness of indexes in X and y sets
-        assert X_train_val_imputed_wo_sensitive_attrs.index.equals(y_train_val.index) is True, \
-            "Indexes of X_train_val_imputed_wo_sensitive_attrs and y_train_val are different"
-        assert X_test_imputed_wo_sensitive_attrs.index.equals(y_test.index) is True, \
-            "Indexes of X_test_imputed_wo_sensitive_attrs and y_test are different"
+    def _run_exp_iter_for_joint_cleaning_and_training(self, data_loader, experiment_seed: int, evaluation_scenario: str,
+                                                      null_imputer_name: str, model_names: list, custom_table_fields_dct: dict):
+        if len(model_names) > 0 and null_imputer_name == ErrorRepairMethod.cp_clean.value:
+            self.__logger.warning(f'model_names argument is ignored for {ErrorRepairMethod.cp_clean.value} '
+                                  f'since only KNN is supported for this null imputation method')
 
-        return BaseFlowDataset(init_features_df=sensitive_attrs_df,  # keep only sensitive attributes with original indexes to compute group metrics
-                               X_train_val=X_train_val_imputed_wo_sensitive_attrs,
-                               X_test=X_test_imputed_wo_sensitive_attrs,
-                               y_train_val=y_train_val,
-                               y_test=y_test,
-                               target=data_loader.target,
-                               numerical_columns=[col for col in data_loader.numerical_columns if col not in self.dataset_sensitive_attrs],
-                               categorical_columns=[col for col in data_loader.categorical_columns if col not in self.dataset_sensitive_attrs])
+        # Split the dataset
+        X_train_val, X_test, y_train_val, y_test = self._split_dataset(data_loader, experiment_seed)
 
-    def _run_exp_iter(self, init_data_loader, run_num, evaluation_scenario, null_imputer_name,
-                      model_names, tune_imputers, ml_impute):
-        data_loader = copy.deepcopy(init_data_loader)
+        # Inject nulls not into sensitive attributes
+        X_train_val_with_nulls, X_test_with_nulls = self._inject_nulls(X_train_val=X_train_val,
+                                                                       X_test=X_test,
+                                                                       evaluation_scenario=evaluation_scenario,
+                                                                       experiment_seed=experiment_seed)
 
-        custom_table_fields_dct = dict()
-        experiment_seed = EXPERIMENT_RUN_SEEDS[run_num - 1]
-        custom_table_fields_dct['session_uuid'] = self._session_uuid
-        custom_table_fields_dct['null_imputer_name'] = null_imputer_name
-        custom_table_fields_dct['evaluation_scenario'] = evaluation_scenario
-        custom_table_fields_dct['experiment_iteration'] = f'exp_iter_{run_num}'
-        custom_table_fields_dct['dataset_split_seed'] = experiment_seed
-        custom_table_fields_dct['model_init_seed'] = experiment_seed
+        # Remove sensitive attributes from train and test sets with nulls to avoid their usage during imputation
+        (X_train_val_with_nulls_wo_sensitive_attrs,
+         X_test_with_nulls_wo_sensitive_attrs,
+         numerical_columns_wo_sensitive_attrs,
+         categorical_columns_wo_sensitive_attrs) = self._remove_sensitive_attrs(X_train_val=X_train_val_with_nulls,
+                                                                                X_test=X_test_with_nulls,
+                                                                                data_loader=data_loader)
 
-        # Create exp_pipeline_guid to define a row level of granularity.
-        # concat(exp_pipeline_guid, model_name, subgroup, metric) can be used to check duplicates of results
-        # for the same experimental pipeline.
-        custom_table_fields_dct['exp_pipeline_guid'] = (
-            generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name, evaluation_scenario, experiment_seed]))
+        # Init:
+        # 1) Train/val/test split
+        # 2) Build synthetic dataset (data_dict, info)
 
-        self.__logger.info("Start an experiment iteration for the following custom params:")
-        pprint(custom_table_fields_dct)
-        print('\n', flush=True)
+        # Fit:
+        # 1) Repair X_train_val using a library of repair techniques
+        # 2) Preprocess X_train_ground_truth
+        # 3) Fit CPClean
 
+        # Predict:
+        #  classifier.predict() (modify KNN class for that)
+
+        # Compute metrics for tuned models
+        # TODO: use multiple test sets interface
+        # TODO: set Virny seed
+        # TODO: set model seed before passing to virny
+        compute_metrics_with_db_writer(dataset=base_flow_dataset,
+                                       config=self.virny_config,
+                                       models_config=models_config,
+                                       custom_tbl_fields_dct=custom_table_fields_dct,
+                                       db_writer_func=self.__db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
+                                       notebook_logs_stdout=False,
+                                       verbose=0)
+
+    def _run_exp_iter_for_standard_imputation(self, data_loader, experiment_seed: int, evaluation_scenario: str,
+                                              null_imputer_name: str, model_names: list, tune_imputers: bool,
+                                              ml_impute: bool, custom_table_fields_dct: dict):
         if ml_impute:
             base_flow_dataset = self.inject_and_impute_nulls(data_loader=data_loader,
                                                              null_imputer_name=null_imputer_name,
@@ -470,6 +516,7 @@ class Benchmark:
         # Compute metrics for tuned models
         # TODO: use multiple test sets interface
         # TODO: set Virny seed
+        # TODO: set model seed before passing to virny
         compute_metrics_with_db_writer(dataset=base_flow_dataset,
                                        config=self.virny_config,
                                        models_config=models_config,
@@ -477,6 +524,41 @@ class Benchmark:
                                        db_writer_func=self.__db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
                                        notebook_logs_stdout=False,
                                        verbose=0)
+
+    def _run_exp_iter(self, init_data_loader, run_num, evaluation_scenario, null_imputer_name,
+                      model_names, tune_imputers, ml_impute):
+        data_loader = copy.deepcopy(init_data_loader)
+
+        custom_table_fields_dct = dict()
+        experiment_seed = EXPERIMENT_RUN_SEEDS[run_num - 1]
+        custom_table_fields_dct['session_uuid'] = self._session_uuid
+        custom_table_fields_dct['null_imputer_name'] = null_imputer_name
+        custom_table_fields_dct['evaluation_scenario'] = evaluation_scenario
+        custom_table_fields_dct['experiment_iteration'] = f'exp_iter_{run_num}'
+        custom_table_fields_dct['dataset_split_seed'] = experiment_seed
+        custom_table_fields_dct['model_init_seed'] = experiment_seed
+
+        # Create exp_pipeline_guid to define a row level of granularity.
+        # concat(exp_pipeline_guid, model_name, subgroup, metric) can be used to check duplicates of results
+        # for the same experimental pipeline.
+        custom_table_fields_dct['exp_pipeline_guid'] = (
+            generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name, evaluation_scenario, experiment_seed]))
+
+        self.__logger.info("Start an experiment iteration for the following custom params:")
+        pprint(custom_table_fields_dct)
+        print('\n', flush=True)
+
+        if null_imputer_name in (ErrorRepairMethod.boost_clean.value, ErrorRepairMethod.cp_clean.value):
+            self._run_exp_iter_for_joint_cleaning_and_training()
+        else:
+            self._run_exp_iter_for_standard_imputation(data_loader=data_loader,
+                                                       experiment_seed=experiment_seed,
+                                                       evaluation_scenario=evaluation_scenario,
+                                                       null_imputer_name=null_imputer_name,
+                                                       model_names=model_names,
+                                                       tune_imputers=tune_imputers,
+                                                       ml_impute=ml_impute,
+                                                       custom_table_fields_dct=custom_table_fields_dct)
 
     def run_experiment(self, run_nums: list, evaluation_scenarios: list, model_names: list, tune_imputers: bool, ml_impute: bool):
         self.__db.connect()
@@ -508,6 +590,10 @@ class Benchmark:
 
     def _run_null_imputation_iter(self, init_data_loader, run_num, evaluation_scenario, null_imputer_name,
                                   tune_imputers, save_imputed_datasets):
+        if null_imputer_name in (ErrorRepairMethod.boost_clean.value, ErrorRepairMethod.cp_clean.value):
+            raise ValueError(f'To work with {ErrorRepairMethod.boost_clean.value} or {ErrorRepairMethod.cp_clean.value}, '
+                             f'use scripts/evaluate_models.py')
+
         data_loader = copy.deepcopy(init_data_loader)
         experiment_seed = EXPERIMENT_RUN_SEEDS[run_num - 1]
         self.inject_and_impute_nulls(data_loader=data_loader,
@@ -546,38 +632,27 @@ class Benchmark:
         self.__logger.info("Experimental results were successfully saved!")
 
     def _prepare_baseline_dataset(self, data_loader, experiment_seed: int):
-        if self.test_set_fraction < 0.0 or self.test_set_fraction > 1.0:
-            raise ValueError("test_set_fraction must be a float in the [0.0-1.0] range")
-
         # Split the dataset
-        X_train_val, X_test, y_train_val, y_test = train_test_split(data_loader.X_data, data_loader.y_data,
-                                                                    test_size=self.test_set_fraction,
-                                                                    random_state=experiment_seed)
+        X_train_val, X_test, y_train_val, y_test = self._split_dataset(data_loader, experiment_seed)
 
         # Remove sensitive attributes from train and test sets with nulls to avoid their usage during model training
-        X_train_val_wo_sensitive_attrs = X_train_val.drop(self.dataset_sensitive_attrs, axis=1)
-        X_test_wo_sensitive_attrs = X_test.drop(self.dataset_sensitive_attrs, axis=1)
-        numerical_columns_wo_sensitive_attrs = [col for col in data_loader.numerical_columns if col not in self.dataset_sensitive_attrs]
-        categorical_columns_wo_sensitive_attrs = [col for col in data_loader.categorical_columns if col not in self.dataset_sensitive_attrs]
-        print('X_test_wo_sensitive_attrs.columns -- ', X_test_wo_sensitive_attrs.columns)
+        (X_train_val_wo_sensitive_attrs,
+         X_test_wo_sensitive_attrs,
+         numerical_columns_wo_sensitive_attrs,
+         categorical_columns_wo_sensitive_attrs) = self._remove_sensitive_attrs(X_train_val=X_train_val,
+                                                                                X_test=X_test,
+                                                                                data_loader=data_loader)
 
-        # Create a dataframe with sensitive attributes and initial dataset indexes
-        sensitive_attrs_df = data_loader.full_df[self.dataset_sensitive_attrs]
+        # Create a base flow dataset for Virny to compute metrics
+        base_flow_dataset = self._create_virny_base_flow_dataset(data_loader=data_loader,
+                                                                 X_train_val_wo_sensitive_attrs=X_train_val_wo_sensitive_attrs,
+                                                                 X_test_wo_sensitive_attrs=X_test_wo_sensitive_attrs,
+                                                                 y_train_val=y_train_val,
+                                                                 y_test=y_test,
+                                                                 numerical_columns_wo_sensitive_attrs=numerical_columns_wo_sensitive_attrs,
+                                                                 categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs)
 
-        # Ensure correctness of indexes in X and sensitive_attrs sets
-        assert X_train_val_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all(), \
-            "Not all indexes of X_train_val_wo_sensitive_attrs are present in sensitive_attrs_df"
-        assert X_test_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all(), \
-            "Not all indexes of X_test_wo_sensitive_attrs are present in sensitive_attrs_df"
-
-        return BaseFlowDataset(init_features_df=sensitive_attrs_df,  # keep only sensitive attributes with original indexes to compute group metrics
-                               X_train_val=X_train_val_wo_sensitive_attrs,
-                               X_test=X_test_wo_sensitive_attrs,
-                               y_train_val=y_train_val,
-                               y_test=y_test,
-                               target=data_loader.target,
-                               numerical_columns=numerical_columns_wo_sensitive_attrs,
-                               categorical_columns=categorical_columns_wo_sensitive_attrs)
+        return base_flow_dataset
 
     def _run_baseline_evaluation_iter(self, init_data_loader, run_num: int, model_names: list):
         null_imputer_name = 'baseline'

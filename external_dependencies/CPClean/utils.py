@@ -29,7 +29,7 @@ def load_csv(save_dir):
         data[name] = pd.read_csv(os.path.join(save_dir, f))
     return data
 
-def load_cache(cache_dir):
+def load_space(cache_dir):
     with open(os.path.join(cache_dir, "info.json"), "r") as f:
         info = json.load(f)
 

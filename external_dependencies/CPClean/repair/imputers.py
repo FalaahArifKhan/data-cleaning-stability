@@ -8,14 +8,9 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.neighbors import KNeighborsRegressor
 # from fancyimpute import SoftImpute as fancySoftImpute, BiScaler as fancyBiScaler, IterativeSVD as fancyIterativeSVD
-import sys
-import sklearn.neighbors._base
-sys.modules['sklearn.neighbors.base'] = sklearn.neighbors._base
-
-from missingpy import MissForest
-import datawig
+# from missingpy import MissForest
 from impyute.imputation.cs import em as impEM
-
+# import datawig
 from sklearn.preprocessing import OrdinalEncoder
 import numpy as np
 from collections import Counter
@@ -124,70 +119,70 @@ class EMImputer(NumImputer):
     def __init__(self):
         self.imputer = EMImputeWrapper()
 
-class DataWigImputer(object):
-    def __init__(self):
-        pass
+# class DataWigImputer(object):
+#     def __init__(self):
+#         pass
+#
+#     def fit_transform(self, X):
+#         return datawig.SimpleImputer.complete(X)
 
-    def fit_transform(self, X):
-        return datawig.SimpleImputer.complete(X)
-
-class MissForestImputer(object):
-    def __init__(self):
-        self.imputer = MissForest(verbose=0)
-
-    def encode_cat(self, X_c):
-        data = X_c.copy()
-        nonulls = data.dropna().values
-        impute_reshape = nonulls.reshape(-1,1)
-        encoder = OrdinalEncoder()
-        impute_ordinal = encoder.fit_transform(impute_reshape)
-        data.loc[data.notnull()] = np.squeeze(impute_ordinal)
-        return data, encoder
-
-    def decode_cat(self, X_c, encoder):
-        data = X_c.copy()
-        nonulls = data.dropna().values.reshape(-1,1)
-        n_cat = len(encoder.categories_[0])
-        nonulls = np.round(nonulls).clip(0, n_cat-1)
-        nonulls = encoder.inverse_transform(nonulls)
-        data.loc[data.notnull()] = np.squeeze(nonulls)
-        return data
-
-    def fit_transform(self, X):
-        num_X = X.select_dtypes(include='number')
-        cat_X = X.select_dtypes(exclude='number')
-
-        # encode the categorical columns to numeric columns
-        if cat_X.shape[1] > 0:
-            cat_encoders = {}
-            cat_X_enc = []
-            for c in cat_X.columns:
-                X_c_enc, encoder = self.encode_cat(cat_X[c])
-                cat_X_enc.append(X_c_enc)
-                cat_encoders[c] = encoder
-            cat_X_enc = pd.concat(cat_X_enc, axis=1)
-            X_enc = pd.concat([num_X, cat_X_enc], axis=1)
-            cat_columns = cat_X.columns
-            cat_indices = [i for i, c in enumerate(X_enc.columns) if c in cat_columns]
-        else:
-            X_enc = X
-            cat_indices = None
-
-        X_imp = self.imputer.fit_transform(X_enc.values.astype(float), cat_vars=cat_indices)
-        X_imp = pd.DataFrame(X_imp, columns=X_enc.columns)
-
-        if cat_X.shape[1] > 0:       
-            num_X_imp = X_imp[num_X.columns]
-            cat_X_imp = X_imp[cat_X.columns]
-            cat_X_dec = []
-            for c in cat_X.columns:
-                X_c_dec = self.decode_cat(cat_X_imp[c], cat_encoders[c])
-                cat_X_dec.append(X_c_dec)
-            cat_X_dec = pd.concat(cat_X_dec, axis=1)
-            X_imp = pd.concat([num_X_imp, cat_X_dec], axis=1)
-        
-        X_imp = X_imp[X.columns]
-        return X_imp
+# class MissForestImputer(object):
+#     def __init__(self):
+#         self.imputer = MissForest(verbose=0)
+#
+#     def encode_cat(self, X_c):
+#         data = X_c.copy()
+#         nonulls = data.dropna().values
+#         impute_reshape = nonulls.reshape(-1,1)
+#         encoder = OrdinalEncoder()
+#         impute_ordinal = encoder.fit_transform(impute_reshape)
+#         data.loc[data.notnull()] = np.squeeze(impute_ordinal)
+#         return data, encoder
+#
+#     def decode_cat(self, X_c, encoder):
+#         data = X_c.copy()
+#         nonulls = data.dropna().values.reshape(-1,1)
+#         n_cat = len(encoder.categories_[0])
+#         nonulls = np.round(nonulls).clip(0, n_cat-1)
+#         nonulls = encoder.inverse_transform(nonulls)
+#         data.loc[data.notnull()] = np.squeeze(nonulls)
+#         return data
+#
+#     def fit_transform(self, X):
+#         num_X = X.select_dtypes(include='number')
+#         cat_X = X.select_dtypes(exclude='number')
+#
+#         # encode the categorical columns to numeric columns
+#         if cat_X.shape[1] > 0:
+#             cat_encoders = {}
+#             cat_X_enc = []
+#             for c in cat_X.columns:
+#                 X_c_enc, encoder = self.encode_cat(cat_X[c])
+#                 cat_X_enc.append(X_c_enc)
+#                 cat_encoders[c] = encoder
+#             cat_X_enc = pd.concat(cat_X_enc, axis=1)
+#             X_enc = pd.concat([num_X, cat_X_enc], axis=1)
+#             cat_columns = cat_X.columns
+#             cat_indices = [i for i, c in enumerate(X_enc.columns) if c in cat_columns]
+#         else:
+#             X_enc = X
+#             cat_indices = None
+#
+#         X_imp = self.imputer.fit_transform(X_enc.values.astype(float), cat_vars=cat_indices)
+#         X_imp = pd.DataFrame(X_imp, columns=X_enc.columns)
+#
+#         if cat_X.shape[1] > 0:
+#             num_X_imp = X_imp[num_X.columns]
+#             cat_X_imp = X_imp[cat_X.columns]
+#             cat_X_dec = []
+#             for c in cat_X.columns:
+#                 X_c_dec = self.decode_cat(cat_X_imp[c], cat_encoders[c])
+#                 cat_X_dec.append(X_c_dec)
+#             cat_X_dec = pd.concat(cat_X_dec, axis=1)
+#             X_imp = pd.concat([num_X_imp, cat_X_dec], axis=1)
+#
+#         X_imp = X_imp[X.columns]
+#         return X_imp
 
 class PercentileImputer(object):
     def __init__(self, p):

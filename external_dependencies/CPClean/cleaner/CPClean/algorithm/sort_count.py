@@ -14,7 +14,7 @@ from itertools import combinations
 import collections
 import itertools
 from copy import deepcopy
-from ....utils import Pool
+from utils import Pool
 from functools import partial
 from .utils import compute_entropy_by_counts
 

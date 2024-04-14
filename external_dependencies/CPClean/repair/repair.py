@@ -1,14 +1,6 @@
 from .imputers import *
 import os
-import os
-
-def makedir(dir_list, file=None):
-    save_dir = os.path.join(*dir_list)
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-    if file is not None:
-        save_dir = os.path.join(save_dir, file)
-    return save_dir
+import utils
 
 num_imputers = {
     "em": EMImputer(),
@@ -19,8 +11,8 @@ num_imputers = {
     # "br_iterative": IterativeImputer("bayesian_ridge"),
     "dt_iterative": IterativeImputer("decision_tree"),
     # "soft": SoftImputer(),
-    "missForest": MissForestImputer(),
-    "datawig": DataWigImputer(),
+    # "missForest": MissForestImputer(),
+    # "datawig": DataWigImputer(),
     "min": PercentileImputer(0),
     # "25_percent": PercentileImputer(25),
     # "75_percent": PercentileImputer(75),
@@ -32,8 +24,8 @@ num_imputers = {
 cat_imputers = {
     "mean": SimpleImputer(cat="most_frequent"),
     "dummy": SimpleImputer(cat="dummy"),
-    #"missForest": MissForestImputer(),
-    "datawig": DataWigImputer(),
+    # "missForest": MissForestImputer(),
+    # "datawig": DataWigImputer(),
     # "2_frequent": CatGridImputer(2),
     # "3_frequent": CatGridImputer(3),
     # "4_frequent": CatGridImputer(4),
@@ -47,12 +39,10 @@ mix_imputers = {
     "median_dummy": SimpleImputer(num="median", cat="dummy"),
     "mode_mode": SimpleImputer(num="most_frequent", cat="most_frequent"),
     "mode_dummy": SimpleImputer(num="most_frequent", cat="dummy"),
-    "missForest": MissForestImputer(),
-    "datawig": DataWigImputer()
+    # "missForest": MissForestImputer(),
+    # "datawig": DataWigImputer()
 }
 
-#takes dataframe with true where cell is errror
-#viele imputer machen repairs, diese werden dann spater zum stacken verwendet
 def repair(X_train_mv, save_dir=None):
     num_X = X_train_mv.select_dtypes(include='number')
     cat_X = X_train_mv.select_dtypes(exclude='number')
@@ -88,5 +78,4 @@ def repair(X_train_mv, save_dir=None):
     if save_dir is not None:
         for name, X_imp in X_train_repairs.items():
             X_imp.to_csv(utils.makedir([save_dir], "{}.csv".format(name)), index=False)
-    
     return X_train_repairs

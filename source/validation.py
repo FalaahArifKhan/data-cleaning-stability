@@ -63,6 +63,7 @@ def validate_args(exp_config_obj, with_model_names=True):
         if evaluation_scenario not in EVALUATION_SCENARIOS:
             raise ValueError('evaluation_scenarios argument should include values from the EVALUATION_SCENARIOS list in configs/constants.py')
 
+    exp_config_obj.evaluation_scenarios = [evaluation_scenario.upper() for evaluation_scenario in exp_config_obj.evaluation_scenarios]
     if with_model_names:
         if not check_str_list_type(exp_config_obj.models):
             raise ValueError('models argument must be a list')

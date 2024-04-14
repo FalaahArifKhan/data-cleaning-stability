@@ -15,10 +15,6 @@ class Debugger(object):
         self.n_val = len(self.data["X_val"])
 
     def init_log(self, percent_cc):
-        self.clean_val_acc, self.clean_test_acc = \
-            KNNEvaluator(self.data["X_train_clean"], self.data["y_train"], 
-                        self.data["X_val"], self.data["y_val"], 
-                        self.data["X_test"], self.data["y_test"]).score()
         self.gt_val_acc, self.gt_test_acc = \
             KNNEvaluator(self.data["X_train_gt"], self.data["y_train"], 
                         self.data["X_val"], self.data["y_val"], 
@@ -27,21 +23,25 @@ class Debugger(object):
         self.selection = []
 
         self.logging = []
-        mean_val_acc, mean_test_acc = \
+        self.dc_val_acc, self.dc_test_acc = \
             KNNEvaluator(self.X_train_mean, self.data["y_train"], 
                 self.data["X_val"], self.data["y_val"], 
                 self.data["X_test"], self.data["y_test"]).score()
 
-        self.logging.append([0, self.n_val, None, None, percent_cc, 0, 
-                             self.clean_val_acc, self.gt_val_acc, mean_val_acc,
-                             self.clean_test_acc, self.gt_test_acc, mean_test_acc])
+        self.logging.append([0, self.n_val, None, None, 
+                             percent_cc, 0, 
+                             self.gt_val_acc, self.dc_val_acc, self.dc_val_acc,
+                             self.gt_test_acc, self.dc_test_acc, self.dc_test_acc
+                            ])
+        self.columns = ["n_iter", "n_val", "selection", "time", 
+                        "percent_cp", "percent_clean", 
+                        "val_acc_gt", "val_acc_gt", "val_acc_cpclean",
+                        "test_acc_gt", "test_acc_dc", "test_acc_cpclean"]
         self.save_log()
 
     def save_log(self):
-        columns = ["n_iter", "n_val", "selection", "time", "percent_cc", "percent_clean", "clean_val_acc", 
-                   "gt_val_acc", "mean_val_acc", "clean_test_acc", "gt_test_acc", "mean_test_acc"]
-        logging_save = pd.DataFrame(self.logging, columns=columns)
-        logging_save.to_csv(utils.makedir([self.debug_dir], "details.csv"), index=False)
+        logging_save = pd.DataFrame(self.logging, columns=self.columns)
+        logging_save.to_csv(utils.makedir([self.debug_dir], "CPClean.csv"), index=False)
 
     def log(self, n_iter, sel, sel_time, percent_cc):
         self.selection.append(sel)
@@ -49,13 +49,14 @@ class Debugger(object):
         percent_clean = len(self.selection) / self.n_dirty
         self.X_train_mean[sel] = self.data["X_train_gt"][sel]
 
-        mean_val_acc, mean_test_acc = KNNEvaluator(self.X_train_mean, self.data["y_train"], 
+        cpclean_val_acc, cpclean_test_acc = KNNEvaluator(self.X_train_mean, self.data["y_train"], 
                                                 self.data["X_val"], self.data["y_val"], 
                                                 self.data["X_test"], self.data["y_test"]).score()
 
-        self.logging.append([n_iter, self.n_val, sel, sel_time, percent_cc, percent_clean, 
-                             self.clean_val_acc, self.gt_val_acc, mean_val_acc,
-                             self.clean_test_acc, self.gt_test_acc, mean_test_acc])
+        self.logging.append([n_iter, self.n_val, sel, sel_time, 
+                             percent_cc, percent_clean, 
+                             self.gt_val_acc, self.dc_val_acc, cpclean_val_acc,
+                             self.gt_test_acc, self.dc_test_acc, cpclean_test_acc])
 
         self.percent_clean = percent_clean
         self.save_log()

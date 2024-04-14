@@ -3,7 +3,7 @@ import pandas as pd
 import time
 from collections import Counter
 from .utils import product, majority_vote
-from ....utils import Pool
+from utils import Pool
 from functools import partial
 
 def min_max(mm, y, K):

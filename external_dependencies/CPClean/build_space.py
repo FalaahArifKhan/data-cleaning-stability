@@ -7,16 +7,14 @@ import pandas as pd
 import utils
 import argparse
 import os
-import shutil
 import json
-from itertools import product
-from collections import Counter
-import time
 from sklearn.model_selection import cross_val_score
 from sklearn.neighbors import KNeighborsClassifier
 from copy import deepcopy
 from training.preprocess import Preprocessor
-from scipy.stats import mode
+from repair.repair import repair
+from training.preprocess import preprocess
+
 
 def split(X, y, val_size, test_size=None, max_size=None, random_state=1):
     """Shuffle and split data to train / val / test
@@ -40,13 +38,10 @@ def split(X, y, val_size, test_size=None, max_size=None, random_state=1):
     if test_size is None:
         test_size = int((N - val_size) * 0.3)
 
-    
     # split train and test
     idx_test = idx[:test_size]
-    idx_val = idx[test_size: test_size+val_size]
-    idx_train = idx[test_size+val_size: N]
-
-
+    idx_val = idx[test_size: test_size + val_size]
+    idx_train = idx[test_size + val_size: N]
 
     # split X and y
     X_train = X.iloc[idx_train].reset_index(drop=True)
@@ -57,6 +52,7 @@ def split(X, y, val_size, test_size=None, max_size=None, random_state=1):
     y_test = y.iloc[idx_test].reset_index(drop=True)
 
     return X_train, y_train, X_val, y_val, X_test, y_test
+
 
 def load_df(file_path, info):
     """Load data file into pandas dataframe, preliminarily preprocess data.
@@ -70,12 +66,13 @@ def load_df(file_path, info):
         categories = info['categorical_variables']
         for cat in categories:
             if cat in df.columns:
-                df[cat] = df[cat].astype(str).replace('nan', np.nan) 
+                df[cat] = df[cat].astype(str).replace('nan', np.nan)
 
     if "drop_variables" in info:
         df = df.drop(columns=info["drop_variables"])
 
     return df
+
 
 def load_raw_data(data_dir, dataset, dropna=True):
     """Load dataset.
@@ -90,12 +87,10 @@ def load_raw_data(data_dir, dataset, dropna=True):
         y (pd.Dataframe): label
         info (dict): information of this dataset
     """
-    
     # load info 
     info_path = os.path.join(data_dir, dataset, "info.json")
     with open(info_path) as info_data:
         info = json.load(info_data)
-    
 
     # load data
     data_path = os.path.join(data_dir, dataset, "data.csv")
@@ -110,6 +105,7 @@ def load_raw_data(data_dir, dataset, dropna=True):
     X = data[feature_column]
     y = data[[label_column]]
     return X, y
+
 
 def get_feature_importance(X, y, random_state=1):
     """Compute the importance of features.
@@ -135,20 +131,23 @@ def get_feature_importance(X, y, random_state=1):
 
     return acc_diff
 
+
 def inject_mv(X_train, y_train, mv_prob, mv_type, feature_importance):
     X_train_mv = deepcopy(X_train)
 
     # get missing prob matrix
-    if mv_type == "MCAR":
-        m_prob_matrix = np.ones(X_train_mv.shape)*mv_prob
-    elif mv_type == "MAR":
+    if mv_type == "random":
+        m_prob_matrix = np.ones(X_train_mv.shape) * mv_prob
+    elif mv_type == "systematic":
         probs = np.array([feature_importance[c] for c in X_train.columns])
-        probs[probs<0] = 0
+        probs[probs < 0] = 0
         probs += 1e-100
         probs = probs / np.sum(probs)
         col_missing_prob = probs * mv_prob * X_train.shape[1]
-        col_missing_prob[col_missing_prob>0.95] = 0.95
+        col_missing_prob[col_missing_prob > 0.95] = 0.95
         m_prob_matrix = np.tile(col_missing_prob, (X_train_mv.shape[0], 1))
+    else:
+        raise Exception("Wrong mv type")
 
     # inject missing values
     mask = np.random.rand(*X_train_mv.shape) <= m_prob_matrix
@@ -157,18 +156,21 @@ def inject_mv(X_train, y_train, mv_prob, mv_type, feature_importance):
     for i in range(len(mask)):
         if mask[i].all():
             print("Bad Luck")
-            non_mv = int(mask.shape[1] * (1-mv_prob))
-            non_mv_indices = np.random.choice(mask.shape[1], size=non_mv, replace=False)
+            non_mv = int(mask.shape[1] * (1 - mv_prob))
+            non_mv_indices = np.random.choice(mask.shape[1], size=non_mv,
+                                              replace=False)
             mask[i, non_mv_indices] = False
 
     X_train_mv[mask] = np.nan
     ind_mv = pd.DataFrame(mask, columns=X_train_mv.columns)
     return X_train_mv, ind_mv
 
+
 def save_data(data_dict, info, save_dir):
     for name, data in data_dict.items():
         if isinstance(data, pd.DataFrame):
-            data.to_csv(utils.makedir([save_dir], "{}.csv".format(name)), index=False)
+            data.to_csv(utils.makedir([save_dir], "{}.csv".format(name)),
+                        index=False)
 
     with open(os.path.join(save_dir, 'info.json'), 'w') as f:
         json.dump(info, f, indent=4)
@@ -181,7 +183,8 @@ def get_info(data, dataset, mv_type):
     n_clean_train = len(data["X_train_dirty"].dropna())
     percent_mv_rows = (n_train - n_clean_train) / n_train
     percent_mv_cells = data["X_train_dirty"].isna().values.mean()
-    missing_columns = data["X_train_dirty"].columns[data["X_train_dirty"].isna().values.any(axis=0)]
+    missing_columns = data["X_train_dirty"].columns[
+        data["X_train_dirty"].isna().values.any(axis=0)]
     cat_columns = data["X_train_dirty"].select_dtypes(exclude="number").columns
     mv_columns = ""
     for c in missing_columns:
@@ -202,12 +205,10 @@ def get_info(data, dataset, mv_type):
     return info
 
 
-    
-
-def build_dataset(data_dir, dataset, val_size=1000, test_size=None, 
-                  max_size=None, mv_prob=0.2, mv_type="MAR",  
-                  max_num_feature=None, save_dir=None, random_state=1):
-
+def build_synthetic_dataset(data_dir, dataset, val_size=1000, test_size=None,
+                            max_size=None, mv_prob=0.2, mv_type="MAR",
+                            max_num_feature=None, save_dir=None,
+                            random_state=1):
     """ Generate dataset for CP experiment
 
     Args:
@@ -228,20 +229,23 @@ def build_dataset(data_dir, dataset, val_size=1000, test_size=None,
     # load raw data and data info
     X_full, y_full = load_raw_data(data_dir, dataset)
 
-    #select important features
+    # select important features
     f_importance = get_feature_importance(X_full, y_full)
-    important_features = sorted(f_importance.keys(), key=lambda c: -f_importance[c])
+    important_features = sorted(f_importance.keys(),
+                                key=lambda c: -f_importance[c])
     if max_num_feature is not None:
         important_features = important_features[:max_num_feature]
         X_full = X_full[important_features]
 
     X_train, y_train, X_val, y_val, X_test, y_test = \
-        split(X_full, y_full, val_size, test_size, max_size=max_size, random_state=random_state)
-    X_train_mv, ind_mv = inject_mv(X_train, y_train, mv_prob, mv_type, f_importance)
+        split(X_full, y_full, val_size, test_size, max_size=max_size,
+              random_state=random_state)
+    X_train_mv, ind_mv = inject_mv(X_train, y_train, mv_prob, mv_type,
+                                   f_importance)
 
     data_dict = {
         "X_train_clean": X_train, "y_train": y_train,
-        "X_train_dirty": X_train_mv, "indicator": ind_mv, 
+        "X_train_dirty": X_train_mv, "indicator": ind_mv,
         "X_full": X_full, "y_full": y_full,
         "X_val": X_val, "y_val": y_val,
         "X_test": X_test, "y_test": y_test,
@@ -255,12 +259,12 @@ def build_dataset(data_dir, dataset, val_size=1000, test_size=None,
 
     return data_dict, info
 
-def build_real_dataset(data_dir, dataset, info, val_size=1000, test_size=None, 
+
+def build_real_dataset(data_dir, dataset, val_size=1000, test_size=None,
                        max_size=None, save_dir=None, random_state=1):
-    
-    #info_path = os.path.join(data_dir, dataset, "info.json")
-    #with open(info_path) as info_data:
-    #    info = json.load(info_data)
+    info_path = os.path.join(data_dir, dataset, "info.json")
+    with open(info_path) as info_data:
+        info = json.load(info_data)
 
     data_clean = load_df(os.path.join(data_dir, dataset, "clean.csv"), info)
     data_dirty = load_df(os.path.join(data_dir, dataset, "dirty.csv"), info)
@@ -278,39 +282,64 @@ def build_real_dataset(data_dir, dataset, info, val_size=1000, test_size=None,
     y_full_dirty = data_dirty[[label_column]]
 
     X_train, y_train, X_val, y_val, X_test, y_test = \
-        split(X_full, y_full, val_size, test_size, max_size=max_size, random_state=random_state)
+        split(X_full, y_full, val_size, test_size, max_size=max_size,
+              random_state=random_state)
 
     X_train_mv, _, _, _, _, _ = \
-        split(X_full_dirty, y_full_dirty, val_size, test_size, max_size=max_size, random_state=random_state)
+        split(X_full_dirty, y_full_dirty, val_size, test_size,
+              max_size=max_size, random_state=random_state)
 
     ind_mv = X_train_mv.isnull()
 
     data_dict = {
         "X_train_clean": X_train, "y_train": y_train,
-        "X_train_dirty": X_train_mv, "indicator": ind_mv, 
+        "X_train_dirty": X_train_mv, "indicator": ind_mv,
         "X_full": X_full, "y_full": y_full,
         "X_val": X_val, "y_val": y_val,
         "X_test": X_test, "y_test": y_test,
     }
 
-    #info = get_info(data_dict, dataset, "real")
-    #info["seed"] = random_state
+    info = get_info(data_dict, dataset, "real")
+    info["seed"] = random_state
 
-    #if save_dir is not None:
-    #    save_data(data_dict, info, save_dir)
+    if save_dir is not None:
+        save_data(data_dict, info, save_dir)
 
-    return data_dict#, info
+    return data_dict, info
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', default=None)
-    parser.add_argument('--data_dir', default="data/CC-raw")
-    parser.add_argument('--save_dir', default="data/CC-01")
-    parser.add_argument('--mv_prob', default=0.1, type=float)
-    parser.add_argument('--mv_type', default=["rand", "sys_class_depend"], nargs="+")
-    parser.add_argument('--max_size', default=float("inf"), type=float)
-    args = parser.parse_args()
+    parser.add_argument('--data_dir', default="data/datasets")
+    parser.add_argument('--save_dir', default="cpclean_space")
+    parser.add_argument('--mv_type', default="systematic",
+                        choices=["systematic", "random", "real"])
+    parser.add_argument('--mv_prob', default=0.2, type=float)
+    parser.add_argument('--val_size', default=1400, type=int)
+    parser.add_argument('--seed', default=1, type=int)
 
-    for mv_type in args.mv_type:
-        print("Build dataset {}_{}_{}".format(args.dataset, mv_type, args.mv_prob))
-        data_dict, new_info = build_dataset(args.data_dir, args.dataset, mv_prob=args.mv_prob, max_size=args.max_size, mv_type=mv_type, save_dir=args.save_dir)
+    args = parser.parse_args()
+    save_dir = os.path.join(args.save_dir, args.dataset, args.mv_type)
+
+    # split datasets and inject errors
+    if args.mv_type in ["systematic", "random"]:
+        data, info = build_synthetic_dataset(args.data_dir, args.dataset,
+                                             val_size=args.val_size,
+                                             mv_prob=args.mv_prob,
+                                             mv_type=args.mv_type,
+                                             random_state=args.seed,
+                                             save_dir=save_dir)
+    else:
+        data, info = build_real_dataset(args.data_dir, args.dataset,
+                                        val_size=args.val_size,
+                                        random_state=args.seed,
+                                        save_dir=save_dir)
+
+    # repair datasets
+    repair_save_dir = os.path.join(save_dir, "X_train_repairs")
+    data["X_train_repairs"] = repair(data["X_train_dirty"], save_dir=repair_save_dir)
+
+    # obtain X_train_ground_truth
+    data = preprocess(data)
+    data["X_train_gt_raw"].to_csv(os.path.join(save_dir, "X_train_ground_truth.csv"), index=False)

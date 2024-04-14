@@ -2,9 +2,9 @@
 import numpy as np
 from copy import deepcopy
 import time
-#import utils
+import utils
 from .query import Querier
-from ...training.knn import KNN
+from training.knn import KNN
 import os
 import pandas as pd
 
@@ -83,9 +83,6 @@ class CPClean(object):
     def score(self, X_test, y_test):
         return self.classifier.score(X_test, y_test)
 
-    # new function to return precision, recall, f1
-    def prf(self, X_test, y_test):
-        return self.classifier.prf(X_test, y_test)
 
     def restore_results(self, S_val_pruned, MM, debugger, gt_indices):
         saved_results = pd.read_csv(os.path.join(debugger.debug_dir, "details_restore.csv"))
@@ -207,7 +204,7 @@ class CPClean(object):
         MM_pruned = MM
 
         percent_cc = q1_results_pruned.mean()
-        #debugger.init_log(percent_cc)
+        debugger.init_log(percent_cc)
 
         while True:
             tic = time.time()
@@ -217,6 +214,7 @@ class CPClean(object):
             S_val_pruned = [S_val_pruned[i] for i in non_cp_idx]
             MM_pruned = [MM_pruned[i] for i in non_cp_idx]
             n_non_cp_val = len(S_val_pruned)
+            print('n_non_cp_val:', n_non_cp_val)
 
             if n_non_cp_val == 0:
                 break
@@ -250,7 +248,7 @@ class CPClean(object):
             # logging
             percent_cc = (len(S_val) - len(S_val_pruned) + sum(q1_results_pruned)) / len(S_val)
             print("Iteration {}, time {}, selection {}, percent_cc {}".format(n_iter, sel_time, sel, percent_cc))
-            #debugger.log(n_iter, sel, sel_time, percent_cc)
+            debugger.log(n_iter, sel, sel_time, percent_cc)
 
             n_iter += 1
 
