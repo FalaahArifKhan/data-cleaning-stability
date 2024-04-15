@@ -83,8 +83,7 @@ class CPClean(object):
         return self.classifier.score(X_test, y_test)
 
     def predict(self, X_test):
-        pred = self.classifier.predict(X_test)
-        return pd.DataFrame(pred, index=X_test.index)
+        return self.classifier.predict(X_test)
 
     def restore_results(self, S_val_pruned, MM, debugger, gt_indices):
         saved_results = pd.read_csv(os.path.join(debugger.debug_dir, "details_restore.csv"))
