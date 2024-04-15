@@ -481,6 +481,7 @@ class Benchmark:
                                        models_config=models_config,
                                        custom_tbl_fields_dct=custom_table_fields_dct,
                                        db_writer_func=self.__db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
+                                       with_predict_proba=False,  # joint cleaning-and-training models do not support a predict_proba method
                                        notebook_logs_stdout=False,
                                        verbose=0)
 

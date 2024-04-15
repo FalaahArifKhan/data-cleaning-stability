@@ -8,6 +8,15 @@ python ./scripts/evaluate_baseline.py \
 
 python ./scripts/evaluate_models.py \
     --dataset folk \
+    --null_imputers \[\"cp_clean\"\] \
+    --models \[\] \
+    --run_nums \[1\] \
+    --tune_imputers true \
+    --ml_impute true \
+    --evaluation_scenarios \[\"mcar_mcar2\"\]
+
+python ./scripts/evaluate_models.py \
+    --dataset folk \
     --null_imputers \[\"median-mode\"\] \
     --models \[\"lr_clf\"\] \
     --run_nums \[1,2\] \

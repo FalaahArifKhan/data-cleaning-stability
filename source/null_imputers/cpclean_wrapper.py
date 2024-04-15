@@ -54,8 +54,9 @@ class CPCleanWrapper(BaseInprocessingWrapper):
         }
 
     def _build_dataset_objects(self, X_train_with_nulls, y_train):
-        X_train_clean = self.X_train_full.iloc[X_train_with_nulls.index]
+        X_train_clean = self.X_train_full.loc[X_train_with_nulls.index]
         ind_mv = X_train_with_nulls.isna()
+        print('X_train_with_nulls.isna().sum().sum():', X_train_with_nulls.isna().sum().sum())
         data_dct = {
             "X_train_clean": X_train_clean, "y_train": y_train,
             "X_train_dirty": X_train_with_nulls, "indicator": ind_mv,
@@ -70,10 +71,12 @@ class CPCleanWrapper(BaseInprocessingWrapper):
 
         datetime_now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
         random_hash = generate_base64_hash()
-        debugger = Debugger(data, self.model_metadata, makedir([self.save_dir, 'logs', datetime_now_str, random_hash]))
+        debugger = Debugger(data, self.model_metadata, makedir([self.save_dir, 'logs', f'{datetime_now_str}_{random_hash}']))
 
+        X_train_mean = data["X_train_repairs"]["mean_mode"] \
+            if "mean_mode" in data["X_train_repairs"] else data["X_train_repairs"]["mean"]
         self.cleaner.fit(X_train_repairs, data["y_train"], data["X_val"], data["y_val"],
-                         gt=data["X_train_gt"], X_train_mean=data["X_train_repairs"]["mean"],
+                         gt=data["X_train_gt"], X_train_mean=X_train_mean,
                          debugger=debugger, restore=False, method=method, sample_size=sample_size)
 
         val_acc, _, _, val_f1 = self.cleaner.score(data["X_val"], data["y_val"])
@@ -103,5 +106,5 @@ class CPCleanWrapper(BaseInprocessingWrapper):
         pass
 
     def predict(self, X):
-        X_preprocessed, _ = self.preprocessor.transform(X_test=X)
+        X_preprocessed, _ = self.preprocessor.transform(X)
         return self.cleaner.predict(X_preprocessed)
