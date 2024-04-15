@@ -112,4 +112,4 @@ class CPCleanWrapper(BaseInprocessingWrapper):
         X_preprocessed = self.preprocessor.transform(X_copy)
         y_preds = self.cleaner.predict(X_preprocessed)
 
-        return pd.DataFrame(y_preds, index=X.index)
+        return pd.Series(y_preds, index=X.index)
