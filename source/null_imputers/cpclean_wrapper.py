@@ -108,9 +108,6 @@ class CPCleanWrapper(BaseInprocessingWrapper):
         pass
 
     def predict(self, X):
-        print('init X.shape:', X.shape)
         X_preprocessed = self.preprocessor.transform(X)
-        print('X_preprocessed.shape:', X_preprocessed.shape)
         y_preds = self.cleaner.predict(X_preprocessed)
-
         return pd.DataFrame(y_preds, index=X.index)
