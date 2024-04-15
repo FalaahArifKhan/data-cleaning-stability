@@ -84,6 +84,7 @@ class CPClean(object):
 
     def predict(self, X_test):
         pred = self.classifier.predict(X_test)
+        print('pred.shape:', pred.shape)
         return pd.DataFrame(pred, index=X_test.index)
 
     def restore_results(self, S_val_pruned, MM, debugger, gt_indices):
