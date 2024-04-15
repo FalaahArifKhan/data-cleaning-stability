@@ -1,6 +1,8 @@
 import os
 import numpy as np
 from datetime import datetime
+
+import pandas as pd
 from virny.custom_classes.base_inprocessing_wrapper import BaseInprocessingWrapper
 
 from external_dependencies.CPClean.utils import makedir
@@ -107,4 +109,5 @@ class CPCleanWrapper(BaseInprocessingWrapper):
 
     def predict(self, X):
         X_preprocessed = self.preprocessor.transform(X)
+        X_preprocessed = pd.DataFrame(X_preprocessed, index=X.index)
         return self.cleaner.predict(X_preprocessed)
