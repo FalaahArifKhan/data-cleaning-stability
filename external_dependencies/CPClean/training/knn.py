@@ -32,7 +32,7 @@ class KNN(object):
         top_K_idx = order[:, :self.K]
         print('self.y_train.shape:', self.y_train.shape)
         top_K = self.y_train[top_K_idx]
-        print('top_K:', top_K)
+        print('top_K.shaoe:', top_K.shaoe)
         pred = np.array([majority_vote(top) for top in top_K])
 
         return pred
