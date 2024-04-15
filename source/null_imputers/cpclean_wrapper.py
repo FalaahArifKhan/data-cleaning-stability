@@ -1,8 +1,6 @@
 import os
 import numpy as np
 from datetime import datetime
-
-import pandas as pd
 from virny.custom_classes.base_inprocessing_wrapper import BaseInprocessingWrapper
 
 from external_dependencies.CPClean.utils import makedir
@@ -24,6 +22,8 @@ class CPCleanWrapper(BaseInprocessingWrapper):
         self.save_dir = save_dir
 
         self.n_jobs = os.cpu_count()
+        print('N_job:', self.n_jobs)
+
         self.model_metadata = {
             "fn": KNN,
             "params": {"n_neighbors": 3}
