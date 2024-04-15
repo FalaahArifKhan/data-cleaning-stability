@@ -106,5 +106,5 @@ class CPCleanWrapper(BaseInprocessingWrapper):
         pass
 
     def predict(self, X):
-        X_preprocessed, _ = self.preprocessor.transform(X)
+        X_preprocessed = self.preprocessor.transform(X)
         return self.cleaner.predict(X_preprocessed)
