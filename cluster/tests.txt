@@ -49,6 +49,15 @@ python ../scripts/impute_nulls_with_predictor.py \
     --save_imputed_datasets true \
     --evaluation_scenarios [\"mcar_mcar1\"]
 
+python ../scripts/evaluate_models.py \
+    --dataset folk \
+    --null_imputers [\"cp_clean\"] \
+    --models [] \
+    --run_nums [1] \
+    --tune_imputers true \
+    --ml_impute true \
+    --evaluation_scenarios [\"mcar_mcar2\"]
+
 pytest -s ./tests/null_imputers/test_datawig_imputer.py
 
 {'global:num_epochs': 1, 'global:patience': 5, 'global:batch_size': 16, 'global:final_fc_hidden_units': [10], 'global:learning_rate': 0.004, 'global:weight_decay': 0, 'WKHP:type': 'numeric', 'WKHP:normalize': True, 'WKHP:numeric_latent_dim': 10, 'WKHP:numeric_hidden_layers': 1, 'COW:type': 'string', 'COW:ngram_range:words': (1, 3), 'COW:ngram_range:chars': (1, 5), 'COW:max_tokens': 32768, 'COW:tokens': ['chars'], 'OCCP:type': 'string', 'OCCP:ngram_range:words': (1, 3), 'OCCP:ngram_range:chars': (1, 5), 'OCCP:max_tokens': 4096, 'OCCP:tokens': ['chars'], 'RELP:type': 'string', 'RELP:ngram_range:words': (1, 3), 'RELP:ngram_range:chars': (1, 5), 'RELP:max_tokens': 4096, 'RELP:tokens': ['words'], 'SEX:type': 'string', 'SEX:ngram_range:words': (1, 3), 'SEX:ngram_range:chars': (1, 5), 'SEX:max_tokens': 262144, 'SEX:tokens': ['chars'], 'RAC1P:type': 'string', 'RAC1P:ngram_range:words': (1, 3), 'RAC1P:ngram_range:chars': (1, 5), 'RAC1P:max_tokens': 262144, 'RAC1P:tokens': ['words'], 'MAR:type': 'string', 'MAR:ngram_range:words': (1, 3), 'MAR:ngram_range:chars': (1, 5), 'MAR:max_tokens': 4096, 'MAR:tokens': ['chars'], 'AGEP:type': 'numeric', 'AGEP:normalize': True, 'AGEP:numeric_latent_dim': 10, 'AGEP:numeric_hidden_layers': 1, 'POBP:type': 'string', 'POBP:ngram_range:words': (1, 3), 'POBP:ngram_range:chars': (1, 5), 'POBP:max_tokens': 32768, 'POBP:tokens': ['chars'], 'f1_micro': 0.25161290322580643, 'f1_macro': 0.05694645741024473, 'f1_weighted': 0.16930588189720006, 'f1_weighted_train': 0.23561292639652479, 'precision_weighted': 0.16930588189720006, 'precision_weighted_train': 0.23561292639652479, 'recall_weighted': 0.25161290322580643, 'recall_weighted_train': 0.3295819935691318, 'coverage_at_90': 0.0, 'coverage_at_90_train': 0.0, 'empirical_precision_at_90': nan, 'ece_pre_calibration': 0.01794679982046927, 'ece_post_calibration': 0.01794679982046927, 'time [min]': 1.2847051739692688}
