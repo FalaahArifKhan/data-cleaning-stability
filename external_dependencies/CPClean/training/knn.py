@@ -23,11 +23,16 @@ class KNN(object):
         self.y_train = y_train
 
     def predict(self, X_test):
+        print('predict self.X_train.shape:', self.X_train.shape)
+        print('predict X_test.shape:', X_test.shape)
         dists = compute_distances(self.X_train, X_test)
+        print('len(dists):', len(dists))
         self.sim = 1 / (1 + dists)
         order = np.argsort(-self.sim, kind="stable", axis=1)
         top_K_idx = order[:, :self.K]
+        print('self.y_train.shape:', self.y_train.shape)
         top_K = self.y_train[top_K_idx]
+        print('top_K:', top_K)
         pred = np.array([majority_vote(top) for top in top_K])
 
         return pred
