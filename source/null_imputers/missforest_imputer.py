@@ -1,4 +1,11 @@
+import sys
+from pathlib import Path
+
+# Define a correct root path
+sys.path.append(str(Path(f"{__file__}").parent.parent.parent))
+
 import warnings
+from collections import defaultdict
 
 import numpy as np
 from scipy.stats import mode
@@ -8,7 +15,7 @@ from sklearn.utils.validation import check_is_fitted, check_array
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 from .abstract_null_imputer import AbstractNullImputer
-from ..utils.dataframe_utils import _get_mask
+from source.utils.dataframe_utils import _get_mask
     
     
 class MissForestImputer(BaseEstimator, AbstractNullImputer):
@@ -255,6 +262,8 @@ class MissForestImputer(BaseEstimator, AbstractNullImputer):
         self.warm_start = warm_start
         self.class_weight = class_weight
         
+        self._predictors = defaultdict(dict)
+        
     def _miss_forest(self, Ximp, mask):
         """The missForest algorithm"""
 
@@ -341,6 +350,8 @@ class MissForestImputer(BaseEstimator, AbstractNullImputer):
         # Reverse order if decreasing is set to True
         if self.decreasing is True:
             misscount_idx = misscount_idx[::-1]
+            
+        self.misscount_idx = misscount_idx
 
         # 3. While new_gammas < old_gammas & self.iter_count_ < max_iter loop:
         self.iter_count_ = 0
@@ -348,11 +359,10 @@ class MissForestImputer(BaseEstimator, AbstractNullImputer):
         gamma_old = np.inf
         gamma_newcat = 0
         gamma_oldcat = np.inf
-        col_index = np.arange(Ximp.shape[1])
+        self.col_index = np.arange(Ximp.shape[1])
 
-        while (
-                gamma_new < gamma_old or gamma_newcat < gamma_oldcat) and \
-                self.iter_count_ < self.max_iter:
+        while ((gamma_new < gamma_old) or (gamma_newcat < gamma_oldcat)) and \
+                (self.iter_count_ < self.max_iter):
 
             # 4. store previously imputed matrix
             Ximp_old = np.copy(Ximp)
@@ -360,9 +370,9 @@ class MissForestImputer(BaseEstimator, AbstractNullImputer):
                 gamma_old = gamma_new
                 gamma_oldcat = gamma_newcat
             # 5. loop
-            for s in misscount_idx:
+            for s in self.misscount_idx:
                 # Column indices other than the one being imputed
-                s_prime = np.delete(col_index, s)
+                s_prime = np.delete(self.col_index, s)
 
                 # Get indices of rows where 's' is observed and missing
                 obs_rows = np.where(~mask[:, s])[0]
@@ -386,12 +396,16 @@ class MissForestImputer(BaseEstimator, AbstractNullImputer):
                     ymis = rf_classifier.predict(xmis)
                     # 8. update imputed matrix using predicted matrix ymis(s)
                     Ximp[mis_rows, s] = ymis
+                    # save the predictor
+                    self._predictors[s][self.iter_count_] = rf_classifier
                 else:
                     rf_regressor.fit(X=xobs, y=yobs)
                     # 7. predict ymis(s) using xmis(x)
                     ymis = rf_regressor.predict(xmis)
                     # 8. update imputed matrix using predicted matrix ymis(s)
                     Ximp[mis_rows, s] = ymis
+                    # save the predictor
+                    self._predictors[s][self.iter_count_] = rf_regressor
 
             # 9. Update gamma (stopping criterion)
             if self.cat_vars_ is not None:
@@ -480,6 +494,8 @@ class MissForestImputer(BaseEstimator, AbstractNullImputer):
         self.cat_vars_ = cat_vars
         self.num_vars_ = num_vars
         self.statistics_ = {"col_means": col_means, "col_modes": col_modes}
+        
+        self._miss_forest(X, mask)
 
         return self
 
@@ -516,13 +532,46 @@ class MissForestImputer(BaseEstimator, AbstractNullImputer):
             warnings.warn("No missing value located; returning original "
                           "dataset.")
             return X
+        
+        # Get col and row indices for missing
+        missing_rows, missing_cols = np.where(mask)
 
-        # row_total_missing = mask.sum(axis=1)
-        # if not np.any(row_total_missing):
-        #     return X
+        if self.num_vars_ is not None:
+            # Only keep indices for numerical vars
+            keep_idx_num = np.in1d(missing_cols, self.num_vars_)
+            missing_num_rows = missing_rows[keep_idx_num]
+            missing_num_cols = missing_cols[keep_idx_num]
 
-        # Call missForest function to impute missing
-        X = self._miss_forest(X, mask)
+            # Make initial guess for missing values
+            col_means = np.full(X.shape[1], fill_value=np.nan)
+            col_means[self.num_vars_] = self.statistics_.get('col_means')
+            X[missing_num_rows, missing_num_cols] = np.take(
+                col_means, missing_num_cols)
+            
+        if self.cat_vars_ is not None:
+            # Only keep indices for categorical vars
+            keep_idx_cat = np.in1d(missing_cols, self.cat_vars_)
+            missing_cat_rows = missing_rows[keep_idx_cat]
+            missing_cat_cols = missing_cols[keep_idx_cat]
+
+            # Make initial guess for missing values
+            col_modes = np.full(X.shape[1], fill_value=np.nan)
+            col_modes[self.cat_vars_] = self.statistics_.get('col_modes')
+            X[missing_cat_rows, missing_cat_cols] = np.take(col_modes, missing_cat_cols)
+
+        for i in range(self.iter_count_):
+            for s in self.misscount_idx:
+                s_prime = np.delete(self.col_index, s)
+                mis_rows = np.where(mask[:, s])[0]
+
+                # If no missing, then skip
+                if len(mis_rows) == 0:
+                    continue
+
+                xmis = X[np.ix_(mis_rows, s_prime)]
+                
+                ymis = self._predictors[s][i].predict(xmis)
+                X[mis_rows, s] = ymis
 
         # Return imputed dataset
         return X
@@ -542,3 +591,4 @@ class MissForestImputer(BaseEstimator, AbstractNullImputer):
             Returns imputed dataset.
         """
         return self.fit(X, **fit_params).transform(X)
+    
