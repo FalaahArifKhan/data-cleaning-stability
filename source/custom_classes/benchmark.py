@@ -514,7 +514,6 @@ class Benchmark:
 
         # Compute metrics for tuned models
         # TODO: use multiple test sets interface
-        # TODO: set Virny seed
         # TODO: set model seed before passing to virny
         compute_metrics_with_db_writer(dataset=base_flow_dataset,
                                        config=self.virny_config,

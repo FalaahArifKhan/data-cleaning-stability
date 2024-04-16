@@ -65,3 +65,8 @@ pytest -s ./tests/null_imputers/test_datawig_imputer.py
 python build_space.py --data_dir data/datasets --dataset Puma --mv_type systematic --save_dir space_dir/Puma --seed 100
 
 python cpclean.py --space_dir space_dir/Puma --dataset Puma --mv_type systematic --result_dir result_dir
+
+Example 1
+X_test_imputed_values = kmeans_imputer.transform(X_test_imputed)
+X_test_imputed = pd.DataFrame(X_test_imputed_values, columns=X_test_imputed.columns, index=X_test_imputed.index)
+X_test_imputed[categorical_columns_with_nulls] = X_test_imputed[categorical_columns_with_nulls].astype(int).astype('str')
