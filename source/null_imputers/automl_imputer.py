@@ -25,6 +25,7 @@ from datetime import datetime
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple
 
+from source.utils.common_helpers import generate_base64_hash
 from source.utils.custom_logger import get_logger
 from source.utils.dataframe_utils import get_columns_sorted_by_nulls
 
@@ -259,13 +260,14 @@ class AutoMLImputer(BaseImputer):
             feature_cols = [c for c in self._categorical_columns + self._numerical_columns if c != target_column]
 
             datetime_now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+            random_hash = generate_base64_hash()
             if target_column in self._numerical_columns:
                 self._predictors[target_column] = StructuredDataRegressor(
                     column_names=feature_cols,
                     overwrite=True,
                     max_trials=self.max_trials,
                     tuner=self.tuner,
-                    project_name=f'{target_column}_{datetime_now_str}_{str(uuid.uuid1())}',
+                    project_name=f'{target_column}_{datetime_now_str}_{random_hash}',
                     directory=f"{self.directory}/models_{target_column}",
                     seed=self._seed
                 )
@@ -277,7 +279,7 @@ class AutoMLImputer(BaseImputer):
                     overwrite=True,
                     max_trials=self.max_trials,
                     tuner=self.tuner,
-                    project_name=f'{target_column}_{datetime_now_str}_{str(uuid.uuid1())}',
+                    project_name=f'{target_column}_{datetime_now_str}_{random_hash}',
                     directory=f"{self.directory}/models_{target_column}",
                     seed=self._seed
                 )

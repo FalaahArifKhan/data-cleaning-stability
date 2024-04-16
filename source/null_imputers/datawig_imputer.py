@@ -1,5 +1,4 @@
 import os
-import uuid
 import shutil
 import random
 import logging
@@ -7,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from datetime import datetime
+from source.utils.common_helpers import generate_base64_hash
 
 
 def complete(X_train_with_nulls: pd.DataFrame,
@@ -54,7 +54,8 @@ def complete(X_train_with_nulls: pd.DataFrame,
     for _ in range(iterations):
         for output_col in set(numeric_columns_with_nulls) | set(categorical_columns_with_nulls):
             datetime_now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-            column_output_path = os.path.join(output_path, f'{output_col}_{datetime_now_str}_{str(uuid.uuid1())}')
+            random_hash = generate_base64_hash()
+            column_output_path = os.path.join(output_path, f'{output_col}_{datetime_now_str}_{random_hash}')
 
             # Reset logger handler
             if datawig.utils.logger.hasHandlers():

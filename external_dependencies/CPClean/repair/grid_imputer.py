@@ -1,6 +1,6 @@
-from sklearn.impute import SimpleImputer
 import numpy as np
-import utils
+import external_dependencies.CPClean.utils as utils
+
 
 def repair(X_train_mv, save_dir=None):
     mv_columns = X_train_mv.isnull().any(axis=0)

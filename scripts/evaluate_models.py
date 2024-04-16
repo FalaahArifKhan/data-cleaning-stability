@@ -3,15 +3,17 @@ Script for evaluating model performance on the imputed datasets from impute_null
 """
 import os
 import sys
+import warnings
 from pathlib import Path
+
+# Suppress all warnings
+warnings.filterwarnings("ignore")
 
 # Define a correct root path
 sys.path.append(str(Path(f"{__file__}").parent.parent))
-print('Current location: ', os.getcwd())
 
 # Import dependencies
 import argparse
-import warnings
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -21,7 +23,6 @@ from source.validation import validate_args, str2bool
 
 
 def preconfigure_experiment(env_file_path: str = Path(__file__).parent.joinpath('..', 'configs', 'secrets.env')):
-    warnings.filterwarnings('ignore')
     os.environ["PYTHONWARNINGS"] = "ignore"
 
     # Load env variables

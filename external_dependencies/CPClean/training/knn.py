@@ -29,15 +29,12 @@ class KNN(object):
         top_K_idx = order[:, :self.K]
         top_K = self.y_train[top_K_idx]
         pred = np.array([majority_vote(top) for top in top_K])
+
         return pred
 
     def score(self, X_test, y_test):
-        pred = self.predict(X_test)
-        acc = np.mean(pred == y_test)
-        return acc
-    
-    # new function to get precision, recall and f1
-    def prf(self, X_test, y_test):
         y_pred_test = self.predict(X_test)
+        acc = np.mean(y_pred_test == y_test)
         p, r, f1, _ = precision_recall_fscore_support(y_test, y_pred_test, average='binary')
-        return p, r, f1
+
+        return acc, p, r, f1

@@ -14,9 +14,10 @@ from itertools import combinations
 import collections
 import itertools
 from copy import deepcopy
-from ....utils import Pool
+from external_dependencies.CPClean.utils import Pool
 from functools import partial
 from .utils import compute_entropy_by_counts
+
 
 def sort(S, y):
     """Squash similarity matrix in an array and sort by similarity ascendingly
@@ -41,6 +42,7 @@ def sort(S, y):
         sorted_A.append((-sij, ri, rj, yi))
     return sorted_A 
 
+
 def compute_B(alpha_beta, K, eps=1e-100):
     n = len(alpha_beta)
     B = np.zeros((n+1, K+1))
@@ -60,6 +62,7 @@ def compute_B(alpha_beta, K, eps=1e-100):
 
     return B, status
 
+
 def compute_BR(alpha_beta, K, eps=1e-100):
     n = len(alpha_beta)
     B = np.zeros((n+1, K+1))
@@ -77,6 +80,7 @@ def compute_BR(alpha_beta, K, eps=1e-100):
             status = "small"
             break
     return B, status
+
 
 def group_by_classes(S, y):
     classes = [0, 1]
@@ -103,6 +107,7 @@ def group_by_classes(S, y):
     n_must_beta_c = {c:N_c[c] for c in classes}
     return alpha_beta_c, new_rid, classes, N_c, row_count, n_must_alpha_c, n_must_beta_c
 
+
 def change_alpha_beta(alpha_beta_c, n_must_alpha_c, n_must_beta_c, ri, yi, ab_after):
     """ Update alpha beta counters and n_must_alpha, n_must_beta
         Used for temporily changing alpha beta counters
@@ -115,6 +120,7 @@ def change_alpha_beta(alpha_beta_c, n_must_alpha_c, n_must_beta_c, ri, yi, ab_af
     n_must_alpha_c[yi] += (n_must_a_after - n_must_a_prev)
     n_must_beta_c[yi] += (n_must_b_after - n_must_b_prev)
     alpha_beta_c[yi][ri] = ab_after
+
 
 def get_cases(n_must_alpha_c, n_must_beta_c, N_c, classes, K):
     cases_c = {}
@@ -138,6 +144,7 @@ def get_cases(n_must_alpha_c, n_must_beta_c, N_c, classes, K):
             max_n_beta[classes[1]] = max(max_n_beta[classes[1]], K-i)
 
     return possible_cases, max_n_beta
+
 
 def sort_count_dp(S_full, y_full, K, mm=None):
     S, y, valid_indices = prune(S_full, y_full, K, mm)
@@ -389,106 +396,3 @@ def sort_count_after_clean_multi(S_val, y_train, K, n_jobs=4, MM=None):
         pool = Pool(n_jobs)    
         after_entropies = pool.map(partial(sort_count_after_clean_wrapper, S_val=S_val, y_train=y_train, K=K, MM=MM), indices)
     return after_entropies
-
-if __name__ == '__main__':
-    # S = np.array([[1, 1.5, 2.1], [2.2, 2.4, 3], [1.6, 2.3, 2.5], [1.1, 3.5, 4], [1.2, 4.5, 5]])
-    # y = np.array([1, 0, 0, 1, 1])
-    np.random.seed(1)
-    N = 5000
-    K = 3
-    S = np.random.rand(N, 10) 
-    y = np.random.randint(0, 2, size=N)
-
-    tic = time.time()
-    result = sort_count_after_clean(S, y, K, np.arange(N))
-    print(time.time() - tic)
-    # print(result)
-
-    tic = time.time()
-    old_result = sort_count_after_clean_old(S, y, K, np.arange(N))
-    print(time.time() - tic)
-    # print(old_result)
-    # tic = time.time()
-    # ae1 = sort_count_after_clean(S, y, 3)
-    # print(time.time() - tic, ae1[0] / (ae1[1] + ae1[0]))
-
-
-    
-
-    # print()
-    # N = 100
-    # alpha = np.random.randint(1, 10, size=(N, ))
-    # beta = 10 - alpha
-
-    # tic = time.time()
-    # B = compute_BR(alpha/10, beta/10, 3)
-    # print(time.time() - tic)
-    # print(B[0][-1])
-
-    # alpha_beta = np.vstack([alpha, beta]).T.tolist()
-
-    # tic = time.time()
-    # B_old = compute_BR_old(alpha_beta, 3)
-    # print(max(B_old[-1]) / (10 ** 100))
-    # print(time.time() - tic)
-
-
-
-    # print(sort_count_entropy(S, y, 3))
-
-
-#     tic = time.time()
-#     from copy import deepcopy
-#     S = S.tolist()
-#     ae2 = []
-#     for i in range(5):
-#         ae_i = []
-#         for j in range(3):
-#             S_a = deepcopy(S)
-#             S_a[i] = [S[i][j]]
-#             count = sort_count_dpdc(S_a, y, 3)
-#             ae_i.append(count)
-#         ae2.append(ae_i)
-#     print(time.time() - tic)
-
-#     for a1, a2 in zip(ae1, ae2):
-#         for e1, e2 in zip(a1, a2):
-#             print(e1 == e2)
-
-    # print(sort_count_no_dp(S, y, 1))
-
-    # print(sort_count_entropy(S, y, 3))
-    
-    # S = np.array([[1, 1.5, 2.1], [2.2, 2.4, 3.1], [1.6, 2.3, 2.5], [1.1, 3.5, 4], [4.1, 4.5, 5]])
-    # y = np.array([1, 0, 0, 1, 1])
-    # print(sort_count_no_dp(S, y, 3))
-    # print("___________")
-    # print(sort_count_dp(S, y, 3))
-    # print(sort_count_dpdc(S, y, 3))
-
-    # N = 1000
-    # S = np.random.rand(N, 10) 
-    # y = np.random.randint(0, 2, size=N)
-    # tic = time.time()
-    # print(sort_count_entropy(S, y, 3))
-    # print(time.time() - tic)
-
-
-    # a = {i:10 for i in range(10000)}
-    # b = {i:10 for i in range(5000, 15000)}
-    # tic = time.time()
-    # c_dict = dict_product3(a, b)
-    # print(len(a))
-    # print(len(c_dict))
-    # print(time.time() - tic)
-
-    # N = 10000
-    # alpha = np.random.randint(1, 10, size=(N, )).tolist()
-    # beta = np.random.randint(1, 10, size=(N, )).tolist()
-    
-    # tic = time.time()
-    # B = compute_B(alpha, beta, 3)
-    # BR = compute_BR(alpha, beta, 3)
-
-    # print(B[0][2] == BR[N][2])
-    # print((time.time() - tic)*N)

@@ -1,19 +1,9 @@
-import random
-
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler, OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
 import numpy as np
 import pandas as pd
-#import utils
-import os
-import json
-import pickle
-from collections import Counter
-import time
-from itertools import product
+
 
 class Preprocessor(object):
     """docstring for Preprocessor"""
@@ -23,7 +13,7 @@ class Preprocessor(object):
             ('imputer', SimpleImputer(strategy=num_strategy)),
             ('scaler', MinMaxScaler())
         ])
-        self.feature_enc = OneHotEncoder(sparse=False, handle_unknown='ignore')
+        self.feature_enc = OneHotEncoder(sparse_output=False, handle_unknown='ignore')
         self.cat_imputer = SimpleImputer(strategy="constant", fill_value="missing")
         self.label_enc = LabelEncoder()
 
@@ -82,14 +72,12 @@ def preprocess(data):
     y_train = data["y_train"]
     indicator = data["indicator"]
     X_val, y_val = data["X_val"], data["y_val"]
-    X_test, y_test = data["X_test"], data["y_test"]
     
     # preprocess data
     preprocessor = Preprocessor()
     preprocessor.fit(X_train_dirty, y_train, X_full)
 
     X_val, y_val = preprocessor.transform(X_val, y_val)
-    X_test, y_test = preprocessor.transform(X_test, y_test)
     X_train_clean, y_train = preprocessor.transform(X_train_clean, y_train)
 
     X_train_repairs = {}
@@ -103,8 +91,6 @@ def preprocess(data):
     data_after["y_train"] = y_train
     data_after["X_val"] = X_val
     data_after["y_val"] = y_val
-    data_after["X_test"] = X_test
-    data_after["y_test"] = y_test
     data_after["indicator"] = indicator
 
     d_train_repairs = []
@@ -133,5 +119,5 @@ def preprocess(data):
 
     X_train_gt_raw = pd.concat(X_train_gt_raw, axis=0)
     data_after["X_train_gt_raw"] = X_train_gt_raw
-    return data_after
 
+    return data_after, preprocessor
