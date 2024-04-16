@@ -244,7 +244,7 @@ class CPClean(object):
             # update q1
             q1_results_pruned = querier.run_q1(MM=MM_pruned)
 
-            sel_time = time.time()-tic
+            sel_time = time.time() - tic
             
             # logging
             percent_cc = (len(S_val) - len(S_val_pruned) + sum(q1_results_pruned)) / len(S_val)

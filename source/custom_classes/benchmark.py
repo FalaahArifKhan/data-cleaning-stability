@@ -462,7 +462,8 @@ class Benchmark:
                                                      X_train_val_with_nulls=X_train_val_with_nulls_wo_sensitive_attrs,
                                                      numerical_columns=numerical_columns_wo_sensitive_attrs,
                                                      categorical_columns=categorical_columns_wo_sensitive_attrs,
-                                                     experiment_seed=experiment_seed, **imputation_kwargs)
+                                                     experiment_seed=experiment_seed,
+                                                     **imputation_kwargs)
 
         # Create a base flow dataset for Virny to compute metrics
         base_flow_dataset = create_virny_base_flow_dataset(data_loader=data_loader,
