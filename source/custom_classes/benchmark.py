@@ -11,6 +11,7 @@ from sklearn.metrics import mean_squared_error, precision_recall_fscore_support
 from sklearn.model_selection import train_test_split
 
 from virny.utils.custom_initializers import create_config_obj
+from virny.user_interfaces.multiple_models_with_db_writer_api import compute_metrics_with_db_writer
 from virny.user_interfaces.multiple_models_with_multiple_test_sets_api import compute_metrics_with_multiple_test_sets
 
 from configs.models_config_for_tuning import get_models_params_for_tuning
@@ -22,8 +23,9 @@ from configs.datasets_config import DATASET_CONFIG
 from configs.scenarios_config import ERROR_INJECTION_SCENARIOS_CONFIG
 from source.utils.custom_logger import get_logger
 from source.utils.model_tuning_utils import tune_ML_models
-from source.utils.common_helpers import generate_guid, create_virny_base_flow_datasets, get_injection_scenarios
-from source.utils.dataframe_utils import preprocess_base_flow_datasets
+from source.utils.common_helpers import (generate_guid, create_base_flow_dataset,
+                                         create_virny_base_flow_datasets, get_injection_scenarios)
+from source.utils.dataframe_utils import preprocess_base_flow_dataset, preprocess_mult_base_flow_datasets
 from source.custom_classes.database_client import DatabaseClient
 from source.error_injectors.nulls_injector import NullsInjector
 from source.validation import is_in_enum
@@ -377,20 +379,20 @@ class Benchmark:
             zip(X_tests_with_nulls_wo_sensitive_attrs_lst, X_tests_imputed_wo_sensitive_attrs_lst)
         ))
 
-        # # Save performance metrics and tuned parameters of the null imputer in database
-        # self._save_imputation_metrics_to_db(train_imputation_metrics_df=train_imputation_metrics_df,
-        #                                     test_imputation_metrics_dfs_lst=test_imputation_metrics_dfs_lst,
-        #                                     imputation_runtime=imputation_runtime,
-        #                                     null_imputer_name=null_imputer_name,
-        #                                     evaluation_scenario=evaluation_scenario,
-        #                                     experiment_seed=experiment_seed)
-        #
-        # if save_imputed_datasets:
-        #     self._save_imputed_datasets_to_fs(X_train_val=X_train_val_imputed_wo_sensitive_attrs,
-        #                                       X_tests_lst=X_tests_imputed_wo_sensitive_attrs_lst,
-        #                                       null_imputer_name=null_imputer_name,
-        #                                       evaluation_scenario=evaluation_scenario,
-        #                                       experiment_seed=experiment_seed)
+        # Save performance metrics and tuned parameters of the null imputer in database
+        self._save_imputation_metrics_to_db(train_imputation_metrics_df=train_imputation_metrics_df,
+                                            test_imputation_metrics_dfs_lst=test_imputation_metrics_dfs_lst,
+                                            imputation_runtime=imputation_runtime,
+                                            null_imputer_name=null_imputer_name,
+                                            evaluation_scenario=evaluation_scenario,
+                                            experiment_seed=experiment_seed)
+
+        if save_imputed_datasets:
+            self._save_imputed_datasets_to_fs(X_train_val=X_train_val_imputed_wo_sensitive_attrs,
+                                              X_tests_lst=X_tests_imputed_wo_sensitive_attrs_lst,
+                                              null_imputer_name=null_imputer_name,
+                                              evaluation_scenario=evaluation_scenario,
+                                              experiment_seed=experiment_seed)
 
         # Create a base flow dataset for Virny to compute metrics
         main_base_flow_dataset, extra_base_flow_datasets = \
@@ -530,7 +532,7 @@ class Benchmark:
                                                                                                  experiment_seed=experiment_seed)
 
         # Preprocess the dataset using the defined preprocessor
-        main_base_flow_dataset, extra_test_sets = preprocess_base_flow_datasets(main_base_flow_dataset, extra_base_flow_datasets)
+        main_base_flow_dataset, extra_test_sets = preprocess_mult_base_flow_datasets(main_base_flow_dataset, extra_base_flow_datasets)
 
         # Tune ML models
         models_config = self._tune_ML_models(model_names=model_names,
@@ -667,21 +669,22 @@ class Benchmark:
 
         # Remove sensitive attributes from train and test sets with nulls to avoid their usage during model training
         (X_train_val_wo_sensitive_attrs,
-         X_test_wo_sensitive_attrs,
+         X_tests_wo_sensitive_attrs_lst,
          numerical_columns_wo_sensitive_attrs,
          categorical_columns_wo_sensitive_attrs) = self._remove_sensitive_attrs(X_train_val=X_train_val,
-                                                                                X_test=X_test,
+                                                                                X_tests_lst=[X_test],
                                                                                 data_loader=data_loader)
+        X_test_wo_sensitive_attrs = X_tests_wo_sensitive_attrs_lst[0]
 
         # Create a base flow dataset for Virny to compute metrics
-        base_flow_dataset = create_virny_base_flow_dataset(data_loader=data_loader,
-                                                           dataset_sensitive_attrs=self.dataset_sensitive_attrs,
-                                                           X_train_val_wo_sensitive_attrs=X_train_val_wo_sensitive_attrs,
-                                                           X_test_wo_sensitive_attrs=X_test_wo_sensitive_attrs,
-                                                           y_train_val=y_train_val,
-                                                           y_test=y_test,
-                                                           numerical_columns_wo_sensitive_attrs=numerical_columns_wo_sensitive_attrs,
-                                                           categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs)
+        base_flow_dataset = create_base_flow_dataset(data_loader=data_loader,
+                                                     dataset_sensitive_attrs=self.dataset_sensitive_attrs,
+                                                     X_train_val_wo_sensitive_attrs=X_train_val_wo_sensitive_attrs,
+                                                     X_test_wo_sensitive_attrs=X_test_wo_sensitive_attrs,
+                                                     y_train_val=y_train_val,
+                                                     y_test=y_test,
+                                                     numerical_columns_wo_sensitive_attrs=numerical_columns_wo_sensitive_attrs,
+                                                     categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs)
 
         return base_flow_dataset
 
@@ -721,7 +724,6 @@ class Benchmark:
                                              null_imputer_name=null_imputer_name)
 
         # Compute metrics for tuned models
-        # TODO: use multiple test sets interface
         compute_metrics_with_db_writer(dataset=base_flow_dataset,
                                        config=self.virny_config,
                                        models_config=models_config,

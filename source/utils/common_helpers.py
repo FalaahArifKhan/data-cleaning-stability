@@ -35,6 +35,37 @@ def get_injection_scenarios(evaluation_scenario: str):
     return train_injection_scenario, test_injection_scenarios_lst
 
 
+def create_base_flow_dataset(data_loader, dataset_sensitive_attrs,
+                             X_train_val_wo_sensitive_attrs, X_test_wo_sensitive_attrs,
+                             y_train_val, y_test, numerical_columns_wo_sensitive_attrs,
+                             categorical_columns_wo_sensitive_attrs):
+    # Create a dataframe with sensitive attributes and initial dataset indexes
+    sensitive_attrs_df = data_loader.full_df[dataset_sensitive_attrs]
+
+    # Ensure correctness of indexes in X and sensitive_attrs sets
+    if X_train_val_wo_sensitive_attrs is not None:
+        assert X_train_val_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all(), \
+            "Not all indexes of X_train_val_wo_sensitive_attrs are present in sensitive_attrs_df"
+    assert X_test_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all(), \
+        "Not all indexes of X_test_wo_sensitive_attrs are present in sensitive_attrs_df"
+
+    # Ensure correctness of indexes in X and y sets
+    if X_train_val_wo_sensitive_attrs is not None and y_train_val is not None:
+        assert X_train_val_wo_sensitive_attrs.index.equals(y_train_val.index) is True, \
+            "Indexes of X_train_val_wo_sensitive_attrs and y_train_val are different"
+    assert X_test_wo_sensitive_attrs.index.equals(y_test.index) is True, \
+        "Indexes of X_test_wo_sensitive_attrs and y_test are different"
+
+    return BaseFlowDataset(init_features_df=sensitive_attrs_df,  # keep only sensitive attributes with original indexes to compute group metrics
+                           X_train_val=X_train_val_wo_sensitive_attrs,
+                           X_test=X_test_wo_sensitive_attrs,
+                           y_train_val=y_train_val,
+                           y_test=y_test,
+                           target=data_loader.target,
+                           numerical_columns=numerical_columns_wo_sensitive_attrs,
+                           categorical_columns=categorical_columns_wo_sensitive_attrs)
+
+
 def create_virny_base_flow_datasets(data_loader, dataset_sensitive_attrs,
                                     X_train_val_wo_sensitive_attrs, X_tests_wo_sensitive_attrs_lst,
                                     y_train_val, y_test, numerical_columns_wo_sensitive_attrs,
@@ -67,34 +98,3 @@ def create_virny_base_flow_datasets(data_loader, dataset_sensitive_attrs,
     ))
 
     return main_base_flow_dataset, extra_base_flow_datasets
-
-
-def create_base_flow_dataset(data_loader, dataset_sensitive_attrs,
-                             X_train_val_wo_sensitive_attrs, X_test_wo_sensitive_attrs,
-                             y_train_val, y_test, numerical_columns_wo_sensitive_attrs,
-                             categorical_columns_wo_sensitive_attrs):
-    # Create a dataframe with sensitive attributes and initial dataset indexes
-    sensitive_attrs_df = data_loader.full_df[dataset_sensitive_attrs]
-
-    # Ensure correctness of indexes in X and sensitive_attrs sets
-    if X_train_val_wo_sensitive_attrs is not None:
-        assert X_train_val_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all(), \
-            "Not all indexes of X_train_val_wo_sensitive_attrs are present in sensitive_attrs_df"
-    assert X_test_wo_sensitive_attrs.index.isin(sensitive_attrs_df.index).all(), \
-        "Not all indexes of X_test_wo_sensitive_attrs are present in sensitive_attrs_df"
-
-    # Ensure correctness of indexes in X and y sets
-    if X_train_val_wo_sensitive_attrs is not None and y_train_val is not None:
-        assert X_train_val_wo_sensitive_attrs.index.equals(y_train_val.index) is True, \
-            "Indexes of X_train_val_wo_sensitive_attrs and y_train_val are different"
-    assert X_test_wo_sensitive_attrs.index.equals(y_test.index) is True, \
-        "Indexes of X_test_wo_sensitive_attrs and y_test are different"
-
-    return BaseFlowDataset(init_features_df=sensitive_attrs_df,  # keep only sensitive attributes with original indexes to compute group metrics
-                           X_train_val=X_train_val_wo_sensitive_attrs,
-                           X_test=X_test_wo_sensitive_attrs,
-                           y_train_val=y_train_val,
-                           y_test=y_test,
-                           target=data_loader.target,
-                           numerical_columns=numerical_columns_wo_sensitive_attrs,
-                           categorical_columns=categorical_columns_wo_sensitive_attrs)
