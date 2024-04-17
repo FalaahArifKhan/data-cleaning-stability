@@ -1,6 +1,8 @@
 import hashlib
 import secrets
 import base64
+
+import pandas as pd
 from virny.custom_classes.base_dataset import BaseFlowDataset
 
 from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
@@ -55,7 +57,7 @@ def create_virny_base_flow_datasets(data_loader, dataset_sensitive_attrs,
         lambda extra_X_test_wo_sensitive_attrs: \
             create_base_flow_dataset(data_loader=data_loader,
                                      dataset_sensitive_attrs=dataset_sensitive_attrs,
-                                     X_train_val_wo_sensitive_attrs=None,
+                                     X_train_val_wo_sensitive_attrs=pd.DataFrame(),
                                      X_test_wo_sensitive_attrs=extra_X_test_wo_sensitive_attrs,
                                      y_train_val=None,
                                      y_test=y_test,

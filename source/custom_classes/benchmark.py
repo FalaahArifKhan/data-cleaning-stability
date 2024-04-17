@@ -113,7 +113,7 @@ class Benchmark:
         error_rate_idx = int(error_rate_str) - 1
         for scenario_for_dataset in ERROR_INJECTION_SCENARIOS_CONFIG[self.dataset_name][injection_strategy]:
             error_rate = scenario_for_dataset['setting']['error_rates'][error_rate_idx]
-            condition = None if scenario_for_dataset == ErrorInjectionStrategy.mcar.value else scenario_for_dataset['setting']['condition']
+            condition = None if injection_strategy == ErrorInjectionStrategy.mcar.value else scenario_for_dataset['setting']['condition']
             nulls_injector = NullsInjector(seed=experiment_seed,
                                            strategy=injection_strategy,
                                            columns_with_nulls=scenario_for_dataset['missing_features'],
@@ -136,6 +136,11 @@ class Benchmark:
                 test_injection_scenarios_lst
         ))
         self.__logger.info('Nulls are successfully injected')
+
+        print("X_tests_with_nulls_lst[2]['AGEP'].isna().sum() --", X_tests_with_nulls_lst[2]['AGEP'].isna().sum())
+        print("X_tests_with_nulls_lst[2]['SCHL'].isna().sum() --", X_tests_with_nulls_lst[2]['SCHL'].isna().sum())
+        print("X_tests_with_nulls_lst[2]['MAR'].isna().sum() --", X_tests_with_nulls_lst[2]['MAR'].isna().sum())
+        print("X_tests_with_nulls_lst[2]['COW'].isna().sum() --", X_tests_with_nulls_lst[2]['COW'].isna().sum())
 
         return X_train_val_with_nulls, X_tests_with_nulls_lst
 
@@ -227,6 +232,7 @@ class Benchmark:
                 null_imputer_params = null_imputer_params_dct[column_name] if null_imputer_params_dct is not None else None
                 rmse = mean_squared_error(true, pred, squared=False)
                 print('RMSE for {}: {:.2f}'.format(column_name, rmse))
+                print()
             else:
                 null_imputer_params = null_imputer_params_dct[column_name] if null_imputer_params_dct is not None else None
                 precision, recall, f1, _ = precision_recall_fscore_support(true, pred, average="micro")
@@ -361,30 +367,30 @@ class Benchmark:
         print('\n')
         self.__logger.info('Evaluating imputation for X_test sets...')
         test_imputation_metrics_dfs_lst = list(map(
-            lambda X_test_with_nulls_wo_sensitive_attrs, X_test_imputed_wo_sensitive_attrs: \
+            lambda X_tests_for_evaluation: \
                 self._evaluate_imputation(real=X_test,
-                                          corrupted=X_test_with_nulls_wo_sensitive_attrs,
-                                          imputed=X_test_imputed_wo_sensitive_attrs,
+                                          corrupted=X_tests_for_evaluation[0],
+                                          imputed=X_tests_for_evaluation[1],
                                           numerical_columns=numerical_columns_wo_sensitive_attrs,
                                           null_imputer_name=null_imputer_name,
                                           null_imputer_params_dct=null_imputer_params_dct),
             zip(X_tests_with_nulls_wo_sensitive_attrs_lst, X_tests_imputed_wo_sensitive_attrs_lst)
         ))
 
-        # Save performance metrics and tuned parameters of the null imputer in database
-        self._save_imputation_metrics_to_db(train_imputation_metrics_df=train_imputation_metrics_df,
-                                            test_imputation_metrics_dfs_lst=test_imputation_metrics_dfs_lst,
-                                            imputation_runtime=imputation_runtime,
-                                            null_imputer_name=null_imputer_name,
-                                            evaluation_scenario=evaluation_scenario,
-                                            experiment_seed=experiment_seed)
-
-        if save_imputed_datasets:
-            self._save_imputed_datasets_to_fs(X_train_val=X_train_val_imputed_wo_sensitive_attrs,
-                                              X_tests_lst=X_tests_imputed_wo_sensitive_attrs_lst,
-                                              null_imputer_name=null_imputer_name,
-                                              evaluation_scenario=evaluation_scenario,
-                                              experiment_seed=experiment_seed)
+        # # Save performance metrics and tuned parameters of the null imputer in database
+        # self._save_imputation_metrics_to_db(train_imputation_metrics_df=train_imputation_metrics_df,
+        #                                     test_imputation_metrics_dfs_lst=test_imputation_metrics_dfs_lst,
+        #                                     imputation_runtime=imputation_runtime,
+        #                                     null_imputer_name=null_imputer_name,
+        #                                     evaluation_scenario=evaluation_scenario,
+        #                                     experiment_seed=experiment_seed)
+        #
+        # if save_imputed_datasets:
+        #     self._save_imputed_datasets_to_fs(X_train_val=X_train_val_imputed_wo_sensitive_attrs,
+        #                                       X_tests_lst=X_tests_imputed_wo_sensitive_attrs_lst,
+        #                                       null_imputer_name=null_imputer_name,
+        #                                       evaluation_scenario=evaluation_scenario,
+        #                                       experiment_seed=experiment_seed)
 
         # Create a base flow dataset for Virny to compute metrics
         main_base_flow_dataset, extra_base_flow_datasets = \
