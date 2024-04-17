@@ -18,7 +18,7 @@ pip install datawig --no-deps
 
 1. Create a new imputation method for your imputer in `source/null_imputers/imputation_methods.py` similar to:
 ```python
-def new_imputation_method(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd.DataFrame,
+def new_imputation_method(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: list,
                           numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
                           hyperparams: dict, **kwargs):
     """
@@ -26,7 +26,7 @@ def new_imputation_method(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: p
     
     Arguments:
         X_train_with_nulls -- a training features df with nulls in numeric_columns_with_nulls and categorical_columns_with_nulls columns
-        X_test_with_nulls -- a test features df with nulls in numeric_columns_with_nulls and categorical_columns_with_nulls columns
+        X_tests_with_nulls_lst -- a list of different X test dfs with nulls in numeric_columns_with_nulls and categorical_columns_with_nulls columns
         numeric_columns_with_nulls -- a list of numerical column names with nulls
         categorical_columns_with_nulls -- a list of categorical column names with nulls
         hyperparams -- a dictionary of tuned hyperparams for the null imputer
@@ -35,7 +35,7 @@ def new_imputation_method(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: p
     Returns:
         X_train_imputed (pd.DataFrame) -- a training features df with imputed columns defined in numeric_columns_with_nulls
                                           and categorical_columns_with_nulls
-        X_test_imputed (pd.DataFrame) -- a training features df with imputed columns defined in numeric_columns_with_nulls 
+        X_tests_imputed_lst (pd.DataFrame) -- a training features df with imputed columns defined in numeric_columns_with_nulls 
                                          and categorical_columns_with_nulls
         null_imputer_params_dct (dict) -- a dictionary where a keys is a column name with nulls, and 
                                           a value is a dictionary of null imputer parameters used to impute this column
@@ -44,7 +44,7 @@ def new_imputation_method(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: p
     # Write here either a call to the algorithm or the algorithm itself
     ...
     
-    return X_train_imputed, X_test_imputed, null_imputer_params_dct
+    return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct
 ```
 
 2. Add the configuration of your new imputer to `configs/null_imputers_config.py` to the _NULL_IMPUTERS_CONFIG_ dictionary.
