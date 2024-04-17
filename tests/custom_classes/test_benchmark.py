@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from tests import compare_dfs, get_df_condition
 from source.custom_classes.benchmark import Benchmark
 from configs.constants import ACS_INCOME_DATASET, ErrorRepairMethod, MLModels, EXPERIMENT_RUN_SEEDS
-from configs.evaluation_scenarios_config import EVALUATION_SCENARIOS_CONFIG
+from configs.scenarios_config import ERROR_INJECTION_SCENARIOS_CONFIG
 
 
 @pytest.fixture(scope='module')
@@ -81,7 +81,7 @@ def test_inject_nulls_into_one_set_for_mcar_evaluation_scenario(folk_benchmark):
                                                                        error_rate_idx=error_rate_idx,
                                                                        experiment_seed=experiment_seed)
 
-    mnar_injection_scenario = EVALUATION_SCENARIOS_CONFIG[folk_benchmark.dataset_name][injection_strategy][0]
+    mnar_injection_scenario = ERROR_INJECTION_SCENARIOS_CONFIG[folk_benchmark.dataset_name][injection_strategy][0]
     error_rate = mnar_injection_scenario['setting']['error_rates'][error_rate_idx]
     missing_features = mnar_injection_scenario['missing_features']
 
@@ -103,7 +103,7 @@ def test_inject_nulls_into_one_set_for_mar_evaluation_scenario(folk_benchmark):
                                                                   error_rate_idx=error_rate_idx,
                                                                   experiment_seed=experiment_seed)
 
-    for injection_scenario in EVALUATION_SCENARIOS_CONFIG[folk_benchmark.dataset_name][injection_strategy]:
+    for injection_scenario in ERROR_INJECTION_SCENARIOS_CONFIG[folk_benchmark.dataset_name][injection_strategy]:
         missing_features = injection_scenario['missing_features']
         error_rate = injection_scenario['setting']['error_rates'][error_rate_idx]
         condition_column, condition_value = injection_scenario['setting']['condition']
@@ -130,7 +130,7 @@ def test_inject_nulls_into_one_set_should_apply_mnar_scenario_for_multiple_colum
                                                                   error_rate_idx=error_rate_idx,
                                                                   experiment_seed=experiment_seed)
 
-    for injection_scenario in EVALUATION_SCENARIOS_CONFIG[folk_benchmark.dataset_name][injection_strategy]:
+    for injection_scenario in ERROR_INJECTION_SCENARIOS_CONFIG[folk_benchmark.dataset_name][injection_strategy]:
         missing_feature = injection_scenario['missing_features'][0]
         error_rate = injection_scenario['setting']['error_rates'][error_rate_idx]
         condition_value = injection_scenario['setting']['condition'][1]

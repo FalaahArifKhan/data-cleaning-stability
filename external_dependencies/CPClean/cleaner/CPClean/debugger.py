@@ -30,7 +30,7 @@ class Debugger(object):
                              self.gt_val_acc, self.dc_val_acc, self.dc_val_acc])
         self.columns = ["n_iter", "n_val", "selection", "time", 
                         "percent_cp", "percent_clean", 
-                        "val_acc_gt", "val_acc_gt", "val_acc_cpclean"]
+                        "val_acc_gt", "val_acc_dc", "val_acc_cpclean"]
         self.save_log()
 
     def save_log(self):
