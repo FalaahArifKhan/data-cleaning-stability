@@ -53,10 +53,11 @@ class ErrorRepairMethod(Enum):
 # ML Models
 # ====================================================================
 class MLModels(Enum):
-    lr_clf = 'lr_clf'
     dt_clf = 'dt_clf'
+    lr_clf = 'lr_clf'
     lgbm_clf = 'lgbm_clf'
-    nn_clf = 'nn_clf'
+    rf_clf = 'rf_clf'
+    mlp_clf = 'mlp_clf'
 
     def __str__(self):
         return self.value

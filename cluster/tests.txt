@@ -22,7 +22,7 @@ python ./scripts/evaluate_models.py \
     --run_nums \[1\] \
     --tune_imputers true \
     --ml_impute true \
-    --evaluation_scenarios \[\"mcar1\"\]
+    --evaluation_scenarios \[\"mcar2\"\]
 
 python ./scripts/impute_nulls_with_predictor.py \
     --dataset folk \
