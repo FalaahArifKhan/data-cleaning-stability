@@ -1,5 +1,6 @@
 dataset_name: folk
 bootstrap_fraction: 0.8
-n_estimators: 50
+#n_estimators: 50
+n_estimators: 5
 computation_mode: error_analysis
 sensitive_attributes_dct: {'SEX': '2', 'RAC1P': ['2', '3', '4', '5', '6', '7', '8', '9'], 'SEX & RAC1P': None}

@@ -12,7 +12,7 @@ from virny.user_interfaces.multiple_models_with_multiple_test_sets_api import co
 
 from configs.null_imputers_config import NULL_IMPUTERS_CONFIG
 from configs.constants import (EXP_COLLECTION_NAME, EXPERIMENT_RUN_SEEDS, ErrorRepairMethod)
-from source.utils.common_helpers import (generate_guid, create_virny_base_flow_datasets)
+from source.utils.common_helpers import (generate_guid, create_virny_base_flow_datasets, get_injection_scenarios)
 from source.utils.dataframe_utils import preprocess_base_flow_dataset, preprocess_mult_base_flow_datasets
 from source.custom_classes.ml_lifecycle import MLLifecycle
 
@@ -28,6 +28,71 @@ class Benchmark(MLLifecycle):
         super().__init__(dataset_name=dataset_name,
                          null_imputers=null_imputers,
                          model_names=model_names)
+
+    def _run_baseline_evaluation_iter(self, init_data_loader, run_num: int, model_names: list):
+        null_imputer_name = 'baseline'
+        evaluation_scenario = 'baseline'
+        data_loader = copy.deepcopy(init_data_loader)
+
+        custom_table_fields_dct = dict()
+        experiment_seed = EXPERIMENT_RUN_SEEDS[run_num - 1]
+        custom_table_fields_dct['session_uuid'] = self._session_uuid
+        custom_table_fields_dct['null_imputer_name'] = null_imputer_name
+        custom_table_fields_dct['evaluation_scenario'] = evaluation_scenario
+        custom_table_fields_dct['experiment_iteration'] = f'exp_iter_{run_num}'
+        custom_table_fields_dct['dataset_split_seed'] = experiment_seed
+        custom_table_fields_dct['model_init_seed'] = experiment_seed
+
+        # Create exp_pipeline_guid to define a row level of granularity.
+        # concat(exp_pipeline_guid, model_name, subgroup, metric) can be used to check duplicates of results
+        # for the same experimental pipeline.
+        custom_table_fields_dct['exp_pipeline_guid'] = (
+            generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name, evaluation_scenario, experiment_seed]))
+
+        self._logger.info("Start an experiment iteration for the following custom params:")
+        pprint(custom_table_fields_dct)
+        print('\n', flush=True)
+
+        # Prepare and preprocess the dataset using the defined preprocessor
+        base_flow_dataset = self._prepare_baseline_dataset(data_loader, experiment_seed)
+        base_flow_dataset = preprocess_base_flow_dataset(base_flow_dataset)
+
+        # Tune ML models
+        models_config = self._tune_ML_models(model_names=model_names,
+                                             base_flow_dataset=base_flow_dataset,
+                                             experiment_seed=experiment_seed,
+                                             evaluation_scenario=evaluation_scenario,
+                                             null_imputer_name=null_imputer_name)
+
+        # Compute metrics for tuned models
+        compute_metrics_with_db_writer(dataset=base_flow_dataset,
+                                       config=self.virny_config,
+                                       models_config=models_config,
+                                       custom_tbl_fields_dct=custom_table_fields_dct,
+                                       db_writer_func=self._db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
+                                       notebook_logs_stdout=False,
+                                       verbose=0)
+
+    def evaluate_baselines(self, run_nums: list, model_names: list):
+        self._db.connect()
+
+        total_iterations = len(run_nums)
+        with tqdm.tqdm(total=total_iterations, desc="Baseline Evaluation Progress") as pbar:
+            for run_idx, run_num in enumerate(run_nums):
+                self._logger.info(f"{'=' * 30} NEW BASELINE EVALUATION RUN {'=' * 30}")
+                print('Configs for a new baseline evaluation run:')
+                print(
+                    f"Models: {model_names})\n"
+                    f"Run num: {run_num} ({run_idx + 1} out of {len(run_nums)})\n"
+                )
+                self._run_baseline_evaluation_iter(init_data_loader=self.init_data_loader,
+                                                   run_num=run_num,
+                                                   model_names=model_names)
+                pbar.update(1)
+                print('\n\n\n\n', flush=True)
+
+        self._db.close()
+        self._logger.info("Performance metrics of the baselines were successfully saved!")
 
     def inject_and_impute_nulls(self, data_loader, null_imputer_name: str, evaluation_scenario: str,
                                 experiment_seed: int, tune_imputers: bool = True, save_imputed_datasets: bool = False):
@@ -104,7 +169,7 @@ class Benchmark(MLLifecycle):
                                               evaluation_scenario=evaluation_scenario,
                                               experiment_seed=experiment_seed)
 
-        # Create a base flow dataset for Virny to compute metrics
+        # Create base flow datasets for Virny to compute metrics
         main_base_flow_dataset, extra_base_flow_datasets = \
             create_virny_base_flow_datasets(data_loader=data_loader,
                                             dataset_sensitive_attrs=self.dataset_sensitive_attrs,
@@ -116,6 +181,49 @@ class Benchmark(MLLifecycle):
                                             categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs)
 
         return main_base_flow_dataset, extra_base_flow_datasets
+
+    def _run_null_imputation_iter(self, init_data_loader, run_num, evaluation_scenario, null_imputer_name,
+                                  tune_imputers, save_imputed_datasets):
+        if null_imputer_name in (ErrorRepairMethod.boost_clean.value, ErrorRepairMethod.cp_clean.value):
+            raise ValueError(f'To work with {ErrorRepairMethod.boost_clean.value} or {ErrorRepairMethod.cp_clean.value}, '
+                             f'use scripts/evaluate_models.py')
+
+        data_loader = copy.deepcopy(init_data_loader)
+        experiment_seed = EXPERIMENT_RUN_SEEDS[run_num - 1]
+        self.inject_and_impute_nulls(data_loader=data_loader,
+                                     null_imputer_name=null_imputer_name,
+                                     evaluation_scenario=evaluation_scenario,
+                                     experiment_seed=experiment_seed,
+                                     tune_imputers=tune_imputers,
+                                     save_imputed_datasets=save_imputed_datasets)
+
+    def impute_nulls_with_multiple_technique(self, run_nums: list, evaluation_scenarios: list,
+                                             tune_imputers: bool, save_imputed_datasets: bool):
+        self._db.connect()
+
+        total_iterations = len(self.null_imputers) * len(evaluation_scenarios) * len(run_nums)
+        with tqdm.tqdm(total=total_iterations, desc="Null Imputation Progress") as pbar:
+            for null_imputer_idx, null_imputer_name in enumerate(self.null_imputers):
+                for evaluation_scenario_idx, evaluation_scenario in enumerate(evaluation_scenarios):
+                    for run_idx, run_num in enumerate(run_nums):
+                        self._logger.info(f"{'=' * 30} NEW DATASET IMPUTATION RUN {'=' * 30}")
+                        print('Configs for a new experiment run:')
+                        print(
+                            f"Null imputer: {null_imputer_name} ({null_imputer_idx + 1} out of {len(self.null_imputers)})\n"
+                            f"Evaluation scenario: {evaluation_scenario} ({evaluation_scenario_idx + 1} out of {len(evaluation_scenarios)})\n"
+                            f"Run num: {run_num} ({run_idx + 1} out of {len(run_nums)})\n"
+                        )
+                        self._run_null_imputation_iter(init_data_loader=self.init_data_loader,
+                                                       run_num=run_num,
+                                                       evaluation_scenario=evaluation_scenario,
+                                                       null_imputer_name=null_imputer_name,
+                                                       tune_imputers=tune_imputers,
+                                                       save_imputed_datasets=save_imputed_datasets)
+                        pbar.update(1)
+                        print('\n\n\n\n', flush=True)
+
+        self._db.close()
+        self._logger.info("Experimental results were successfully saved!")
 
     def load_imputed_train_test_sets(self, data_loader, null_imputer_name: str, evaluation_scenario: str,
                                      experiment_seed: int):
@@ -131,33 +239,46 @@ class Benchmark(MLLifecycle):
         save_sets_dir_path = (pathlib.Path(__file__).parent.parent.parent
                                   .joinpath('results')
                                   .joinpath(self.dataset_name)
-                                  .joinpath(null_imputer_name))
+                                  .joinpath(null_imputer_name)
+                                  .joinpath(evaluation_scenario)
+                                  .joinpath(str(experiment_seed)))
 
-        train_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_train_val.csv'
-        X_train_val_imputed_wo_sensitive_attrs = pd.read_csv(os.path.join(save_sets_dir_path, train_set_filename), header=0)
+        # Read X_train_val set
+        train_set_filename = f'imputed_{self.dataset_name}_{null_imputer_name}_{evaluation_scenario}_{experiment_seed}_X_train_val.csv'
+        X_train_val_imputed_wo_sensitive_attrs = pd.read_csv(os.path.join(save_sets_dir_path, train_set_filename),
+                                                             header=0, index_col=0)
 
-        test_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_test.csv'
-        X_test_imputed_wo_sensitive_attrs = pd.read_csv(os.path.join(save_sets_dir_path, test_set_filename), header=0)
+        # Read X_test sets
+        X_tests_imputed_wo_sensitive_attrs_lst = list()
+        _, test_injection_scenarios_lst = get_injection_scenarios(evaluation_scenario)
+        for test_injection_scenario in test_injection_scenarios_lst:
+            test_set_filename = f'imputed_{self.dataset_name}_{null_imputer_name}_{evaluation_scenario}_{experiment_seed}_X_test_{test_injection_scenario}.csv'
+            X_test_imputed_wo_sensitive_attrs = pd.read_csv(os.path.join(save_sets_dir_path, test_set_filename),
+                                                            header=0, index_col=0)
+            X_tests_imputed_wo_sensitive_attrs_lst.append(X_test_imputed_wo_sensitive_attrs)
 
         # Create a base flow dataset for Virny to compute metrics
         numerical_columns_wo_sensitive_attrs = [col for col in data_loader.numerical_columns if col not in self.dataset_sensitive_attrs]
         categorical_columns_wo_sensitive_attrs = [col for col in data_loader.categorical_columns if col not in self.dataset_sensitive_attrs]
-        base_flow_dataset = create_virny_base_flow_dataset(data_loader=data_loader,
-                                                           dataset_sensitive_attrs=self.dataset_sensitive_attrs,
-                                                           X_train_val_wo_sensitive_attrs=X_train_val_imputed_wo_sensitive_attrs,
-                                                           X_test_wo_sensitive_attrs=X_test_imputed_wo_sensitive_attrs,
-                                                           y_train_val=y_train_val,
-                                                           y_test=y_test,
-                                                           numerical_columns_wo_sensitive_attrs=numerical_columns_wo_sensitive_attrs,
-                                                           categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs)
 
-        return base_flow_dataset
+        # Create base flow datasets for Virny to compute metrics
+        main_base_flow_dataset, extra_base_flow_datasets = \
+            create_virny_base_flow_datasets(data_loader=data_loader,
+                                            dataset_sensitive_attrs=self.dataset_sensitive_attrs,
+                                            X_train_val_wo_sensitive_attrs=X_train_val_imputed_wo_sensitive_attrs,
+                                            X_tests_wo_sensitive_attrs_lst=X_tests_imputed_wo_sensitive_attrs_lst,
+                                            y_train_val=y_train_val,
+                                            y_test=y_test,
+                                            numerical_columns_wo_sensitive_attrs=numerical_columns_wo_sensitive_attrs,
+                                            categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs)
+
+        return main_base_flow_dataset, extra_base_flow_datasets
 
     def _run_exp_iter_for_joint_cleaning_and_training(self, data_loader, experiment_seed: int, evaluation_scenario: str,
                                                       null_imputer_name: str, model_names: list, custom_table_fields_dct: dict):
         if len(model_names) > 0 and null_imputer_name == ErrorRepairMethod.cp_clean.value:
             self._logger.warning(f'model_names argument is ignored for {ErrorRepairMethod.cp_clean.value} '
-                                  f'since only KNN is supported for this null imputation method')
+                                 f'since only KNN is supported for this null imputation method')
 
         # Split the dataset
         X_train_val, X_test, y_train_val, y_test = self._split_dataset(data_loader, experiment_seed)
@@ -227,15 +348,15 @@ class Benchmark(MLLifecycle):
 
     def _run_exp_iter_for_standard_imputation(self, data_loader, experiment_seed: int, evaluation_scenario: str,
                                               null_imputer_name: str, model_names: list, tune_imputers: bool,
-                                              ml_impute: bool, custom_table_fields_dct: dict):
+                                              ml_impute: bool, save_imputed_datasets: bool, custom_table_fields_dct: dict):
         if ml_impute:
             main_base_flow_dataset, extra_base_flow_datasets = self.inject_and_impute_nulls(data_loader=data_loader,
                                                                                             null_imputer_name=null_imputer_name,
                                                                                             evaluation_scenario=evaluation_scenario,
                                                                                             tune_imputers=tune_imputers,
-                                                                                            experiment_seed=experiment_seed)
+                                                                                            experiment_seed=experiment_seed,
+                                                                                            save_imputed_datasets=save_imputed_datasets)
         else:
-            # TODO: extract train and test sets from AWS S3
             main_base_flow_dataset, extra_base_flow_datasets = self.load_imputed_train_test_sets(data_loader=data_loader,
                                                                                                  null_imputer_name=null_imputer_name,
                                                                                                  evaluation_scenario=evaluation_scenario,
@@ -263,7 +384,7 @@ class Benchmark(MLLifecycle):
                                                 verbose=0)
 
     def _run_exp_iter(self, init_data_loader, run_num, evaluation_scenario, null_imputer_name,
-                      model_names, tune_imputers, ml_impute):
+                      model_names, tune_imputers, ml_impute, save_imputed_datasets):
         data_loader = copy.deepcopy(init_data_loader)
 
         custom_table_fields_dct = dict()
@@ -300,9 +421,11 @@ class Benchmark(MLLifecycle):
                                                        model_names=model_names,
                                                        tune_imputers=tune_imputers,
                                                        ml_impute=ml_impute,
+                                                       save_imputed_datasets=save_imputed_datasets,
                                                        custom_table_fields_dct=custom_table_fields_dct)
 
-    def run_experiment(self, run_nums: list, evaluation_scenarios: list, model_names: list, tune_imputers: bool, ml_impute: bool):
+    def run_experiment(self, run_nums: list, evaluation_scenarios: list, model_names: list,
+                       tune_imputers: bool, ml_impute: bool, save_imputed_datasets: bool):
         self._db.connect()
 
         total_iterations = len(self.null_imputers) * len(evaluation_scenarios) * len(run_nums)
@@ -323,117 +446,10 @@ class Benchmark(MLLifecycle):
                                            null_imputer_name=null_imputer_name,
                                            model_names=model_names,
                                            tune_imputers=tune_imputers,
-                                           ml_impute=ml_impute)
+                                           ml_impute=ml_impute,
+                                           save_imputed_datasets=save_imputed_datasets)
                         pbar.update(1)
                         print('\n\n\n\n', flush=True)
 
         self._db.close()
         self._logger.info("Experimental results were successfully saved!")
-
-    def _run_null_imputation_iter(self, init_data_loader, run_num, evaluation_scenario, null_imputer_name,
-                                  tune_imputers, save_imputed_datasets):
-        if null_imputer_name in (ErrorRepairMethod.boost_clean.value, ErrorRepairMethod.cp_clean.value):
-            raise ValueError(f'To work with {ErrorRepairMethod.boost_clean.value} or {ErrorRepairMethod.cp_clean.value}, '
-                             f'use scripts/evaluate_models.py')
-
-        data_loader = copy.deepcopy(init_data_loader)
-        experiment_seed = EXPERIMENT_RUN_SEEDS[run_num - 1]
-        self.inject_and_impute_nulls(data_loader=data_loader,
-                                     null_imputer_name=null_imputer_name,
-                                     evaluation_scenario=evaluation_scenario,
-                                     experiment_seed=experiment_seed,
-                                     tune_imputers=tune_imputers,
-                                     save_imputed_datasets=save_imputed_datasets)
-
-    def impute_nulls_with_multiple_technique(self, run_nums: list, evaluation_scenarios: list,
-                                             tune_imputers: bool, save_imputed_datasets: bool):
-        self._db.connect()
-
-        total_iterations = len(self.null_imputers) * len(evaluation_scenarios) * len(run_nums)
-        with tqdm.tqdm(total=total_iterations, desc="Null Imputation Progress") as pbar:
-            for null_imputer_idx, null_imputer_name in enumerate(self.null_imputers):
-                for evaluation_scenario_idx, evaluation_scenario in enumerate(evaluation_scenarios):
-                    for run_idx, run_num in enumerate(run_nums):
-                        self._logger.info(f"{'=' * 30} NEW DATASET IMPUTATION RUN {'=' * 30}")
-                        print('Configs for a new experiment run:')
-                        print(
-                            f"Null imputer: {null_imputer_name} ({null_imputer_idx + 1} out of {len(self.null_imputers)})\n"
-                            f"Evaluation scenario: {evaluation_scenario} ({evaluation_scenario_idx + 1} out of {len(evaluation_scenarios)})\n"
-                            f"Run num: {run_num} ({run_idx + 1} out of {len(run_nums)})\n"
-                        )
-                        self._run_null_imputation_iter(init_data_loader=self.init_data_loader,
-                                                       run_num=run_num,
-                                                       evaluation_scenario=evaluation_scenario,
-                                                       null_imputer_name=null_imputer_name,
-                                                       tune_imputers=tune_imputers,
-                                                       save_imputed_datasets=save_imputed_datasets)
-                        pbar.update(1)
-                        print('\n\n\n\n', flush=True)
-
-        self._db.close()
-        self._logger.info("Experimental results were successfully saved!")
-
-    def _run_baseline_evaluation_iter(self, init_data_loader, run_num: int, model_names: list):
-        null_imputer_name = 'baseline'
-        evaluation_scenario = 'baseline'
-        data_loader = copy.deepcopy(init_data_loader)
-
-        custom_table_fields_dct = dict()
-        experiment_seed = EXPERIMENT_RUN_SEEDS[run_num - 1]
-        custom_table_fields_dct['session_uuid'] = self._session_uuid
-        custom_table_fields_dct['null_imputer_name'] = null_imputer_name
-        custom_table_fields_dct['evaluation_scenario'] = evaluation_scenario
-        custom_table_fields_dct['experiment_iteration'] = f'exp_iter_{run_num}'
-        custom_table_fields_dct['dataset_split_seed'] = experiment_seed
-        custom_table_fields_dct['model_init_seed'] = experiment_seed
-
-        # Create exp_pipeline_guid to define a row level of granularity.
-        # concat(exp_pipeline_guid, model_name, subgroup, metric) can be used to check duplicates of results
-        # for the same experimental pipeline.
-        custom_table_fields_dct['exp_pipeline_guid'] = (
-            generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name, evaluation_scenario, experiment_seed]))
-
-        self._logger.info("Start an experiment iteration for the following custom params:")
-        pprint(custom_table_fields_dct)
-        print('\n', flush=True)
-
-        # Prepare and preprocess the dataset using the defined preprocessor
-        base_flow_dataset = self._prepare_baseline_dataset(data_loader, experiment_seed)
-        base_flow_dataset = preprocess_base_flow_dataset(base_flow_dataset)
-
-        # Tune ML models
-        models_config = self._tune_ML_models(model_names=model_names,
-                                             base_flow_dataset=base_flow_dataset,
-                                             experiment_seed=experiment_seed,
-                                             evaluation_scenario=evaluation_scenario,
-                                             null_imputer_name=null_imputer_name)
-
-        # Compute metrics for tuned models
-        compute_metrics_with_db_writer(dataset=base_flow_dataset,
-                                       config=self.virny_config,
-                                       models_config=models_config,
-                                       custom_tbl_fields_dct=custom_table_fields_dct,
-                                       db_writer_func=self._db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
-                                       notebook_logs_stdout=False,
-                                       verbose=0)
-
-    def evaluate_baselines(self, run_nums: list, model_names: list):
-        self._db.connect()
-
-        total_iterations = len(run_nums)
-        with tqdm.tqdm(total=total_iterations, desc="Baseline Evaluation Progress") as pbar:
-            for run_idx, run_num in enumerate(run_nums):
-                self._logger.info(f"{'=' * 30} NEW BASELINE EVALUATION RUN {'=' * 30}")
-                print('Configs for a new baseline evaluation run:')
-                print(
-                    f"Models: {model_names})\n"
-                    f"Run num: {run_num} ({run_idx + 1} out of {len(run_nums)})\n"
-                )
-                self._run_baseline_evaluation_iter(init_data_loader=self.init_data_loader,
-                                                   run_num=run_num,
-                                                   model_names=model_names)
-                pbar.update(1)
-                print('\n\n\n\n', flush=True)
-
-        self._db.close()
-        self._logger.info("Performance metrics of the baselines were successfully saved!")

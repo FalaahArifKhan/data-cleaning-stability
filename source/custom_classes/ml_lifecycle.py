@@ -10,8 +10,7 @@ from virny.utils.custom_initializers import create_config_obj
 
 from configs.models_config_for_tuning import get_models_params_for_tuning
 from configs.null_imputers_config import NULL_IMPUTERS_CONFIG, NULL_IMPUTERS_HYPERPARAMS
-from configs.constants import (MODEL_HYPER_PARAMS_COLLECTION_NAME,
-                               IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
+from configs.constants import (MODEL_HYPER_PARAMS_COLLECTION_NAME, IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                NUM_FOLDS_FOR_TUNING, ErrorRepairMethod, ErrorInjectionStrategy)
 from configs.datasets_config import DATASET_CONFIG
 from configs.scenarios_config import ERROR_INJECTION_SCENARIOS_CONFIG
@@ -130,11 +129,6 @@ class MLLifecycle:
             test_injection_scenarios_lst
         ))
         self._logger.info('Nulls are successfully injected')
-
-        print("X_tests_with_nulls_lst[2]['AGEP'].isna().sum() --", X_tests_with_nulls_lst[2]['AGEP'].isna().sum())
-        print("X_tests_with_nulls_lst[2]['SCHL'].isna().sum() --", X_tests_with_nulls_lst[2]['SCHL'].isna().sum())
-        print("X_tests_with_nulls_lst[2]['MAR'].isna().sum() --", X_tests_with_nulls_lst[2]['MAR'].isna().sum())
-        print("X_tests_with_nulls_lst[2]['COW'].isna().sum() --", X_tests_with_nulls_lst[2]['COW'].isna().sum())
 
         return X_train_val_with_nulls, X_tests_with_nulls_lst
 
@@ -290,24 +284,26 @@ class MLLifecycle:
         save_sets_dir_path = (pathlib.Path(__file__).parent.parent.parent
                               .joinpath('results')
                               .joinpath(self.dataset_name)
-                              .joinpath(null_imputer_name))
+                              .joinpath(null_imputer_name)
+                              .joinpath(evaluation_scenario)
+                              .joinpath(str(experiment_seed)))
         os.makedirs(save_sets_dir_path, exist_ok=True)
 
-        train_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_train_val.csv'
+        train_set_filename = f'imputed_{self.dataset_name}_{null_imputer_name}_{evaluation_scenario}_{experiment_seed}_X_train_val.csv'
         X_train_val.to_csv(os.path.join(save_sets_dir_path, train_set_filename),
                            sep=",",
                            columns=X_train_val.columns,
-                           index=False)
+                           index=True)
 
         # Save each imputed test set in a local filesystem
         _, test_injection_scenarios_lst = get_injection_scenarios(evaluation_scenario)
         for test_set_idx, X_test in enumerate(X_tests_lst):
             test_injection_scenario = test_injection_scenarios_lst[test_set_idx]
-            test_set_filename = f'imputed_{self.dataset_name}_{experiment_seed}_{evaluation_scenario}_{null_imputer_name}_X_test_{test_injection_scenario}.csv'
+            test_set_filename = f'imputed_{self.dataset_name}_{null_imputer_name}_{evaluation_scenario}_{experiment_seed}_X_test_{test_injection_scenario}.csv'
             X_test.to_csv(os.path.join(save_sets_dir_path, test_set_filename),
                           sep=",",
                           columns=X_test.columns,
-                          index=False)
+                          index=True)
 
         self._logger.info("Imputed train and test sets are saved locally")
 

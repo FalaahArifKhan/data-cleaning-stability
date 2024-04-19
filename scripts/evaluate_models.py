@@ -38,6 +38,8 @@ def parse_input_args():
     parser.add_argument("--run_nums", type=str, help="a list of experiment run numbers", required=True)
     parser.add_argument("--tune_imputers", type=str2bool, required=True,
                         help="True -- tune null imputers, False -- take hyper-params of null imputers from configs/null_imputers_config.py")
+    parser.add_argument("--save_imputed_datasets", type=str2bool, required=False, default=False,
+                        help="True -- save imputed train and test sets, False -- do not save train and test sets")
     parser.add_argument("--ml_impute", type=str2bool, required=True,
                         help="True -- apply ML-oriented imputers, False -- use pre-computed imputed datasets")
     parser.add_argument("--evaluation_scenarios", type=str, help="a list of evaluation scenarios",
@@ -69,7 +71,8 @@ if __name__ == '__main__':
                              evaluation_scenarios=args.evaluation_scenarios,
                              model_names=args.models,
                              tune_imputers=args.tune_imputers,
-                             ml_impute=args.ml_impute)
+                             ml_impute=args.ml_impute,
+                             save_imputed_datasets=args.save_imputed_datasets)
 
     end_time = datetime.now()
     print(f'The script is successfully executed. Run time: {end_time - start_time}')
