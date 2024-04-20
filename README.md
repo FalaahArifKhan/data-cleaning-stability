@@ -35,7 +35,7 @@ def new_imputation_method(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
     Returns:
         X_train_imputed (pd.DataFrame) -- a training features df with imputed columns defined in numeric_columns_with_nulls
                                           and categorical_columns_with_nulls
-        X_tests_imputed_lst (pd.DataFrame) -- a training features df with imputed columns defined in numeric_columns_with_nulls 
+        X_tests_imputed_lst (list) -- a list of test features df with imputed columns defined in numeric_columns_with_nulls 
                                          and categorical_columns_with_nulls
         null_imputer_params_dct (dict) -- a dictionary where a keys is a column name with nulls, and 
                                           a value is a dictionary of null imputer parameters used to impute this column

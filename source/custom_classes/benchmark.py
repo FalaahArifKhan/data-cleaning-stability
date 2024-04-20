@@ -284,22 +284,22 @@ class Benchmark(MLLifecycle):
         X_train_val, X_test, y_train_val, y_test = self._split_dataset(data_loader, experiment_seed)
 
         # Inject nulls not into sensitive attributes
-        X_train_val_with_nulls, X_test_with_nulls = self._inject_nulls(X_train_val=X_train_val,
-                                                                       X_test=X_test,
-                                                                       evaluation_scenario=evaluation_scenario,
-                                                                       experiment_seed=experiment_seed)
+        X_train_val_with_nulls, X_tests_with_nulls_lst = self._inject_nulls(X_train_val=X_train_val,
+                                                                            X_test=X_test,
+                                                                            evaluation_scenario=evaluation_scenario,
+                                                                            experiment_seed=experiment_seed)
 
         # Remove sensitive attributes from train and test sets to avoid their usage during imputation
         (X_train_val_wo_sensitive_attrs,
-         X_test_wo_sensitive_attrs,
+         X_test_wo_sensitive_attrs_lst, _, _) = self._remove_sensitive_attrs(X_train_val=X_train_val,
+                                                                             X_tests_lst=[X_test],
+                                                                             data_loader=data_loader)
+        (X_train_val_with_nulls_wo_sensitive_attrs,
+         X_tests_with_nulls_wo_sensitive_attrs_lst,
          numerical_columns_wo_sensitive_attrs,
          categorical_columns_wo_sensitive_attrs) = self._remove_sensitive_attrs(X_train_val=X_train_val_with_nulls,
-                                                                                X_test=X_test_with_nulls,
+                                                                                X_tests_lst=X_tests_with_nulls_lst,
                                                                                 data_loader=data_loader)
-        (X_train_val_with_nulls_wo_sensitive_attrs,
-         X_test_with_nulls_wo_sensitive_attrs,  _, _) = self._remove_sensitive_attrs(X_train_val=X_train_val_with_nulls,
-                                                                                     X_test=X_test_with_nulls,
-                                                                                     data_loader=data_loader)
 
         # Define a directory path to save an intermediate state
         save_dir = (pathlib.Path(__file__).parent.parent.parent.joinpath('results')
@@ -316,7 +316,7 @@ class Benchmark(MLLifecycle):
         # Create a wrapper for the input joint cleaning-and-training method
         # to conduct in-depth performance profiling with Virny
         (models_config,
-         X_train_with_nulls,
+         X_train_with_nulls_wo_sensitive_attrs,
          y_train) = joint_cleaning_and_training_func(X_train_val=X_train_val_wo_sensitive_attrs,
                                                      y_train_val=y_train_val,
                                                      X_train_val_with_nulls=X_train_val_with_nulls_wo_sensitive_attrs,
@@ -326,25 +326,30 @@ class Benchmark(MLLifecycle):
                                                      **imputation_kwargs)
 
         # Create a base flow dataset for Virny to compute metrics
-        base_flow_dataset = create_virny_base_flow_dataset(data_loader=data_loader,
-                                                           dataset_sensitive_attrs=self.dataset_sensitive_attrs,
-                                                           X_train_val_wo_sensitive_attrs=X_train_with_nulls,
-                                                           X_test_wo_sensitive_attrs=X_test_with_nulls,
-                                                           y_train_val=y_train,
-                                                           y_test=y_test,
-                                                           numerical_columns_wo_sensitive_attrs=numerical_columns_wo_sensitive_attrs,
-                                                           categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs)
+        main_base_flow_dataset, extra_base_flow_datasets = \
+            create_virny_base_flow_datasets(data_loader=data_loader,
+                                            dataset_sensitive_attrs=self.dataset_sensitive_attrs,
+                                            X_train_val_wo_sensitive_attrs=X_train_with_nulls_wo_sensitive_attrs,
+                                            X_tests_wo_sensitive_attrs_lst=X_tests_with_nulls_wo_sensitive_attrs_lst,
+                                            y_train_val=y_train,
+                                            y_test=y_test,
+                                            numerical_columns_wo_sensitive_attrs=numerical_columns_wo_sensitive_attrs,
+                                            categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs)
 
-        # Compute metrics for tuned models
-        # TODO: use multiple test sets interface
-        compute_metrics_with_db_writer(dataset=base_flow_dataset,
-                                       config=self.virny_config,
-                                       models_config=models_config,
-                                       custom_tbl_fields_dct=custom_table_fields_dct,
-                                       db_writer_func=self._db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
-                                       with_predict_proba=False,  # joint cleaning-and-training models do not support a predict_proba method
-                                       notebook_logs_stdout=False,
-                                       verbose=0)
+        # Create extra_test_sets
+        extra_test_sets = [(extra_base_flow_datasets[i].X_test, extra_base_flow_datasets[i].y_test, extra_base_flow_datasets[i].init_features_df)
+                           for i in range(len(extra_base_flow_datasets))]
+
+        # Compute metrics using Virny
+        compute_metrics_with_multiple_test_sets(dataset=main_base_flow_dataset,
+                                                extra_test_sets_lst=extra_test_sets,
+                                                config=self.virny_config,
+                                                models_config=models_config,
+                                                custom_tbl_fields_dct=custom_table_fields_dct,
+                                                db_writer_func=self._db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
+                                                with_predict_proba=False,  # joint cleaning-and-training models do not support a predict_proba method
+                                                notebook_logs_stdout=False,
+                                                verbose=0)
 
     def _run_exp_iter_for_standard_imputation(self, data_loader, experiment_seed: int, evaluation_scenario: str,
                                               null_imputer_name: str, model_names: list, tune_imputers: bool,
