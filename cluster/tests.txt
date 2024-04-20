@@ -13,7 +13,7 @@ python ./scripts/evaluate_models.py \
     --run_nums \[1\] \
     --tune_imputers true \
     --ml_impute true \
-    --evaluation_scenarios \[\"mcar_mcar2\"\]
+    --evaluation_scenarios \[\"mcar2\"\]
 
 python ./scripts/evaluate_models.py \
     --dataset folk \
