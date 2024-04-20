@@ -155,7 +155,7 @@ def test_automl_imputer_diff_seed(acs_income_dataset_params, null_imputer_name,
     imputation_kwargs.update({'experiment_seed': 200})
     X_train_imputed2, X_test_imputed_lst2, null_imputer_params_dct2 = (
         impute_with_automl(X_train_with_nulls=X_train_with_nulls,
-                           X_test_with_nulls=X_tests_with_nulls_lst,
+                           X_tests_with_nulls_lst=X_tests_with_nulls_lst,
                            numeric_columns_with_nulls=train_numerical_null_columns,
                            categorical_columns_with_nulls=train_categorical_null_columns,
                            hyperparams=hyperparams,
