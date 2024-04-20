@@ -91,9 +91,7 @@ def test_inject_nulls_into_one_set_for_mcar_evaluation_scenario(folk_benchmark):
 
 def test_inject_nulls_into_one_set_for_mar_evaluation_scenario(folk_benchmark):
     experiment_seed = 400
-    evaluation_scenario = 'MAR1'
-    train_injection_scenario, _ = get_injection_scenarios(evaluation_scenario)
-    test_injection_scenario = train_injection_scenario
+    test_injection_scenario = 'MAR1'
 
     X_train_val, X_test, _, _ = train_test_split(folk_benchmark.init_data_loader.X_data,
                                                  folk_benchmark.init_data_loader.y_data,
@@ -110,19 +108,17 @@ def test_inject_nulls_into_one_set_for_mar_evaluation_scenario(folk_benchmark):
         error_rate = injection_scenario['setting']['error_rates'][error_rate_idx]
         condition_column, condition_value = injection_scenario['setting']['condition']
 
-        actual_column_nulls_count = X_test_with_nulls[missing_features].isnull().sum().sum()
         df_condition = get_df_condition(df=X_test,
                                         condition_col=condition_column,
                                         condition_val=condition_value,
                                         include_val=True)
+        actual_column_nulls_count = X_test_with_nulls[df_condition][missing_features].isnull().sum().sum()
         assert actual_column_nulls_count == int(X_test[df_condition].shape[0] * error_rate)
 
 
 def test_inject_nulls_into_one_set_should_apply_mnar_scenario_for_multiple_columns(folk_benchmark):
     experiment_seed = 200
-    evaluation_scenario = 'MNAR3'
-    train_injection_scenario, _ = get_injection_scenarios(evaluation_scenario)
-    test_injection_scenario = train_injection_scenario
+    test_injection_scenario = 'MNAR3'
 
     X_train_val, X_test, _, _ = train_test_split(folk_benchmark.init_data_loader.X_data,
                                                  folk_benchmark.init_data_loader.y_data,
@@ -139,9 +135,9 @@ def test_inject_nulls_into_one_set_should_apply_mnar_scenario_for_multiple_colum
         error_rate = injection_scenario['setting']['error_rates'][error_rate_idx]
         condition_value = injection_scenario['setting']['condition'][1]
 
-        actual_column_nulls_count = X_test_with_nulls[missing_feature].isnull().sum()
         df_condition = get_df_condition(df=X_test,
                                         condition_col=missing_feature,
                                         condition_val=condition_value,
                                         include_val=True)
+        actual_column_nulls_count = X_test_with_nulls[df_condition][missing_feature].isnull().sum()
         assert actual_column_nulls_count == int(X_test[df_condition].shape[0] * error_rate)

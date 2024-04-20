@@ -16,7 +16,7 @@ def common_seed():
 
 @pytest.fixture(scope="function")
 def mcar_evaluation_scenario():
-    return 'mcar2'
+    return 'MCAR2'
 
 
 # Fixture to load the dataset
