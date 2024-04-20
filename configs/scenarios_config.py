@@ -45,36 +45,60 @@ ERROR_INJECTION_SCENARIOS_CONFIG = {
     ACS_INCOME_DATASET: {
         "MCAR": [
             {
-                'missing_features': ['AGEP', 'SCHL', 'MAR', 'COW'],
-                'setting': {'error_rates': [0.1, 0.5, 0.9]},
+                'missing_features': ['WKHP', 'AGEP', 'SCHL', 'MAR'],
+                'setting': {'error_rates': [0.1, 0.3, 0.5]},
             },
         ],
         "MAR": [
             {
-                'missing_features': ['AGEP', 'MAR'],
-                'setting': {'condition': ('SEX', '2'), 'error_rates': [0.1, 0.5, 0.9]},
+                'missing_features': ['WKHP', 'SCHL'],
+                'setting': {'condition': ('SEX', '2'), 'error_rates': [0.08, 0.2, 0.35]},
             },
             {
-                'missing_features': ['SCHL', 'COW'],
-                'setting': {'condition': ('RAC1P', ['2', '3', '4', '5', '6', '7', '8', '9']), 'error_rates': [0.1, 0.5, 0.9]},
+                'missing_features': ['WKHP', 'SCHL'],
+                'setting': {'condition': ('SEX', '1'), 'error_rates': [0.02, 0.1, 0.15]},
+            },
+            {
+                'missing_features': ['MAR', 'AGEP'],
+                'setting': {'condition': ('RAC1P', ['2', '3', '4', '5', '6', '7', '8', '9']), 'error_rates': [0.08, 0.2, 0.35]},
+            },
+            {
+                'missing_features': ['MAR', 'AGEP'],
+                'setting': {'condition': ('RAC1P', '1'), 'error_rates': [0.02, 0.1, 0.15]},
             },
         ],
         "MNAR": [
             {
                 'missing_features': ['MAR'],
-                'setting': {'condition': ('MAR', '5'), 'error_rates': [0.1, 0.5, 0.9]},
+                'setting': {'condition': ('MAR', '1'), 'error_rates': [0.01, 0.05, 0.15]},
             },
             {
-                'missing_features': ['COW'],
-                'setting': {'condition': ('COW', ['8', '9']), 'error_rates': [0.1, 0.5, 0.9]},  # TODO
+                'missing_features': ['MAR'],
+                'setting': {'condition': ('MAR', ['2', '3', '4', '5']), 'error_rates': [0.09, 0.25, 0.35]},
+            },
+            {
+                'missing_features': ['WKHP'],  # TODO: check
+                'setting': {'condition': ('WKHP', [i * 1.0 for i in range(1, 40)]), 'error_rates': [0.09, 0.25, 0.35]},
+            },
+            {
+                'missing_features': ['WKHP'],
+                'setting': {'condition': ('WKHP', [i * 1.0 for i in range(40, 101)]), 'error_rates': [0.01, 0.05, 0.15]},
             },
             {
                 'missing_features': ['AGEP'],
-                'setting': {'condition': ('AGEP', [i for i in range(46, 100)]), 'error_rates': [0.1, 0.5, 0.9]},
+                'setting': {'condition': ('AGEP', [i for i in range(17, 51)]), 'error_rates': [0.01, 0.05, 0.15]},
+            },
+            {
+                'missing_features': ['AGEP'],
+                'setting': {'condition': ('AGEP', [i for i in range(51, 100)]), 'error_rates': [0.09, 0.25, 0.35]},
+            },
+            {
+                'missing_features': ['SCHL'],  # TODO: ask Falaah to swap percentages
+                'setting': {'condition': ('SCHL', [str(i) for i in range(1, 21)]), 'error_rates': [0.01, 0.05, 0.15]},
             },
             {
                 'missing_features': ['SCHL'],
-                'setting': {'condition': ('SCHL', [str(i) for i in range(1, 15)]), 'error_rates': [0.1, 0.5, 0.9]},
+                'setting': {'condition': ('SCHL', [str(i) for i in range(21, 25)]), 'error_rates': [0.09, 0.25, 0.35]},
             },
         ],
     },
