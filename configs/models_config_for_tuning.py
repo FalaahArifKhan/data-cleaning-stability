@@ -24,8 +24,8 @@ def get_models_params_for_tuning(models_tuning_seed):
             'model': LogisticRegression(random_state=models_tuning_seed, max_iter=1000),
             'params': {
                 'penalty': ['l1', 'l2'],
-                # 'C' : [0.001, 0.01, 0.1, 1],
-                # 'solver': ['newton-cg', 'lbfgs', 'sag', 'saga'],
+                'C' : [0.001, 0.01, 0.1, 1],
+                'solver': ['newton-cg', 'lbfgs', 'sag', 'saga'],
             }
         },
         MLModels.lgbm_clf.value: {

@@ -86,9 +86,3 @@ pytest -s ./tests/null_imputers/test_datawig_imputer.py
 python build_space.py --data_dir data/datasets --dataset Puma --mv_type systematic --save_dir space_dir/Puma --seed 100
 
 python cpclean.py --space_dir space_dir/Puma --dataset Puma --mv_type systematic --result_dir result_dir
-
-
-# =======================================================================================
-# Experiments
-# =======================================================================================
-
