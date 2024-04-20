@@ -5,11 +5,11 @@ from sklearn.model_selection import train_test_split
 from tests import compare_dfs, get_df_condition
 from source.custom_classes.benchmark import Benchmark
 from source.utils.common_helpers import get_injection_scenarios
-from configs.constants import ACS_INCOME_DATASET, ErrorRepairMethod, MLModels
+from configs.constants import ACS_INCOME_DATASET, ErrorRepairMethod, MLModels, ErrorInjectionStrategy
 from configs.scenarios_config import ERROR_INJECTION_SCENARIOS_CONFIG
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def folk_benchmark():
     benchmark = Benchmark(dataset_name=ACS_INCOME_DATASET,
                           null_imputers=[ErrorRepairMethod.median_mode.value],
@@ -41,6 +41,8 @@ def test_inject_nulls_should_be_the_same_mcar_train_sets_with_nulls(folk_benchma
         dataset_pairs_with_nulls.append((X_train_val_with_nulls, X_tests_with_nulls_lst))
 
     assert compare_dfs(dataset_pairs_with_nulls[0][0], dataset_pairs_with_nulls[1][0])
+    assert compare_dfs(dataset_pairs_with_nulls[0][1][0], dataset_pairs_with_nulls[1][1][0])
+    assert compare_dfs(dataset_pairs_with_nulls[0][1][1], dataset_pairs_with_nulls[1][1][1])
 
 
 def test_inject_nulls_should_be_the_same_mnar_train_sets_with_nulls(folk_benchmark):
@@ -64,6 +66,7 @@ def test_inject_nulls_should_be_the_same_mnar_train_sets_with_nulls(folk_benchma
         dataset_pairs_with_nulls.append((X_train_val_with_nulls, X_tests_with_nulls_lst))
 
     assert compare_dfs(dataset_pairs_with_nulls[0][0], dataset_pairs_with_nulls[1][0])
+    assert compare_dfs(dataset_pairs_with_nulls[0][1][0], dataset_pairs_with_nulls[1][1][0])
 
 
 def test_inject_nulls_into_one_set_for_mcar_evaluation_scenario(folk_benchmark):
@@ -141,3 +144,123 @@ def test_inject_nulls_into_one_set_should_apply_mnar_scenario_for_multiple_colum
                                         include_val=True)
         actual_column_nulls_count = X_test_with_nulls[df_condition][missing_feature].isnull().sum()
         assert actual_column_nulls_count == int(X_test[df_condition].shape[0] * error_rate)
+
+
+# ====================================================================
+# Test sequence of test sets with nulls
+# ====================================================================
+def test_inject_nulls_should_preserve_mcar_scenario_test_sets_sequence(folk_benchmark):
+    evaluation_scenario = 'MCAR1'
+    experiment_seed = 100
+    data_loader = folk_benchmark.init_data_loader
+
+    # Split and preprocess the dataset
+    X_train_val, X_test, y_train_val, y_test = train_test_split(data_loader.X_data,
+                                                                data_loader.y_data,
+                                                                test_size=folk_benchmark.test_set_fraction,
+                                                                random_state=experiment_seed)
+    # Inject nulls
+    X_train_val_with_nulls, X_tests_with_nulls_lst = folk_benchmark._inject_nulls(X_train_val=X_train_val,
+                                                                                  X_test=X_test,
+                                                                                  evaluation_scenario=evaluation_scenario,
+                                                                                  experiment_seed=experiment_seed)
+
+    expected_test_injection_scenarios = ['MCAR1', 'MAR1', 'MNAR1']
+    for test_set_idx, injection_scenario in enumerate(expected_test_injection_scenarios):
+        X_test_with_nulls = X_tests_with_nulls_lst[test_set_idx]
+        injection_strategy, error_rate_str = injection_scenario[:-1], injection_scenario[-1]
+        error_rate_idx = int(error_rate_str) - 1
+
+        for injection_scenario_config in ERROR_INJECTION_SCENARIOS_CONFIG[folk_benchmark.dataset_name][injection_strategy]:
+            missing_features = injection_scenario_config['missing_features']
+            error_rate = injection_scenario_config['setting']['error_rates'][error_rate_idx]
+
+            if injection_strategy == ErrorInjectionStrategy.mcar.value:
+                actual_column_nulls_count = X_test_with_nulls[missing_features].isnull().sum().sum()
+                assert actual_column_nulls_count == int(X_test.shape[0] * error_rate)
+            else:
+                condition_column, condition_value = injection_scenario_config['setting']['condition']
+                df_condition = get_df_condition(df=X_test,
+                                                condition_col=condition_column,
+                                                condition_val=condition_value,
+                                                include_val=True)
+                actual_column_nulls_count = X_test_with_nulls[df_condition][missing_features].isnull().sum().sum()
+                assert actual_column_nulls_count == int(X_test[df_condition].shape[0] * error_rate)
+
+
+def test_inject_nulls_should_preserve_mar_scenario_test_sets_sequence(folk_benchmark):
+    evaluation_scenario = 'MAR2'
+    experiment_seed = 200
+    data_loader = folk_benchmark.init_data_loader
+
+    # Split and preprocess the dataset
+    X_train_val, X_test, y_train_val, y_test = train_test_split(data_loader.X_data,
+                                                                data_loader.y_data,
+                                                                test_size=folk_benchmark.test_set_fraction,
+                                                                random_state=experiment_seed)
+    # Inject nulls
+    X_train_val_with_nulls, X_tests_with_nulls_lst = folk_benchmark._inject_nulls(X_train_val=X_train_val,
+                                                                                  X_test=X_test,
+                                                                                  evaluation_scenario=evaluation_scenario,
+                                                                                  experiment_seed=experiment_seed)
+
+    expected_test_injection_scenarios = ['MAR2', 'MNAR2']
+    for test_set_idx, injection_scenario in enumerate(expected_test_injection_scenarios):
+        X_test_with_nulls = X_tests_with_nulls_lst[test_set_idx]
+        injection_strategy, error_rate_str = injection_scenario[:-1], injection_scenario[-1]
+        error_rate_idx = int(error_rate_str) - 1
+
+        for injection_scenario_config in ERROR_INJECTION_SCENARIOS_CONFIG[folk_benchmark.dataset_name][injection_strategy]:
+            missing_features = injection_scenario_config['missing_features']
+            error_rate = injection_scenario_config['setting']['error_rates'][error_rate_idx]
+
+            if injection_strategy == ErrorInjectionStrategy.mcar.value:
+                actual_column_nulls_count = X_test_with_nulls[missing_features].isnull().sum().sum()
+                assert actual_column_nulls_count == int(X_test.shape[0] * error_rate)
+            else:
+                condition_column, condition_value = injection_scenario_config['setting']['condition']
+                df_condition = get_df_condition(df=X_test,
+                                                condition_col=condition_column,
+                                                condition_val=condition_value,
+                                                include_val=True)
+                actual_column_nulls_count = X_test_with_nulls[df_condition][missing_features].isnull().sum().sum()
+                assert actual_column_nulls_count == int(X_test[df_condition].shape[0] * error_rate)
+
+
+def test_inject_nulls_should_preserve_mnar_scenario_test_sets_sequence(folk_benchmark):
+    evaluation_scenario = 'MNAR3'
+    experiment_seed = 300
+    data_loader = folk_benchmark.init_data_loader
+
+    # Split and preprocess the dataset
+    X_train_val, X_test, y_train_val, y_test = train_test_split(data_loader.X_data,
+                                                                data_loader.y_data,
+                                                                test_size=folk_benchmark.test_set_fraction,
+                                                                random_state=experiment_seed)
+    # Inject nulls
+    X_train_val_with_nulls, X_tests_with_nulls_lst = folk_benchmark._inject_nulls(X_train_val=X_train_val,
+                                                                                  X_test=X_test,
+                                                                                  evaluation_scenario=evaluation_scenario,
+                                                                                  experiment_seed=experiment_seed)
+
+    expected_test_injection_scenarios = ['MCAR3', 'MAR3', 'MNAR3']
+    for test_set_idx, injection_scenario in enumerate(expected_test_injection_scenarios):
+        X_test_with_nulls = X_tests_with_nulls_lst[test_set_idx]
+        injection_strategy, error_rate_str = injection_scenario[:-1], injection_scenario[-1]
+        error_rate_idx = int(error_rate_str) - 1
+
+        for injection_scenario_config in ERROR_INJECTION_SCENARIOS_CONFIG[folk_benchmark.dataset_name][injection_strategy]:
+            missing_features = injection_scenario_config['missing_features']
+            error_rate = injection_scenario_config['setting']['error_rates'][error_rate_idx]
+
+            if injection_strategy == ErrorInjectionStrategy.mcar.value:
+                actual_column_nulls_count = X_test_with_nulls[missing_features].isnull().sum().sum()
+                assert actual_column_nulls_count == int(X_test.shape[0] * error_rate)
+            else:
+                condition_column, condition_value = injection_scenario_config['setting']['condition']
+                df_condition = get_df_condition(df=X_test,
+                                                condition_col=condition_column,
+                                                condition_val=condition_value,
+                                                include_val=True)
+                actual_column_nulls_count = X_test_with_nulls[df_condition][missing_features].isnull().sum().sum()
+                assert actual_column_nulls_count == int(X_test[df_condition].shape[0] * error_rate)
