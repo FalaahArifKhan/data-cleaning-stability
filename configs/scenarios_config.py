@@ -29,15 +29,15 @@ EVALUATION_SCENARIOS_CONFIG = {
     },
     'MNAR1': {
         'train_injection_scenario': 'MNAR1',
-        'test_injection_scenarios': ['MNAR1'],
+        'test_injection_scenarios': ['MCAR1', 'MAR1', 'MNAR1'],
     },
     'MNAR2': {
         'train_injection_scenario': 'MNAR2',
-        'test_injection_scenarios': ['MNAR2'],
+        'test_injection_scenarios': ['MCAR2', 'MAR2', 'MNAR2'],
     },
     'MNAR3': {
         'train_injection_scenario': 'MNAR3',
-        'test_injection_scenarios': ['MNAR3'],
+        'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
 }
 
