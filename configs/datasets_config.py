@@ -42,6 +42,6 @@ DATASET_CONFIG = {
         "data_loader_kwargs": {"state": ['GA'], "year": 2018, "with_nulls": False,
                                "subsample_size": 15_000, "subsample_seed": 42},
         "test_set_fraction": 0.2,
-        "virny_config_path": pathlib.Path(__file__).parent.joinpath('yaml_files', 'acs_income_GA_2018_config.yaml')
+        "virny_config_path": pathlib.Path(__file__).parent.joinpath('yaml_files', 'folk_config.yaml')
     },
 }
