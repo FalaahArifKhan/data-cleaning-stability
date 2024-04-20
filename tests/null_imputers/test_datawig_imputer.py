@@ -22,10 +22,10 @@ def datawig_kwargs():
 
 # Test if output of datawig does not contain nulls
 def test_datawig_imputer_no_nulls(acs_income_dataset_params, null_imputer_name,
-                                  mcar_mar_evaluation_scenario, common_seed, datawig_kwargs):
+                                  mcar_evaluation_scenario, common_seed, datawig_kwargs):
     # Init function variables
     dataset_name = ACS_INCOME_DATASET
-    evaluation_scenario = mcar_mar_evaluation_scenario
+    evaluation_scenario = mcar_evaluation_scenario
     experiment_seed = common_seed
     imputation_kwargs = datawig_kwargs
 
@@ -63,10 +63,10 @@ def test_datawig_imputer_no_nulls(acs_income_dataset_params, null_imputer_name,
 
 # Test if datawig returns same results with the same seed
 def test_datawig_imputer_same_seed(acs_income_dataset_params, null_imputer_name,
-                                   mcar_mar_evaluation_scenario, common_seed, datawig_kwargs):
+                                   mcar_evaluation_scenario, common_seed, datawig_kwargs):
     # Init function variables
     dataset_name = ACS_INCOME_DATASET
-    evaluation_scenario = mcar_mar_evaluation_scenario
+    evaluation_scenario = mcar_evaluation_scenario
     experiment_seed = common_seed
     imputation_kwargs = datawig_kwargs
 
@@ -118,10 +118,10 @@ def test_datawig_imputer_same_seed(acs_income_dataset_params, null_imputer_name,
 
 # Test if datawig returns different results for different seeds
 def test_datawig_imputer_diff_seed(acs_income_dataset_params, null_imputer_name,
-                                   mcar_mar_evaluation_scenario, common_seed, datawig_kwargs):
+                                   mcar_evaluation_scenario, common_seed, datawig_kwargs):
     # Init function variables
     dataset_name = ACS_INCOME_DATASET
-    evaluation_scenario = mcar_mar_evaluation_scenario
+    evaluation_scenario = mcar_evaluation_scenario
     experiment_seed = common_seed
     imputation_kwargs = datawig_kwargs
 
