@@ -77,7 +77,7 @@ python ../scripts/evaluate_models.py \
     --run_nums [1] \
     --tune_imputers true \
     --ml_impute true \
-    --evaluation_scenarios [\"mcar_mcar2\"]
+    --evaluation_scenarios [\"mcar2\"]
 
 pytest -s ./tests/null_imputers/test_datawig_imputer.py
 
