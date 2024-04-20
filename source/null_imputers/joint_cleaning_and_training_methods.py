@@ -10,7 +10,8 @@ def prepare_cpclean(X_train_val: pd.DataFrame, y_train_val: pd.DataFrame, X_trai
     save_dir = kwargs['save_dir']
 
     # Create a validation split
-    optimal_validation_set_size = 1000
+    # optimal_validation_set_size = 1000
+    optimal_validation_set_size = 100
     val_set_ratio = 0.2
     val_size = min([optimal_validation_set_size, X_train_val.shape[0] * val_set_ratio])
     X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val,
