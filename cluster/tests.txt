@@ -2,7 +2,7 @@
 # Local
 # =======================================================================================
 python ./scripts/evaluate_baseline.py \
-    --dataset german \
+    --dataset folk \
     --models \[\"lr_clf\"\] \
     --run_nums \[1\]
 

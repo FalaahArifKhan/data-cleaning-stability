@@ -59,7 +59,6 @@ def validate_args(exp_config_obj, with_model_names=True):
         if not is_in_enum(val=null_imputer_name, enum_obj=ErrorRepairMethod):
             raise ValueError('null_imputers argument should include values from the ErrorRepairMethod enum in configs/constants.py')
 
-    exp_config_obj.evaluation_scenarios = [evaluation_scenario.upper() for evaluation_scenario in exp_config_obj.evaluation_scenarios]
     for evaluation_scenario in exp_config_obj.evaluation_scenarios:
         if evaluation_scenario not in EVALUATION_SCENARIOS_CONFIG.keys():
             raise ValueError('evaluation_scenarios argument should include values '
