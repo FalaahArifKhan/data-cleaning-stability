@@ -9,7 +9,7 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 from .abstract_null_imputer import AbstractNullImputer
 from ..utils.dataframe_utils import _get_mask
-    
+
     
 class MissForestImputer(BaseEstimator, AbstractNullImputer):
     """Missing value imputation using Random Forests.
