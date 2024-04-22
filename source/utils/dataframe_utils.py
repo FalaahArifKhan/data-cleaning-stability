@@ -21,8 +21,11 @@ def preprocess_mult_base_flow_datasets(main_base_flow_dataset, extra_base_flow_d
     # Preprocess main_base_flow_dataset
     main_base_flow_dataset.X_train_val = column_transformer.fit_transform(main_base_flow_dataset.X_train_val)
     main_base_flow_dataset.X_test = column_transformer.transform(main_base_flow_dataset.X_test)
-    print('preprocessed ordinal columns',
-          main_base_flow_dataset.X_train_val[list(main_base_flow_dataset.ordered_categories_dct.keys())].head(20))
+
+    print('preprocessed ordinal columns\n',
+          main_base_flow_dataset.X_train_val[
+              ['ord__' + col for col in list(main_base_flow_dataset.ordered_categories_dct.keys())]
+          ].head(20))
 
     # Preprocess extra_base_flow_datasets
     extra_test_sets = []
