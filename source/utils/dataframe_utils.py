@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from scipy.stats import entropy
 
 from source.preprocessing import get_simple_preprocessor
 
@@ -68,3 +70,20 @@ def get_columns_sorted_by_nulls(mask):
     sorted_columns_names = sorted_columns.index.tolist()
 
     return sorted_columns_names
+
+
+def calculate_kl_divergence(true: pd.DataFrame, pred: pd.DataFrame):
+    # Get the value counts normalized to probability distributions
+    true_dist = true.value_counts(normalize=True)
+    pred_dist = pred.value_counts(normalize=True)
+
+    # Ensure both distributions have the same index
+    all_categories = true_dist.index.union(pred_dist.index)
+    true_dist = true_dist.reindex(all_categories, fill_value=0.000000001).sort_index()
+    pred_dist = pred_dist.reindex(all_categories, fill_value=0.000000001).sort_index()
+
+    # Calculate KL divergence from true_dist to pred_dist
+    # KL(P || Q) where P is the true distribution and Q is the approximation
+    kl_div = entropy(true_dist, pred_dist)
+
+    return kl_div

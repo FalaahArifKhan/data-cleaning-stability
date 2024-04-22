@@ -2,8 +2,8 @@ import os
 import uuid
 import pathlib
 import pandas as pd
-from datetime import datetime, timezone
 
+from datetime import datetime, timezone
 from sklearn.metrics import mean_squared_error, precision_recall_fscore_support
 from sklearn.model_selection import train_test_split
 from virny.utils.custom_initializers import create_config_obj
@@ -15,6 +15,7 @@ from configs.constants import (MODEL_HYPER_PARAMS_COLLECTION_NAME, IMPUTATION_PE
 from configs.datasets_config import DATASET_CONFIG
 from configs.scenarios_config import ERROR_INJECTION_SCENARIOS_CONFIG
 from source.utils.custom_logger import get_logger
+from source.utils.dataframe_utils import calculate_kl_divergence
 from source.utils.model_tuning_utils import tune_ML_models
 from source.utils.common_helpers import (generate_guid, create_base_flow_dataset, get_injection_scenarios)
 from source.custom_classes.database_client import DatabaseClient
@@ -204,13 +205,20 @@ class MLLifecycle:
     def _evaluate_imputation(self, real, imputed, corrupted, numerical_columns, null_imputer_name, null_imputer_params_dct):
         columns_with_nulls = corrupted.columns[corrupted.isna().any()].tolist()
         metrics_df = pd.DataFrame(columns=('Dataset_Name', 'Null_Imputer_Name', 'Null_Imputer_Params',
-                                           'Column_Type', 'Column_With_Nulls', 'RMSE', 'Precision', 'Recall', 'F1_Score'))
+                                           'Column_Type', 'Column_With_Nulls', 'KL_Divergence_Pred',
+                                           'KL_Divergence_Total', 'RMSE', 'Precision', 'Recall', 'F1_Score'))
         for column_idx, column_name in enumerate(columns_with_nulls):
             column_type = 'numerical' if column_name in numerical_columns else 'categorical'
 
             indexes = corrupted[column_name].isna()
             true = real.loc[indexes, column_name]
             pred = imputed.loc[indexes, column_name]
+
+            # Column type agnostic metrics
+            kl_divergence_pred = calculate_kl_divergence(true, pred)
+            print('Predictive KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_pred))
+            kl_divergence_total = calculate_kl_divergence(real[column_name], imputed[column_name])
+            print('Total KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_total))
 
             rmse = None
             precision = None
@@ -231,7 +239,8 @@ class MLLifecycle:
 
             # Save imputation performance metric of the imputer in a dataframe
             metrics_df.loc[column_idx] = [self.dataset_name, null_imputer_name, null_imputer_params,
-                                          column_type, column_name, rmse, precision, recall, f1]
+                                          column_type, column_name, kl_divergence_pred, kl_divergence_total,
+                                          rmse, precision, recall, f1]
 
         return metrics_df
 

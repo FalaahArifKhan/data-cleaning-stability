@@ -27,8 +27,18 @@ python ./scripts/evaluate_models.py \
 python ./scripts/impute_nulls_with_predictor.py \
     --dataset folk \
     --null_imputers \[\"median-mode\"\] \
-    --run_nums \[1,2\] \
-    --save_imputed_datasets true --evaluation_scenarios \[\"mcar_mcar1\",\"mcar_mar1\"\]
+    --run_nums \[1\] \
+    --tune_imputers true \
+    --save_imputed_datasets true \
+    --evaluation_scenarios \[\"exp3_mcar3\"\]
+
+python ./scripts/impute_nulls_with_predictor.py \
+    --dataset folk \
+    --null_imputers \[\"median-mode\"\] \
+    --run_nums \[1\] \
+    --tune_imputers true \
+    --save_imputed_datasets true \
+    --evaluation_scenarios \[\"exp1\&2_mar3\"\]
 
 python ../scripts/impute_nulls_with_predictor.py \
     --dataset folk \
