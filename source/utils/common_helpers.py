@@ -56,7 +56,7 @@ def create_base_flow_dataset(data_loader, dataset_sensitive_attrs,
     assert X_test_wo_sensitive_attrs.index.equals(y_test.index) is True, \
         "Indexes of X_test_wo_sensitive_attrs and y_test are different"
 
-    return BaseFlowDataset(init_features_df=sensitive_attrs_df,  # keep only sensitive attributes with original indexes to compute group metrics
+    return BaseFlowDataset(init_sensitive_attrs_df=sensitive_attrs_df,  # keep only sensitive attributes with original indexes to compute group metrics
                            X_train_val=X_train_val_wo_sensitive_attrs,
                            X_test=X_test_wo_sensitive_attrs,
                            y_train_val=y_train_val,

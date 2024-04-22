@@ -33,7 +33,7 @@ def preprocess_mult_base_flow_datasets(main_base_flow_dataset, extra_base_flow_d
         extra_base_flow_datasets[i].X_test = column_transformer.transform(extra_base_flow_datasets[i].X_test)
         extra_test_sets.append((extra_base_flow_datasets[i].X_test,
                                 extra_base_flow_datasets[i].y_test,
-                                extra_base_flow_datasets[i].init_features_df))
+                                extra_base_flow_datasets[i].init_sensitive_attrs_df))
 
     return main_base_flow_dataset, extra_test_sets
 

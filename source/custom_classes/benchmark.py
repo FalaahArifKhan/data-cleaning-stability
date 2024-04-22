@@ -337,7 +337,7 @@ class Benchmark(MLLifecycle):
                                             categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs)
 
         # Create extra_test_sets
-        extra_test_sets = [(extra_base_flow_datasets[i].X_test, extra_base_flow_datasets[i].y_test, extra_base_flow_datasets[i].init_features_df)
+        extra_test_sets = [(extra_base_flow_datasets[i].X_test, extra_base_flow_datasets[i].y_test, extra_base_flow_datasets[i].init_sensitive_attrs_df)
                            for i in range(len(extra_base_flow_datasets))]
 
         # Compute metrics using Virny
