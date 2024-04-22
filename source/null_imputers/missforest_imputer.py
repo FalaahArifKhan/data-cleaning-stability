@@ -14,8 +14,37 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils.validation import check_is_fitted, check_array
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import make_scorer, accuracy_score, f1_score, mean_squared_error
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
+
 from .abstract_null_imputer import AbstractNullImputer
-from source.utils.dataframe_utils import _get_mask
+from ..utils.dataframe_utils import _get_mask
+  
+
+def get_missforest_params_for_tuning(models_tuning_seed):
+    return {
+        'RandomForestClassifier': {
+            'model': RandomForestClassifier(random_state=models_tuning_seed),
+            'params': {
+                'n_estimators': [50, 100],
+                'max_depth': [10, 25],
+                'min_samples_split': [5],
+                'min_samples_leaf': [2],
+                'bootstrap': [True]
+            }
+        },
+        'RandomForestRegressor': {
+            'model': RandomForestRegressor(random_state=models_tuning_seed),
+            'params': {
+                'n_estimators': [50, 100],
+                'max_depth': [10, 25],
+                'min_samples_split': [5],
+                'min_samples_leaf': [2],
+                'bootstrap': [True]
+            }
+        }
+    }
     
     
 class MissForestImputer(BaseEstimator, AbstractNullImputer):
@@ -234,35 +263,45 @@ class MissForestImputer(BaseEstimator, AbstractNullImputer):
            [8.  , 8. , 7. ]])
     """
 
-    def __init__(self, max_iter=10, decreasing=False, missing_values=np.nan,
-                 copy=True, n_estimators=100, criterion=('squared_error', 'gini'),
-                 max_depth=None, min_samples_split=2, min_samples_leaf=1,
-                 min_weight_fraction_leaf=0.0, max_features=1.0,
-                 max_leaf_nodes=None, min_impurity_decrease=0.0,
-                 bootstrap=True, oob_score=False, n_jobs=-1, seed=None,
-                 verbose=0, warm_start=False, class_weight=None):
+    def __init__(self, seed=None, hyperparams=None, 
+                 missing_values=np.nan, copy=True,
+                 decreasing=False, max_iter=10,
+                 n_jobs=-1, verbose=0):
         super().__init__(seed=seed)
-        self.max_iter = max_iter
-        self.decreasing = decreasing
+        self.verbose = verbose
         self.missing_values = missing_values
         self.copy = copy
-        self.n_estimators = n_estimators
-        self.criterion = criterion
-        self.max_depth = max_depth
-        self.min_samples_split = min_samples_split
-        self.min_samples_leaf = min_samples_leaf
-        self.min_weight_fraction_leaf = min_weight_fraction_leaf
-        self.max_features = max_features
-        self.max_leaf_nodes = max_leaf_nodes
-        self.min_impurity_decrease = min_impurity_decrease
-        self.bootstrap = bootstrap
-        self.oob_score = oob_score
         self.n_jobs = n_jobs
-        self.verbose = verbose
-        self.warm_start = warm_start
-        self.class_weight = class_weight
-        
+        self.decreasing = decreasing
+        self.max_iter = max_iter
+        self.hyperparams = hyperparams
         self._predictors = defaultdict(dict)
+        self._predictors_params = defaultdict(dict)
+        
+        if hyperparams is not None:
+            print("Hyperparameters are provided and not be tuned.")
+            self.classifier = RandomForestClassifier(random_state=seed, **hyperparams['RandomForestClassifier'])
+            self.regressor = RandomForestRegressor(random_state=seed, **hyperparams['RandomForestRegressor'])
+        else:
+            print("Hyperparameters are not provided and will be tuned.")
+            params_grid = get_missforest_params_for_tuning(seed)
+            self.classifier_params_grid = params_grid['RandomForestClassifier']['params']
+            self.regressor_params_grid = params_grid['RandomForestRegressor']['params']
+            
+            self.classifier_grid_search = GridSearchCV(
+                            estimator=params_grid['RandomForestClassifier']['model'],
+                            param_grid=self.classifier_params_grid,
+                            scoring="f1_macro",
+                            n_jobs=self.n_jobs,
+                            cv=3, verbose=self.verbose)
+            
+            self.regressor_grid_search = GridSearchCV(
+                            estimator=params_grid['RandomForestRegressor']['model'],
+                            param_grid=self.regressor_params_grid,
+                            scoring="neg_root_mean_squared_error",
+                            n_jobs=self.n_jobs,
+                            cv=3, verbose=self.verbose)
+        
         
     def _miss_forest(self, Ximp, mask):
         """The missForest algorithm"""
@@ -285,28 +324,6 @@ class MissForestImputer(BaseEstimator, AbstractNullImputer):
             Ximp[missing_num_rows, missing_num_cols] = np.take(
                 col_means, missing_num_cols)
 
-            # Reg criterion
-            reg_criterion = self.criterion if type(self.criterion) == str \
-                else self.criterion[0]
-
-            # Instantiate regression model
-            rf_regressor = RandomForestRegressor(
-                n_estimators=self.n_estimators,
-                criterion=reg_criterion,
-                max_depth=self.max_depth,
-                min_samples_split=self.min_samples_split,
-                min_samples_leaf=self.min_samples_leaf,
-                min_weight_fraction_leaf=self.min_weight_fraction_leaf,
-                max_features=self.max_features,
-                max_leaf_nodes=self.max_leaf_nodes,
-                min_impurity_decrease=self.min_impurity_decrease,
-                bootstrap=self.bootstrap,
-                oob_score=self.oob_score,
-                n_jobs=self.n_jobs,
-                random_state=self.seed,
-                verbose=self.verbose,
-                warm_start=self.warm_start)
-
         # If needed, repeat for categorical variables
         if self.cat_vars_ is not None:
             # Calculate total number of missing categorical values (used later)
@@ -321,29 +338,6 @@ class MissForestImputer(BaseEstimator, AbstractNullImputer):
             col_modes = np.full(Ximp.shape[1], fill_value=np.nan)
             col_modes[self.cat_vars_] = self.statistics_.get('col_modes')
             Ximp[missing_cat_rows, missing_cat_cols] = np.take(col_modes, missing_cat_cols)
-
-            # Classfication criterion
-            clf_criterion = self.criterion if type(self.criterion) == str \
-                else self.criterion[1]
-
-            # Instantiate classification model
-            rf_classifier = RandomForestClassifier(
-                n_estimators=self.n_estimators,
-                criterion=clf_criterion,
-                max_depth=self.max_depth,
-                min_samples_split=self.min_samples_split,
-                min_samples_leaf=self.min_samples_leaf,
-                min_weight_fraction_leaf=self.min_weight_fraction_leaf,
-                max_features=self.max_features,
-                max_leaf_nodes=self.max_leaf_nodes,
-                min_impurity_decrease=self.min_impurity_decrease,
-                bootstrap=self.bootstrap,
-                oob_score=self.oob_score,
-                n_jobs=self.n_jobs,
-                random_state=self.seed,
-                verbose=self.verbose,
-                warm_start=self.warm_start,
-                class_weight=self.class_weight)
 
         # 2. misscount_idx: sorted indices of cols in X based on missing count
         misscount_idx = np.argsort(col_missing_count)
@@ -391,21 +385,45 @@ class MissForestImputer(BaseEstimator, AbstractNullImputer):
 
                 # 6. Fit a random forest over observed and predict the missing
                 if self.cat_vars_ is not None and s in self.cat_vars_:
-                    rf_classifier.fit(X=xobs, y=yobs)
-                    # 7. predict ymis(s) using xmis(x)
-                    ymis = rf_classifier.predict(xmis)
-                    # 8. update imputed matrix using predicted matrix ymis(s)
-                    Ximp[mis_rows, s] = ymis
-                    # save the predictor
-                    self._predictors[s][self.iter_count_] = rf_classifier
+                    if self.hyperparams is not None:
+                        self.classifier.fit(X=xobs, y=yobs)
+                        # 7. predict ymis(s) using xmis(x)
+                        ymis = self.classifier.predict(xmis)
+                        # 8. update imputed matrix using predicted matrix ymis(s)
+                        Ximp[mis_rows, s] = ymis
+                        # save the predictor
+                        self._predictors[s][self.iter_count_] = self.classifier
+                    else:
+                        self.classifier_grid_search.fit(X=xobs, y=yobs)
+                        best_classifier = self.classifier_grid_search.best_estimator_
+                        best_classifier.fit(X=xobs, y=yobs)
+                        # 7. predict ymis(s) using xmis(x)
+                        ymis = best_classifier.predict(xmis)
+                        # 8. update imputed matrix using predicted matrix ymis(s)
+                        Ximp[mis_rows, s] = ymis
+                        # save the predictor
+                        self._predictors[s][self.iter_count_] = best_classifier
+                        self._predictors_params[s][self.iter_count_] = self.classifier_grid_search.best_params_
                 else:
-                    rf_regressor.fit(X=xobs, y=yobs)
-                    # 7. predict ymis(s) using xmis(x)
-                    ymis = rf_regressor.predict(xmis)
-                    # 8. update imputed matrix using predicted matrix ymis(s)
-                    Ximp[mis_rows, s] = ymis
-                    # save the predictor
-                    self._predictors[s][self.iter_count_] = rf_regressor
+                    if self.hyperparams is not None:
+                        self.regressor.fit(X=xobs, y=yobs)
+                        # 7. predict ymis(s) using xmis(x)
+                        ymis = self.regressor.predict(xmis)
+                        # 8. update imputed matrix using predicted matrix ymis(s)
+                        Ximp[mis_rows, s] = ymis
+                        # save the predictor
+                        self._predictors[s][self.iter_count_] = self.regressor
+                    else:
+                        self.regressor_grid_search.fit(X=xobs, y=yobs)
+                        best_regressor = self.regressor_grid_search.best_estimator_
+                        best_regressor.fit(X=xobs, y=yobs)
+                        # 7. predict ymis(s) using xmis(x)
+                        ymis = best_regressor.predict(xmis)
+                        # 8. update imputed matrix using predicted matrix ymis(s)
+                        Ximp[mis_rows, s] = ymis
+                        # save the predictor
+                        self._predictors[s][self.iter_count_] = best_regressor
+                        self._predictors_params[s][self.iter_count_] = self.regressor_grid_search.best_params_
 
             # 9. Update gamma (stopping criterion)
             if self.cat_vars_ is not None:
@@ -591,4 +609,10 @@ class MissForestImputer(BaseEstimator, AbstractNullImputer):
             Returns imputed dataset.
         """
         return self.fit(X, **fit_params).transform(X)
+    
+    def get_predictors_params(self):
+        if self.hyperparams is None:
+            return self._predictors_params
+        
+        return self.hyperparams
     

@@ -87,7 +87,7 @@ def impute_with_missforest(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: 
     X_test_imputed = copy.deepcopy(X_test_with_nulls)
     
     # Impute numerical columns
-    missforest_imputer = MissForestImputer(seed=seed)
+    missforest_imputer = MissForestImputer(seed=seed, hyperparams=hyperparams)
     # Get indices of categorical columns
     categorical_columns_idxs = get_object_columns_indexes(X_train_imputed)
     
@@ -100,7 +100,12 @@ def impute_with_missforest(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: 
     X_test_imputed = pd.DataFrame(X_test_imputed_values, columns=X_test_imputed.columns, index=X_test_imputed.index)
     X_test_imputed[categorical_columns_with_nulls] = X_test_imputed[categorical_columns_with_nulls].astype('int').astype(str)
     
-    null_imp_params_dct = None
+    if hyperparams is not None:
+        null_imp_params_dct = {col: hyperparams for col in X_train_with_nulls.columns}
+    else:
+        predictor_params = missforest_imputer.get_predictors_params()
+        null_imp_params_dct = {X_train_with_nulls.columns[i]: {str(k): predictor_params[i][k] for k in predictor_params[i]} for i in predictor_params}
+    
     return X_train_imputed, X_test_imputed, null_imp_params_dct
 
 

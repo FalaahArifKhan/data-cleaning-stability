@@ -23,5 +23,19 @@ NULL_IMPUTERS_HYPERPARAMS = {
         ACS_INCOME_DATASET: {
             ErrorInjectionStrategy.mcar.value: {'final_fc_hidden_units': None}
         },
-    }
+    },
+    ErrorRepairMethod.miss_forest.value: {
+        ACS_INCOME_DATASET: {
+            ErrorInjectionStrategy.mcar.value: {
+                    "RandomForestClassifier": {
+                        'n_estimators': 100, 'max_depth': 10, 
+                        'min_samples_split': 5, 'min_samples_leaf': 2
+                    },
+                    "RandomForestRegressor": {
+                        'n_estimators': 100, 'max_depth': 10, 
+                        'min_samples_split': 5, 'min_samples_leaf': 2
+                    }
+            }
+        }
+    },
 }
