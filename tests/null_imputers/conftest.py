@@ -4,9 +4,17 @@ from virny.datasets import ACSIncomeDataset
 from sklearn.model_selection import train_test_split
 
 from configs.datasets_config import ACS_INCOME_DATASET
+from configs.null_imputers_config import NULL_IMPUTERS_HYPERPARAMS
+from configs.constants import ErrorRepairMethod, ErrorInjectionStrategy
 from source.custom_classes.benchmark import Benchmark
 from source.error_injectors.nulls_injector import NullsInjector
 from source.utils.dataframe_utils import get_object_columns_indexes
+
+
+@pytest.fixture(scope="function")
+def missforest_acs_income_hyperparams():
+    hyperparams = NULL_IMPUTERS_HYPERPARAMS.get(ErrorRepairMethod.miss_forest.value).get(ACS_INCOME_DATASET).get(ErrorInjectionStrategy.mcar.value)
+    return hyperparams
 
 
 @pytest.fixture(scope="function")
