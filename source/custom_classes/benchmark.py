@@ -65,6 +65,7 @@ class Benchmark(MLLifecycle):
                                              null_imputer_name=null_imputer_name)
 
         # Compute metrics for tuned models
+        self.virny_config.random_state = experiment_seed  # Set random state for the metric computation with Virny
         compute_metrics_with_db_writer(dataset=base_flow_dataset,
                                        config=self.virny_config,
                                        models_config=models_config,
@@ -341,6 +342,7 @@ class Benchmark(MLLifecycle):
                            for i in range(len(extra_base_flow_datasets))]
 
         # Compute metrics using Virny
+        self.virny_config.random_state = experiment_seed  # Set random state for the metric computation with Virny
         compute_metrics_with_multiple_test_sets(dataset=main_base_flow_dataset,
                                                 extra_test_sets_lst=extra_test_sets,
                                                 config=self.virny_config,
@@ -378,7 +380,7 @@ class Benchmark(MLLifecycle):
                                              null_imputer_name=null_imputer_name)
 
         # Compute metrics for tuned models
-        # TODO: set model seed before passing to virny
+        self.virny_config.random_state = experiment_seed  # Set random state for the metric computation with Virny
         compute_metrics_with_multiple_test_sets(dataset=main_base_flow_dataset,
                                                 extra_test_sets_lst=extra_test_sets,
                                                 config=self.virny_config,
