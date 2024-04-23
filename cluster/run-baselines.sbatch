@@ -15,8 +15,8 @@ module purge
 EXECUTION_COMMAND="
 python ../scripts/evaluate_baseline.py \
     --dataset folk \
-    --models [lr_clf] \
-    --run_nums [1]
+    --models \[lr_clf\] \
+    --run_nums \[1\]
 "
 
 singularity exec \

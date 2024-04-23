@@ -35,6 +35,8 @@ def parse_input_args():
     parser.add_argument("--run_nums", type=str, help="a list of experiment run numbers", required=True)
 
     args = parser.parse_args()
+    print('args.models --', args.models)
+    print('args.run_nums --', args.run_nums)
     args.run_nums = ast.literal_eval(args.run_nums)
     args.models = ast.literal_eval(args.models)
 
