@@ -22,8 +22,6 @@ class CPCleanWrapper(BaseInprocessingWrapper):
         self.save_dir = save_dir
 
         self.n_jobs = os.cpu_count()
-        print('N_job:', self.n_jobs)
-
         self.model_metadata = {
             "fn": KNN,
             "params": {"n_neighbors": 3}
@@ -54,6 +52,13 @@ class CPCleanWrapper(BaseInprocessingWrapper):
             'n_jobs': self.n_jobs,
             'model_metadata_params': self.model_metadata['params'],
         }
+
+    def set_params(self, random_state):
+        return CPCleanWrapper(X_train_full=self.X_train_full,
+                              X_val=self.X_val,
+                              y_val=self.y_val,
+                              random_state=random_state,
+                              save_dir=self.save_dir)
 
     def _build_dataset_objects(self, X_train_with_nulls, y_train):
         X_train_clean = self.X_train_full.loc[X_train_with_nulls.index]

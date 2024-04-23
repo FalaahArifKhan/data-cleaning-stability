@@ -3,8 +3,8 @@
 # =======================================================================================
 python ./scripts/evaluate_baseline.py \
     --dataset folk \
-    --models \[\"lr_clf\"\] \
-    --run_nums \[1,2\]
+    --models \[\"lgbm_clf\"\] \
+    --run_nums \[1\]
 
 python ./scripts/evaluate_models.py \
     --dataset folk \
@@ -13,22 +13,32 @@ python ./scripts/evaluate_models.py \
     --run_nums \[1\] \
     --tune_imputers true \
     --ml_impute true \
-    --evaluation_scenarios \[\"mcar_mcar2\"\]
+    --evaluation_scenarios \[\"exp3_mcar3\"\]
 
 python ./scripts/evaluate_models.py \
     --dataset folk \
     --null_imputers \[\"median-mode\"\] \
     --models \[\"lr_clf\"\] \
-    --run_nums \[1,2\] \
+    --run_nums \[1\] \
     --tune_imputers true \
     --ml_impute true \
-    --evaluation_scenarios \[\"mcar_mcar1\"\]
+    --evaluation_scenarios \[\"exp3_mcar3\"\]
 
 python ./scripts/impute_nulls_with_predictor.py \
     --dataset folk \
     --null_imputers \[\"median-mode\"\] \
-    --run_nums \[1,2\] \
-    --save_imputed_datasets true --evaluation_scenarios \[\"mcar_mcar1\",\"mcar_mar1\"\]
+    --run_nums \[1\] \
+    --tune_imputers true \
+    --save_imputed_datasets true \
+    --evaluation_scenarios \[\"exp3_mcar3\"\]
+
+python ./scripts/impute_nulls_with_predictor.py \
+    --dataset folk \
+    --null_imputers \[\"median-mode\"\] \
+    --run_nums \[1\] \
+    --tune_imputers true \
+    --save_imputed_datasets true \
+    --evaluation_scenarios \[\"exp1\&2_mar3\"\]
 
 python ../scripts/impute_nulls_with_predictor.py \
     --dataset folk \
@@ -37,6 +47,27 @@ python ../scripts/impute_nulls_with_predictor.py \
     --tune_imputers true \
     --save_imputed_datasets true \
     --evaluation_scenarios \[\"mcar_mcar1\"\]
+
+-- Test load_imputed_datasets
+python ./scripts/evaluate_models.py \
+    --dataset folk \
+    --null_imputers \[\"median-mode\"\] \
+    --models \[\"lr_clf\"\] \
+    --run_nums \[1\] \
+    --tune_imputers true \
+    --ml_impute true \
+    --save_imputed_datasets true \
+    --evaluation_scenarios \[\"mcar2\",\"mar3\"\]
+
+python ./scripts/evaluate_models.py \
+    --dataset folk \
+    --null_imputers \[\"median-mode\"\] \
+    --models \[\"lr_clf\"\] \
+    --run_nums \[1\] \
+    --tune_imputers true \
+    --ml_impute false \
+    --evaluation_scenarios \[\"mcar2\",\"mar3\"\]
+
 
 # =======================================================================================
 # Cluster
@@ -56,7 +87,7 @@ python ../scripts/evaluate_models.py \
     --run_nums [1] \
     --tune_imputers true \
     --ml_impute true \
-    --evaluation_scenarios [\"mcar_mcar2\"]
+    --evaluation_scenarios [\"mcar2\"]
 
 pytest -s ./tests/null_imputers/test_datawig_imputer.py
 

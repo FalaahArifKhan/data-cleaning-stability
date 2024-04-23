@@ -1,7 +1,8 @@
 import ast
 import argparse
 
-from configs.constants import ErrorRepairMethod, MLModels, EVALUATION_SCENARIOS
+from configs.constants import ErrorRepairMethod, MLModels
+from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
 from configs.datasets_config import DATASET_CONFIG
 
 
@@ -11,14 +12,13 @@ def check_str_list_type(str_param):
     return False
 
 
+def has_unique_elements(lst):
+    return len(lst) == len(set(lst))
+
+
 def is_in_enum(val, enum_obj):
     enum_vals = [member.value for member in enum_obj]
     return val in enum_vals
-
-
-def parse_evaluation_scenario(evaluation_scenario: str):
-    train_injection_strategy, test_injection_strategy = evaluation_scenario[:-1].split('_')
-    return train_injection_strategy.upper(), test_injection_strategy.upper()
 
 
 def str2bool(v):
@@ -60,10 +60,20 @@ def validate_args(exp_config_obj, with_model_names=True):
             raise ValueError('null_imputers argument should include values from the ErrorRepairMethod enum in configs/constants.py')
 
     for evaluation_scenario in exp_config_obj.evaluation_scenarios:
-        if evaluation_scenario not in EVALUATION_SCENARIOS:
-            raise ValueError('evaluation_scenarios argument should include values from the EVALUATION_SCENARIOS list in configs/constants.py')
+        if evaluation_scenario not in EVALUATION_SCENARIOS_CONFIG.keys():
+            raise ValueError('evaluation_scenarios argument should include values '
+                             'from the EVALUATION_SCENARIOS_CONFIG keys in configs/scenarios_config.py')
 
-    exp_config_obj.evaluation_scenarios = [evaluation_scenario.upper() for evaluation_scenario in exp_config_obj.evaluation_scenarios]
+    # Check correctness of evaluation scenarios
+    for evaluation_scenario in EVALUATION_SCENARIOS_CONFIG.keys():
+        test_injection_scenarios_lst = EVALUATION_SCENARIOS_CONFIG[evaluation_scenario]['test_injection_scenarios']
+        if not isinstance(test_injection_scenarios_lst, list):
+            raise ValueError('test_injection_scenarios in EVALUATION_SCENARIOS_CONFIG should be a Python list. '
+                             'EVALUATION_SCENARIOS_CONFIG is located in configs/scenarios_config.py')
+        if not has_unique_elements(test_injection_scenarios_lst):
+            raise ValueError('injection strategies in the test_injection_scenarios list in EVALUATION_SCENARIOS_CONFIG should be unique for each evaliuation scenario. '
+                             'EVALUATION_SCENARIOS_CONFIG is located in configs/scenarios_config.py')
+
     if with_model_names:
         if not check_str_list_type(exp_config_obj.models):
             raise ValueError('models argument must be a list')
