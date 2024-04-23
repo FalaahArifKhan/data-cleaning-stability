@@ -29,12 +29,12 @@ def get_models_params_for_tuning(models_tuning_seed):
             }
         },
         MLModels.lgbm_clf.value: {
-            'model': LGBMClassifier(random_state=models_tuning_seed),
+            'model': LGBMClassifier(random_state=models_tuning_seed, n_jobs=-1),
             'params': {
                 'max_depth' : [i for i in range(3, 12)],
                 'num_leaves' : [int(x) for x in np.linspace(start = 20, stop = 3000, num = 10)],
                 'min_data_in_leaf' : [int(x) for x in np.linspace(start = 100, stop = 1000, num = 10)],
-                'verbosity': [-1]
+                # 'verbosity': [-1]
             }
         },
         MLModels.rf_clf.value: {
