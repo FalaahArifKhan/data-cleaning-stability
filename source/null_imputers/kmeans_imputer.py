@@ -54,7 +54,7 @@ class KMeansImputer(AbstractNullImputer):
         
         if self.hyperparameters is not None:
             print("Hyperparameters are provided. Grid search will not be performed.")
-            self.kprototypes = KPrototypes(**self.hyperparameters)
+            self.kprototypes = KPrototypes(random_state=self.seed, n_jobs=self.n_jobs, **self.hyperparameters)
         else:
             print("Hyperparameters are not provided. Grid search will be performed.")
             tuning_params = get_kmeans_imputer_params_for_tuning(seed)["KMeansImputer"]

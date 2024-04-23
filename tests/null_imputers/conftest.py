@@ -18,6 +18,12 @@ def missforest_acs_income_hyperparams():
 
 
 @pytest.fixture(scope="function")
+def kmeans_acs_income_hyperparams():
+    hyperparams = NULL_IMPUTERS_HYPERPARAMS.get(ErrorRepairMethod.k_means_clustering.value).get(ACS_INCOME_DATASET).get(ErrorInjectionStrategy.mcar.value)
+    return hyperparams
+
+
+@pytest.fixture(scope="function")
 def common_seed():
     return 42
 
