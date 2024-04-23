@@ -7,8 +7,8 @@
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=END
 #SBATCH --mail-user=dh3553@nyu.edu
-#SBATCH --output=german_lgbm_%j.out
-#SBATCH --error=german_lgbm_%j.err
+#SBATCH --output=%j_german_lgbm.out
+#SBATCH --error=%j_german_lgbm.err
 
 module purge
 
@@ -21,5 +21,5 @@ python ../scripts/evaluate_baseline.py \
 
 singularity exec \
 	    --overlay /scratch/dh3553/ml_life_cycle_project/vldb_env.ext3:ro \
-	    /scratch/work/public/singularity/cuda11.0-cudnn8-devel-ubuntu18.04.sif \
+	    /scratch/work/public/singularity/ubuntu-20.04.1.sif \
 	    /bin/bash -c "source /ext3/env.sh; ${EXECUTION_COMMAND}"
