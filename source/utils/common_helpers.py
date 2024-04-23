@@ -1,3 +1,4 @@
+import copy
 import hashlib
 import secrets
 import base64
@@ -75,24 +76,24 @@ def create_virny_base_flow_datasets(data_loader, dataset_sensitive_attrs,
         X_tests_wo_sensitive_attrs_lst[0], X_tests_wo_sensitive_attrs_lst[1:]
 
     # Create a main base flow dataset for Virny
-    main_base_flow_dataset = create_base_flow_dataset(data_loader=data_loader,
+    main_base_flow_dataset = create_base_flow_dataset(data_loader=copy.deepcopy(data_loader),
                                                       dataset_sensitive_attrs=dataset_sensitive_attrs,
                                                       X_train_val_wo_sensitive_attrs=X_train_val_wo_sensitive_attrs,
                                                       X_test_wo_sensitive_attrs=main_X_test_wo_sensitive_attrs,
                                                       y_train_val=y_train_val,
-                                                      y_test=y_test,
+                                                      y_test=copy.deepcopy(y_test),
                                                       numerical_columns_wo_sensitive_attrs=numerical_columns_wo_sensitive_attrs,
                                                       categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs)
 
     # Create extra base flow datasets for Virny
     extra_base_flow_datasets = list(map(
         lambda extra_X_test_wo_sensitive_attrs: \
-            create_base_flow_dataset(data_loader=data_loader,
+            create_base_flow_dataset(data_loader=copy.deepcopy(data_loader),
                                      dataset_sensitive_attrs=dataset_sensitive_attrs,
                                      X_train_val_wo_sensitive_attrs=pd.DataFrame(),
                                      X_test_wo_sensitive_attrs=extra_X_test_wo_sensitive_attrs,
                                      y_train_val=pd.DataFrame(),
-                                     y_test=y_test,
+                                     y_test=copy.deepcopy(y_test),
                                      numerical_columns_wo_sensitive_attrs=numerical_columns_wo_sensitive_attrs,
                                      categorical_columns_wo_sensitive_attrs=categorical_columns_wo_sensitive_attrs),
         extra_X_tests_wo_sensitive_attrs_lst
