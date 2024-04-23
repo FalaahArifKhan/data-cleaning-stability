@@ -118,7 +118,7 @@ def impute_with_kmeans(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd.D
     X_test_imputed = copy.deepcopy(X_test_with_nulls)
     
     # Impute numerical columns
-    kmeans_imputer = KMeansImputer(n_clusters=2, seed=seed)
+    kmeans_imputer = KMeansImputer(seed=seed, hyperparameters=hyperparams)
     categorical_columns_idxs = get_object_columns_indexes(X_train_imputed)
     
     X_train_imputed_values = kmeans_imputer.fit_transform(X_train_imputed, cat_vars=categorical_columns_idxs)
@@ -130,5 +130,5 @@ def impute_with_kmeans(X_train_with_nulls: pd.DataFrame, X_test_with_nulls: pd.D
     X_test_imputed = pd.DataFrame(X_test_imputed_values, columns=X_test_imputed.columns, index=X_test_imputed.index)
     X_test_imputed[categorical_columns_with_nulls] = X_test_imputed[categorical_columns_with_nulls].astype(int).astype('str')
     
-    null_imp_params_dct = None
+    null_imp_params_dct = {col: kmeans_imputer.get_predictors_params() for col in X_train_with_nulls.columns}    
     return X_train_imputed, X_test_imputed, null_imp_params_dct

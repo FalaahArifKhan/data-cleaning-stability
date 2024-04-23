@@ -38,4 +38,11 @@ NULL_IMPUTERS_HYPERPARAMS = {
             }
         }
     },
+    ErrorRepairMethod.k_means_clustering.value: {
+        ACS_INCOME_DATASET: {
+            ErrorInjectionStrategy.mcar.value: {
+                "n_clusters": 2, "max_iter": 100, "init": "Cao", "n_init": 5
+            }
+        }
+    },
 }

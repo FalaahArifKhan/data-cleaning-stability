@@ -8,7 +8,7 @@ from source.null_imputers.kmeans_imputer import KMeansImputer
 def test_kmeans_imputer_no_nulls(acs_income_dataset_categorical_columns_idxs, common_seed):
     injected_df, categorical_columns_idxs = acs_income_dataset_categorical_columns_idxs
     # Initialize KMeansImputer
-    imputer = KMeansImputer(seed=common_seed, n_clusters=3)
+    imputer = KMeansImputer(seed=common_seed)
 
     # Fit and transform the dataset
     X_imputed = imputer.fit_transform(injected_df, cat_vars=categorical_columns_idxs)
@@ -22,8 +22,8 @@ def test_kmeans_imputer_same_seed(acs_income_dataset_categorical_columns_idxs, c
     injected_df, categorical_columns_idxs = acs_income_dataset_categorical_columns_idxs
     
     # Initialize KMeansImputer with seed
-    imputer1 = KMeansImputer(seed=common_seed, n_clusters=3)
-    imputer2 = KMeansImputer(seed=common_seed, n_clusters=3)
+    imputer1 = KMeansImputer(seed=common_seed)
+    imputer2 = KMeansImputer(seed=common_seed)
 
     # Fit and transform the sample data with imputer1
     X_imputed1 = imputer1.fit_transform(injected_df, cat_vars=categorical_columns_idxs)
