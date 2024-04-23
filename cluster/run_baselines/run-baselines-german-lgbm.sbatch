@@ -15,7 +15,7 @@ module purge
 EXECUTION_COMMAND="
 python ../scripts/evaluate_baseline.py \
     --dataset german \
-    --models \[\"'lr_clf'\"\] \
+    --models \[\"'lgbm_clf'\"\] \
     --run_nums \[1,2,3,4,5,6\]
 "
 
