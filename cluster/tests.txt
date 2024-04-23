@@ -3,8 +3,8 @@
 # =======================================================================================
 python ./scripts/evaluate_baseline.py \
     --dataset folk \
-    --models \[\"lgbm_clf\"\] \
-    --run_nums \[1\]
+    --models \[\"lr_clf\"\] \
+    --run_nums \[1,2\]
 
 python ./scripts/evaluate_models.py \
     --dataset folk \
@@ -72,6 +72,11 @@ python ./scripts/evaluate_models.py \
 # =======================================================================================
 # Cluster
 # =======================================================================================
+python ../scripts/evaluate_baseline.py \
+    --dataset folk \
+    --models [\"lr_clf\"] \
+    --run_nums [1,3]
+
 python ../scripts/impute_nulls_with_predictor.py \
     --dataset folk \
     --null_imputers [\"datawig\"] \
