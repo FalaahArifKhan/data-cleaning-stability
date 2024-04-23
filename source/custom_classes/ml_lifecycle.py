@@ -149,7 +149,6 @@ class MLLifecycle:
         imputation_kwargs = NULL_IMPUTERS_CONFIG[null_imputer_name]["kwargs"]
         imputation_kwargs.update({'experiment_seed': experiment_seed})
 
-        # TODO: Save a result imputed dataset in imputed_data_dict for each imputation technique
         train_set_cols_with_nulls = X_train_with_nulls.columns[X_train_with_nulls.isna().any()].tolist()
         train_numerical_null_columns = list(set(train_set_cols_with_nulls).intersection(numerical_columns))
         train_categorical_null_columns = list(set(train_set_cols_with_nulls).intersection(categorical_columns))
