@@ -25,5 +25,26 @@ NULL_IMPUTERS_HYPERPARAMS = {
         ACS_INCOME_DATASET: {
             ErrorInjectionStrategy.mcar.value: {'final_fc_hidden_units': None}
         },
-    }
+    },
+    ErrorRepairMethod.miss_forest.value: {
+        ACS_INCOME_DATASET: {
+            ErrorInjectionStrategy.mcar.value: {
+                    "RandomForestClassifier": {
+                        'n_estimators': 100, 'max_depth': 10, 
+                        'min_samples_split': 5, 'min_samples_leaf': 2
+                    },
+                    "RandomForestRegressor": {
+                        'n_estimators': 100, 'max_depth': 10, 
+                        'min_samples_split': 5, 'min_samples_leaf': 2
+                    }
+            }
+        }
+    },
+    ErrorRepairMethod.k_means_clustering.value: {
+        ACS_INCOME_DATASET: {
+            ErrorInjectionStrategy.mcar.value: {
+                "n_clusters": 2, "max_iter": 100, "init": "Cao", "n_init": 5
+            }
+        }
+    },
 }

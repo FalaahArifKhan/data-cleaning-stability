@@ -7,6 +7,7 @@ from pathlib import Path
 sys.path.append(str(Path(f"{__file__}").parent.parent))
 
 from sklearn.utils.validation import check_is_fitted, check_array
+from sklearn.model_selection import GridSearchCV
 
 from kmodes.kprototypes import KPrototypes
 
@@ -14,19 +15,58 @@ from .abstract_null_imputer import AbstractNullImputer
 from ..utils.dataframe_utils import _get_mask
 
 
+def get_kmeans_imputer_params_for_tuning(seed: int):
+    return {
+        # "KMeansImputer": {
+        #     "model": KPrototypes(random_state=seed),
+        #     "params": {
+        #         "n_clusters": [2, 3, 4, 5, 6, 7, 8, 9, 10],
+        #         "max_iter": [100, 200],
+        #         "init": ["Huang", "Cao", "random"],
+        #         "n_init": [1, 5, 10],
+        #     }
+        # }
+        "KMeansImputer": {
+            "model": KPrototypes(random_state=seed),
+            "params": {
+                "n_clusters": [2, 10],
+                "max_iter": [100, 200],
+                "init": ["Cao"],
+                "n_init": [5],
+            }
+        }
+    }
+
+
+def custom_scoring_function(estimator, X, y=None):
+    return estimator.epoch_costs_[-1]
+
+
 class KMeansImputer(AbstractNullImputer):
-    def __init__(self, seed: int, n_clusters: int, missing_values=np.nan,
-                 max_iter: int = 100, n_init: int = 10, init: str = 'Cao', n_jobs: int = -1):
+    def __init__(self, seed: int, missing_values=np.nan,
+                 n_jobs: int = -1, verbose: int = 0,
+                 hyperparameters: dict = None):
         super().__init__(seed)
-        self.n_clusters = n_clusters
         self.missing_values = missing_values
+        self.n_jobs = n_jobs
+        self.verbose = verbose
+        self.hyperparameters = hyperparameters
         
-        self.kprototypes = KPrototypes(
-            n_clusters=n_clusters,
-            max_iter=max_iter,
-            init=init, n_init=n_init,
-            n_jobs=n_jobs, random_state=seed
-        )
+        if self.hyperparameters is not None:
+            print("Hyperparameters are provided. Grid search will not be performed.")
+            self.kprototypes = KPrototypes(random_state=self.seed, n_jobs=self.n_jobs, **self.hyperparameters)
+        else:
+            print("Hyperparameters are not provided. Grid search will be performed.")
+            tuning_params = get_kmeans_imputer_params_for_tuning(seed)["KMeansImputer"]
+            self.tuning_params = tuning_params["params"]
+            self.kprototypes_grid_search = GridSearchCV(
+                estimator=tuning_params["model"],
+                param_grid=self.tuning_params,
+                scoring=custom_scoring_function,
+                cv=3,
+                n_jobs=self.n_jobs,
+                verbose=self.verbose
+            )
         
     def _validate_input(self, df=None):
         # Check data integrity and calling arguments
@@ -86,7 +126,12 @@ class KMeansImputer(AbstractNullImputer):
         self.observed_columns_ = observed_columns
         self.missing_columns_ = missing_cols
         
-        self.kprototypes.fit(X_observed, categorical=self.cat_vars_)
+        if self.hyperparameters is None:
+            self.kprototypes_grid_search.fit(X_observed, categorical=self.cat_vars_)
+            self.kprototypes = self.kprototypes_grid_search.best_estimator_
+            self.best_params_ = self.kprototypes_grid_search.best_params_
+        else:
+            self.kprototypes.fit(X_observed, categorical=self.cat_vars_)
         
         return self
     
@@ -112,3 +157,9 @@ class KMeansImputer(AbstractNullImputer):
 
     def fit_transform(self, df, target_column: str = None, **fit_params):
         return self.fit(df, **fit_params).transform(df)
+    
+    def get_predictors_params(self):
+        if self.hyperparameters is None:
+            return self.best_params_
+        
+        return self.hyperparameters
