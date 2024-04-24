@@ -29,7 +29,7 @@ def get_models_params_for_tuning(models_tuning_seed):
             }
         },
         MLModels.lgbm_clf.value: {
-            'model': LGBMClassifier(random_state=models_tuning_seed),
+            'model': LGBMClassifier(random_state=models_tuning_seed, n_jobs=24, num_threads=24),
             'params': {
                 'max_depth' : [i for i in range(3, 12)],
                 'num_leaves' : [int(x) for x in np.linspace(start = 20, stop = 3000, num = 10)],
