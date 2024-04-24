@@ -19,7 +19,7 @@ python ../scripts/evaluate_baseline.py \
     --run_nums \[1,2,3,4,5,6\]
 "
 
-singularity exec \
+singularity exec $nv \
 	    --overlay /scratch/dh3553/ml_life_cycle_project/vldb_env.ext3:ro \
-	    /scratch/work/public/singularity/ubuntu-20.04.1.sif \
+	    /scratch/work/public/singularity/cuda11.0-cudnn8-devel-ubuntu18.04.sif \
 	    /bin/bash -c "source /ext3/env.sh; ${EXECUTION_COMMAND}"
