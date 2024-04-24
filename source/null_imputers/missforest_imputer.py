@@ -45,7 +45,7 @@ def get_missforest_params_for_tuning(models_tuning_seed):
             }
         }
     }
-    
+
     
 class MissForestImputer(BaseEstimator, AbstractNullImputer):
     """Missing value imputation using Random Forests.

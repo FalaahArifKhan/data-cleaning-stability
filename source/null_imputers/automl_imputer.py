@@ -16,7 +16,6 @@ The below code is an extension of this work:
 	ABSTRACT={With the increasing importance and complexity of data pipelines, data quality became one of the key challenges in modern software applications. The importance of data quality has been recognized beyond the field of data engineering and database management systems (DBMSs). Also, for machine learning (ML) applications, high data quality standards are crucial to ensure robust predictive performance and responsible usage of automated decision making. One of the most frequent data quality problems is missing values. Incomplete datasets can break data pipelines and can have a devastating impact on downstream ML applications when not detected. While statisticians and, more recently, ML researchers have introduced a variety of approaches to impute missing values, comprehensive benchmarks comparing classical and modern imputation approaches under fair and realistic conditions are underrepresented. Here, we aim to fill this gap. We conduct a comprehensive suite of experiments on a large number of datasets with heterogeneous data and realistic missingness conditions, comparing both novel deep learning approaches and classical ML imputation methods when either only test or train and test data are affected by missing data. Each imputation method is evaluated regarding the imputation quality and the impact imputation has on a downstream ML task. Our results provide valuable insights into the performance of a variety of imputation methods under realistic conditions. We hope that our results help researchers and engineers to guide their data preprocessing method selection for automated data quality improvement.}
 }
 """
-import uuid
 import random
 import pandas as pd
 import numpy as np
@@ -25,6 +24,7 @@ from datetime import datetime
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple
 
+from source.utils.common_helpers import generate_base64_hash
 from source.utils.custom_logger import get_logger
 from source.utils.dataframe_utils import get_columns_sorted_by_nulls
 
@@ -259,13 +259,14 @@ class AutoMLImputer(BaseImputer):
             feature_cols = [c for c in self._categorical_columns + self._numerical_columns if c != target_column]
 
             datetime_now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+            random_hash = generate_base64_hash()
             if target_column in self._numerical_columns:
                 self._predictors[target_column] = StructuredDataRegressor(
                     column_names=feature_cols,
                     overwrite=True,
                     max_trials=self.max_trials,
                     tuner=self.tuner,
-                    project_name=f'{target_column}_{datetime_now_str}_{str(uuid.uuid1())}',
+                    project_name=f'{target_column}_{datetime_now_str}_{random_hash}',
                     directory=f"{self.directory}/models_{target_column}",
                     seed=self._seed
                 )
@@ -277,7 +278,7 @@ class AutoMLImputer(BaseImputer):
                     overwrite=True,
                     max_trials=self.max_trials,
                     tuner=self.tuner,
-                    project_name=f'{target_column}_{datetime_now_str}_{str(uuid.uuid1())}',
+                    project_name=f'{target_column}_{datetime_now_str}_{random_hash}',
                     directory=f"{self.directory}/models_{target_column}",
                     seed=self._seed
                 )

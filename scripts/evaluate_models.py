@@ -3,25 +3,26 @@ Script for evaluating model performance on the imputed datasets from impute_null
 """
 import os
 import sys
+import warnings
 from pathlib import Path
+
+# Suppress all warnings
+warnings.filterwarnings("ignore")
 
 # Define a correct root path
 sys.path.append(str(Path(f"{__file__}").parent.parent))
-print('Current location: ', os.getcwd())
 
 # Import dependencies
 import argparse
-import warnings
 from datetime import datetime
 from dotenv import load_dotenv
 
-from configs.constants import EVALUATION_SCENARIOS
+from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
 from source.custom_classes.benchmark import Benchmark
 from source.validation import validate_args, str2bool
 
 
 def preconfigure_experiment(env_file_path: str = Path(__file__).parent.joinpath('..', 'configs', 'secrets.env')):
-    warnings.filterwarnings('ignore')
     os.environ["PYTHONWARNINGS"] = "ignore"
 
     # Load env variables
@@ -37,10 +38,12 @@ def parse_input_args():
     parser.add_argument("--run_nums", type=str, help="a list of experiment run numbers", required=True)
     parser.add_argument("--tune_imputers", type=str2bool, required=True,
                         help="True -- tune null imputers, False -- take hyper-params of null imputers from configs/null_imputers_config.py")
+    parser.add_argument("--save_imputed_datasets", type=str2bool, required=False, default=False,
+                        help="True -- save imputed train and test sets, False -- do not save train and test sets")
     parser.add_argument("--ml_impute", type=str2bool, required=True,
                         help="True -- apply ML-oriented imputers, False -- use pre-computed imputed datasets")
     parser.add_argument("--evaluation_scenarios", type=str, help="a list of evaluation scenarios",
-                        default=str(EVALUATION_SCENARIOS))
+                        default=str(list(EVALUATION_SCENARIOS_CONFIG.keys())))
 
     args = parser.parse_args()
     args = validate_args(exp_config_obj=args)
@@ -68,7 +71,8 @@ if __name__ == '__main__':
                              evaluation_scenarios=args.evaluation_scenarios,
                              model_names=args.models,
                              tune_imputers=args.tune_imputers,
-                             ml_impute=args.ml_impute)
+                             ml_impute=args.ml_impute,
+                             save_imputed_datasets=args.save_imputed_datasets)
 
     end_time = datetime.now()
     print(f'The script is successfully executed. Run time: {end_time - start_time}')

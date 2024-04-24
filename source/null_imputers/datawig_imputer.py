@@ -1,5 +1,5 @@
 import os
-import uuid
+import copy
 import shutil
 import random
 import logging
@@ -7,10 +7,11 @@ import numpy as np
 import pandas as pd
 
 from datetime import datetime
+from source.utils.common_helpers import generate_base64_hash
 
 
 def complete(X_train_with_nulls: pd.DataFrame,
-             X_test_with_nulls: pd.DataFrame,
+             X_tests_with_nulls_lst: list,
              numeric_columns_with_nulls: list,
              categorical_columns_with_nulls: list,
              all_numeric_columns: list,
@@ -29,10 +30,9 @@ def complete(X_train_with_nulls: pd.DataFrame,
     num_epochs = kwargs['num_epochs']
     iterations = kwargs['iterations']
 
-    train_missing_mask = X_train_with_nulls.copy().isnull()
-    test_missing_mask = X_test_with_nulls.copy().isnull()
-    X_train_imputed = X_train_with_nulls.copy()
-    X_test_imputed = X_test_with_nulls.copy()
+    train_missing_mask = X_train_with_nulls.copy(deep=True).isnull()
+    X_train_imputed = X_train_with_nulls.copy(deep=True)
+    X_tests_imputed_lst = list(map(lambda X_test_with_nulls: copy.deepcopy(X_test_with_nulls), X_tests_with_nulls_lst))
 
     # Define column types for each feature column in X dataframe
     hps = dict()
@@ -54,7 +54,8 @@ def complete(X_train_with_nulls: pd.DataFrame,
     for _ in range(iterations):
         for output_col in set(numeric_columns_with_nulls) | set(categorical_columns_with_nulls):
             datetime_now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-            column_output_path = os.path.join(output_path, f'{output_col}_{datetime_now_str}_{str(uuid.uuid1())}')
+            random_hash = generate_base64_hash()
+            column_output_path = os.path.join(output_path, f'{output_col}_{datetime_now_str}_{random_hash}')
 
             # Reset logger handler
             if datawig.utils.logger.hasHandlers():
@@ -96,9 +97,16 @@ def complete(X_train_with_nulls: pd.DataFrame,
             tmp_train = imputer.predict(X_train_imputed, precision_threshold=precision_threshold)
             X_train_imputed.loc[train_idx_missing, output_col] = tmp_train[output_col + "_imputed"]
 
-            test_idx_missing = test_missing_mask[output_col]
-            tmp_test = imputer.predict(X_test_imputed, precision_threshold=precision_threshold)
-            X_test_imputed.loc[test_idx_missing, output_col] = tmp_test[output_col + "_imputed"]
+            # Impute each test set with nulls in X_tests_imputed_lst
+            for i in range(len(X_tests_imputed_lst)):
+                X_test_imputed = X_tests_imputed_lst[i]
+
+                test_missing_mask = X_test_imputed.copy().isnull()
+                test_idx_missing = test_missing_mask[output_col]
+                tmp_test = imputer.predict(X_test_imputed, precision_threshold=precision_threshold)
+                X_test_imputed.loc[test_idx_missing, output_col] = tmp_test[output_col + "_imputed"]
+
+                X_tests_imputed_lst[i] = X_test_imputed
 
             # Select hyper-params of the best model
             if imputer.hpo.results.shape[0] == 0:
@@ -119,4 +127,4 @@ def complete(X_train_with_nulls: pd.DataFrame,
 
             datawig.utils.logger.info(f'Successfully completed null imputation for the {output_col} column')
 
-    return X_train_imputed, X_test_imputed, null_imputer_params_dct
+    return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct

@@ -12,13 +12,12 @@ singularity exec --nv --overlay /scratch/dh3553/ml_life_cycle_project/vldb_env.e
 Singularity> source /ext3/env.sh
 ```
 
-
 Commands for development on the cluster using CPUs:
 ```shell
 # To request 32 CPUs, 16 GB memory, and 12 hour running duration
-srun -t12:00:00 --mem=16000 --cpus-per-task=32 --pty /bin/bash
+srun -t12:00:00 --mem=16000 --ntasks-per-node=1 --cpus-per-task=48 --pty /bin/bash
 
-singularity exec --overlay /scratch/dh3553/ml_life_cycle_project/vldb_env.ext3:rw /bin/bash
+singularity exec --overlay /scratch/dh3553/ml_life_cycle_project/vldb_env.ext3:rw /scratch/work/public/singularity/ubuntu-20.04.1.sif /bin/bash
 
 Singularity> source /ext3/env.sh
 ```
@@ -27,6 +26,12 @@ Find location of a python package to change source files:
 ```shell
 # /ext3/miniconda3/lib/python3.9/site-packages/datawig/__init__.py
 python -c "import datawig; print(datawig.__file__)"
+```
+
+SSH to a bash SLURM job:
+```shell
+# Pattern: ssh username@hostname
+ssh dh3553@cs223
 ```
 
 

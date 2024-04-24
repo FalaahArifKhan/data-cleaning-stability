@@ -19,7 +19,7 @@ import argparse
 from datetime import datetime
 from dotenv import load_dotenv
 
-from configs.constants import EVALUATION_SCENARIOS
+from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
 from source.custom_classes.benchmark import Benchmark
 from source.validation import validate_args, str2bool
 
@@ -40,7 +40,7 @@ def parse_input_args():
     parser.add_argument("--save_imputed_datasets", type=str2bool, required=True,
                         help="True -- save imputed train and test sets, False -- do not save train and test sets")
     parser.add_argument("--evaluation_scenarios", type=str, help="a list of evaluation scenarios",
-                        default=str(EVALUATION_SCENARIOS))
+                        default=str(list(EVALUATION_SCENARIOS_CONFIG.keys())))
 
     args = parser.parse_args()
     args = validate_args(exp_config_obj=args, with_model_names=False)
