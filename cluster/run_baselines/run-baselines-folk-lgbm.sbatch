@@ -7,8 +7,8 @@
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=END
 #SBATCH --mail-user=dh3553@nyu.edu
-#SBATCH --output=folk_lgbm_%j.out
-#SBATCH --error=folk_lgbm_%j.err
+#SBATCH --output=%j_folk_lgbm.out
+#SBATCH --error=%j_folk_lgbm.err
 
 module purge
 

@@ -7,8 +7,8 @@
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=END
 #SBATCH --mail-user=dh3553@nyu.edu
-#SBATCH --output=german_dt_%j.out
-#SBATCH --error=german_dt_%j.err
+#SBATCH --output=%j_german_dt.out
+#SBATCH --error=%j_german_dt.err
 
 module purge
 
