@@ -20,5 +20,5 @@ python ../scripts/evaluate_baseline.py \
 
 singularity exec $nv \
 	    --overlay /scratch/dh3553/ml_life_cycle_project/vldb_env.ext3:ro \
-	    /scratch/work/public/singularity/cuda11.0-cudnn8-devel-ubuntu18.04.sif \
+	    /scratch/work/public/singularity/ubuntu-20.04.1.sif \
 	    /bin/bash -c "source /ext3/env.sh; ${EXECUTION_COMMAND}"
