@@ -17,7 +17,7 @@ python ./scripts/evaluate_models.py \
 
 python ./scripts/evaluate_models.py \
     --dataset folk \
-    --null_imputers \[\"miss_forest\"\] \
+    --null_imputers \[\"median-mode\"\] \
     --models \[\"lr_clf\"\] \
     --run_nums \[1\] \
     --tune_imputers true \
