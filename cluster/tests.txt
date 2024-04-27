@@ -2,8 +2,8 @@
 # Local
 # =======================================================================================
 python ./scripts/evaluate_baseline.py \
-    --dataset german \
-    --models \[\"lgbm_clf\"\] \
+    --dataset bank \
+    --models \[\"lr_clf\"\] \
     --run_nums \[1\]
 
 python ./scripts/evaluate_models.py \

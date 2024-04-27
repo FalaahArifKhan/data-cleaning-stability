@@ -40,8 +40,7 @@ def get_models_params_for_tuning(models_tuning_seed):
         MLModels.rf_clf.value: {
             'model': RandomForestClassifier(random_state=models_tuning_seed),
             'params': {
-                # 'n_estimators': [50, 100, 200, 500, 700, 1000],
-                'n_estimators': [50, 100, 200, 500],
+                'n_estimators': [50, 100, 200, 500, 700, 1000],
                 'max_depth': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, None],
                 'min_samples_split': [2, 5, 10],
                 'min_samples_leaf': [1, 2, 4],
