@@ -10,13 +10,10 @@ from collections import defaultdict
 import numpy as np
 from scipy.stats import mode
 
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_is_fitted, check_array
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import make_scorer, accuracy_score, f1_score, mean_squared_error
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
 
 from .abstract_null_imputer import AbstractNullImputer
 from ..utils.dataframe_utils import _get_mask
@@ -46,7 +43,7 @@ def get_missforest_params_for_tuning(models_tuning_seed):
         }
     }
 
-    
+
 class MissForestImputer(BaseEstimator, AbstractNullImputer):
     """Missing value imputation using Random Forests.
 

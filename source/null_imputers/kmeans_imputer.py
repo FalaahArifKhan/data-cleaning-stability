@@ -21,18 +21,18 @@ def get_kmeans_imputer_params_for_tuning(seed: int):
         "KMeansImputer": {
             "kprototypes_model": KPrototypes(random_state=seed),
             "kmodes_model": KModes(random_state=seed),
-            "params": {
-                "n_clusters": [2, 3, 4, 5, 6, 7, 8, 9, 10],
-                "max_iter": [100, 200],
-                "init": ["Huang", "Cao", "random"],
-                "n_init": [1, 5, 10],
-            }
-            #  "params": {
-            #     "n_clusters": [2, 10],
-            #     "max_iter": [100],
-            #     "init": ["Cao"],
-            #     "n_init": [1],
+            # "params": {
+            #     "n_clusters": [2, 3, 4, 5, 6, 7, 8, 9, 10],
+            #     "max_iter": [100, 200],
+            #     "init": ["Huang", "Cao", "random"],
+            #     "n_init": [1, 5, 10],
             # }
+             "params": {
+                "n_clusters": [2, 10],
+                "max_iter": [100],
+                "init": ["Cao"],
+                "n_init": [1],
+            }
         }
     }
 
@@ -127,7 +127,10 @@ class KMeansImputer(AbstractNullImputer):
         
         observed_cat_vars = np.intersect1d(observed_columns, cat_vars).tolist()
         observed_num_vars = np.intersect1d(observed_columns, num_vars).tolist()
-        
+
+        print('K-Means Imputer: observed_cat_vars --', observed_cat_vars)
+        print('K-Means Imputer: observed_num_vars --', observed_num_vars)
+
         X_observed = np.hstack([X[:, observed_cat_vars], X[:, observed_num_vars]])
         
         self.cat_vars_ = list(range(len(observed_cat_vars)))
