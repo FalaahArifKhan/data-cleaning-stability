@@ -21,18 +21,18 @@ def get_kmeans_imputer_params_for_tuning(seed: int):
         "KMeansImputer": {
             "kprototypes_model": KPrototypes(random_state=seed),
             "kmodes_model": KModes(random_state=seed),
-            # "params": {
-            #     "n_clusters": [2, 3, 4, 5, 6, 7, 8, 9, 10],
-            #     "max_iter": [100, 200],
-            #     "init": ["Huang", "Cao", "random"],
-            #     "n_init": [1, 5, 10],
-            # }
-             "params": {
-                "n_clusters": [2, 10],
-                "max_iter": [100],
-                "init": ["Cao"],
-                "n_init": [1],
+            "params": {
+                "n_clusters": [2, 3, 4, 5, 6, 7, 8, 9, 10],
+                "max_iter": [100, 200],
+                "init": ["Huang", "Cao", "random"],
+                "n_init": [1, 5, 10],
             }
+            # "params": {
+            #     "n_clusters": [2, 10],
+            #     "max_iter": [100],
+            #     "init": ["Cao"],
+            #     "n_init": [1],
+            # }
         }
     }
 
@@ -127,10 +127,7 @@ class KMeansImputer(AbstractNullImputer):
         
         observed_cat_vars = np.intersect1d(observed_columns, cat_vars).tolist()
         observed_num_vars = np.intersect1d(observed_columns, num_vars).tolist()
-
-        print('K-Means Imputer: observed_cat_vars --', observed_cat_vars)
-        print('K-Means Imputer: observed_num_vars --', observed_num_vars)
-
+        
         X_observed = np.hstack([X[:, observed_cat_vars], X[:, observed_num_vars]])
         
         self.cat_vars_ = list(range(len(observed_cat_vars)))
@@ -149,25 +146,43 @@ class KMeansImputer(AbstractNullImputer):
         else:
             self.model.fit(X_observed, categorical=self.cat_vars_)
         
+        pred_clusters = self.model.predict(X_observed, categorical=self.cat_vars_)
+        self._calculate_cluster_stats(X, pred_clusters)
+        
+        return self
+    
+    def _calculate_cluster_stats(self, X, clusters):
+        self.cluster_statistics_ = {}
+        for cluster in set(clusters):
+            cluster_indices = np.where(clusters == cluster)[0]
+
+            for col in self.missing_columns_:
+                if col in self.missing_cat_columns_:
+                    self.cluster_statistics_[(cluster, col)] = mode(X[cluster_indices, col], axis=0, nan_policy='omit')[0]
+                else:
+                    self.cluster_statistics_[(cluster, col)] = np.nanmean(X[cluster_indices, col])
+        
         return self
     
     def transform(self, X, y=None):
         # Confirm whether fit() has been called
         check_is_fitted(self, ["cat_vars_", "num_vars_"])
         
-        X, mask = self._validate_input(X)  
+        X, mask = self._validate_input(X)
+        missing_rows, _ = np.where(mask)  
         X_observed = X[:, self.observed_columns_]
         
         clusters = self.model.predict(X_observed, categorical=self.cat_vars_)
         
         for cluster in set(clusters):
             cluster_indices = np.where(clusters == cluster)[0]
+            missing_in_cluster_indices = np.intersect1d(cluster_indices, missing_rows)
             for col in self.missing_columns_:
                 if col in self.missing_cat_columns_:
                     # calucate mode discarding nan and assign to missing values
-                    X[cluster_indices, col] = mode(X[cluster_indices, col], axis=0, nan_policy='omit')[0]
+                    X[missing_in_cluster_indices, col] = self.cluster_statistics_[(cluster, col)]
                 else:
-                    X[cluster_indices, col] = np.nanmean(X[cluster_indices, col])
+                    X[missing_in_cluster_indices, col] = self.cluster_statistics_[(cluster, col)]
         
         return X
 
