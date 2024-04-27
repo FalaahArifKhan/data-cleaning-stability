@@ -10,6 +10,7 @@ from sklearn.utils.validation import check_is_fitted, check_array
 from sklearn.model_selection import GridSearchCV
 
 from kmodes.kprototypes import KPrototypes
+from kmodes.kmodes import KModes
 
 from .abstract_null_imputer import AbstractNullImputer
 from ..utils.dataframe_utils import _get_mask
@@ -17,23 +18,21 @@ from ..utils.dataframe_utils import _get_mask
 
 def get_kmeans_imputer_params_for_tuning(seed: int):
     return {
-        # "KMeansImputer": {
-        #     "model": KPrototypes(random_state=seed),
-        #     "params": {
-        #         "n_clusters": [2, 3, 4, 5, 6, 7, 8, 9, 10],
-        #         "max_iter": [100, 200],
-        #         "init": ["Huang", "Cao", "random"],
-        #         "n_init": [1, 5, 10],
-        #     }
-        # }
         "KMeansImputer": {
-            "model": KPrototypes(random_state=seed),
+            "kprototypes_model": KPrototypes(random_state=seed),
+            "kmodes_model": KModes(random_state=seed),
             "params": {
-                "n_clusters": [2, 10],
+                "n_clusters": [2, 3, 4, 5, 6, 7, 8, 9, 10],
                 "max_iter": [100, 200],
-                "init": ["Cao"],
-                "n_init": [5],
+                "init": ["Huang", "Cao", "random"],
+                "n_init": [1, 5, 10],
             }
+            #  "params": {
+            #     "n_clusters": [2, 10],
+            #     "max_iter": [100],
+            #     "init": ["Cao"],
+            #     "n_init": [1],
+            # }
         }
     }
 
@@ -43,7 +42,8 @@ def custom_scoring_function(estimator, X, y=None):
 
 
 class KMeansImputer(AbstractNullImputer):
-    def __init__(self, seed: int, missing_values=np.nan,
+    def __init__(self, imputer_mode: str,
+                 seed: int, missing_values=np.nan,
                  n_jobs: int = -1, verbose: int = 0,
                  hyperparameters: dict = None):
         super().__init__(seed)
@@ -51,16 +51,29 @@ class KMeansImputer(AbstractNullImputer):
         self.n_jobs = n_jobs
         self.verbose = verbose
         self.hyperparameters = hyperparameters
+        self.imputer_mode = imputer_mode
         
         if self.hyperparameters is not None:
             print("Hyperparameters are provided. Grid search will not be performed.")
-            self.kprototypes = KPrototypes(random_state=self.seed, n_jobs=self.n_jobs, **self.hyperparameters)
+            if imputer_mode == "kprototypes":
+                self.model = KPrototypes(random_state=self.seed, n_jobs=self.n_jobs, **self.hyperparameters)
+            elif imputer_mode == "kmodes":
+                self.model = KModes(random_state=self.seed, n_jobs=self.n_jobs, **self.hyperparameters)
+            else:
+                raise ValueError("Invalid imputer mode. Choose either 'kprototypes' or 'kmodes'.")
         else:
             print("Hyperparameters are not provided. Grid search will be performed.")
             tuning_params = get_kmeans_imputer_params_for_tuning(seed)["KMeansImputer"]
             self.tuning_params = tuning_params["params"]
-            self.kprototypes_grid_search = GridSearchCV(
-                estimator=tuning_params["model"],
+            if imputer_mode == "kprototypes":
+                estimator = tuning_params["kprototypes_model"]
+            elif imputer_mode == "kmodes":
+                estimator = tuning_params["kmodes_model"]
+            else:
+                raise ValueError("Invalid imputer mode. Choose either 'kprototypes' or 'kmodes'.")
+            
+            self.model_grid_search = GridSearchCV(
+                estimator=estimator,
                 param_grid=self.tuning_params,
                 scoring=custom_scoring_function,
                 cv=3,
@@ -127,11 +140,11 @@ class KMeansImputer(AbstractNullImputer):
         self.missing_columns_ = missing_cols
         
         if self.hyperparameters is None:
-            self.kprototypes_grid_search.fit(X_observed, categorical=self.cat_vars_)
-            self.kprototypes = self.kprototypes_grid_search.best_estimator_
-            self.best_params_ = self.kprototypes_grid_search.best_params_
+            self.model_grid_search.fit(X_observed, categorical=self.cat_vars_)
+            self.model = self.model_grid_search.best_estimator_
+            self.best_params_ = self.model_grid_search.best_params_
         else:
-            self.kprototypes.fit(X_observed, categorical=self.cat_vars_)
+            self.model.fit(X_observed, categorical=self.cat_vars_)
         
         return self
     
@@ -142,7 +155,7 @@ class KMeansImputer(AbstractNullImputer):
         X, mask = self._validate_input(X)  
         X_observed = X[:, self.observed_columns_]
         
-        clusters = self.kprototypes.predict(X_observed, categorical=self.cat_vars_)
+        clusters = self.model.predict(X_observed, categorical=self.cat_vars_)
         
         for cluster in set(clusters):
             cluster_indices = np.where(clusters == cluster)[0]
