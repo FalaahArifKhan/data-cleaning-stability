@@ -146,6 +146,22 @@ class KMeansImputer(AbstractNullImputer):
         else:
             self.model.fit(X_observed, categorical=self.cat_vars_)
         
+        pred_clusters = self.model.predict(X_observed, categorical=self.cat_vars_)
+        self._calculate_cluster_stats(X, pred_clusters)
+        
+        return self
+    
+    def _calculate_cluster_stats(self, X, clusters):
+        self.cluster_statistics_ = {}
+        for cluster in set(clusters):
+            cluster_indices = np.where(clusters == cluster)[0]
+
+            for col in self.missing_columns_:
+                if col in self.missing_cat_columns_:
+                    self.cluster_statistics_[(cluster, col)] = mode(X[cluster_indices, col], axis=0, nan_policy='omit')[0]
+                else:
+                    self.cluster_statistics_[(cluster, col)] = np.nanmean(X[cluster_indices, col])
+        
         return self
     
     def transform(self, X, y=None):
@@ -164,9 +180,9 @@ class KMeansImputer(AbstractNullImputer):
             for col in self.missing_columns_:
                 if col in self.missing_cat_columns_:
                     # calucate mode discarding nan and assign to missing values
-                    X[missing_in_cluster_indices, col] = mode(X[cluster_indices, col], axis=0, nan_policy='omit')[0]
+                    X[missing_in_cluster_indices, col] = self.cluster_statistics_[(cluster, col)]
                 else:
-                    X[missing_in_cluster_indices, col] = np.nanmean(X[cluster_indices, col])
+                    X[missing_in_cluster_indices, col] = self.cluster_statistics_[(cluster, col)]
         
         return X
 
