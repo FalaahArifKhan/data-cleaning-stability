@@ -127,10 +127,7 @@ class KMeansImputer(AbstractNullImputer):
         
         observed_cat_vars = np.intersect1d(observed_columns, cat_vars).tolist()
         observed_num_vars = np.intersect1d(observed_columns, num_vars).tolist()
-
-        print('K-Means Imputer: observed_cat_vars --', observed_cat_vars)
-        print('K-Means Imputer: observed_num_vars --', observed_num_vars)
-
+        
         X_observed = np.hstack([X[:, observed_cat_vars], X[:, observed_num_vars]])
         
         self.cat_vars_ = list(range(len(observed_cat_vars)))
@@ -155,19 +152,21 @@ class KMeansImputer(AbstractNullImputer):
         # Confirm whether fit() has been called
         check_is_fitted(self, ["cat_vars_", "num_vars_"])
         
-        X, mask = self._validate_input(X)  
+        X, mask = self._validate_input(X)
+        missing_rows, _ = np.where(mask)  
         X_observed = X[:, self.observed_columns_]
         
         clusters = self.model.predict(X_observed, categorical=self.cat_vars_)
         
         for cluster in set(clusters):
             cluster_indices = np.where(clusters == cluster)[0]
+            missing_in_cluster_indices = np.intersect1d(cluster_indices, missing_rows)
             for col in self.missing_columns_:
                 if col in self.missing_cat_columns_:
                     # calucate mode discarding nan and assign to missing values
-                    X[cluster_indices, col] = mode(X[cluster_indices, col], axis=0, nan_policy='omit')[0]
+                    X[missing_in_cluster_indices, col] = mode(X[cluster_indices, col], axis=0, nan_policy='omit')[0]
                 else:
-                    X[cluster_indices, col] = np.nanmean(X[cluster_indices, col])
+                    X[missing_in_cluster_indices, col] = np.nanmean(X[cluster_indices, col])
         
         return X
 
