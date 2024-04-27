@@ -1,20 +1,8 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "folk lgbm_clf 1,2"
-    "folk lgbm_clf 3,4"
-    "folk lgbm_clf 5,6"
-    "heart lgbm_clf 1,2"
-    "heart lgbm_clf 3,4"
-    "heart lgbm_clf 5,6"
-    "law_school lgbm_clf 1,2"
-    "law_school lgbm_clf 3,4"
-    "law_school lgbm_clf 5,6"
     "german lgbm_clf 1,2"
     "german lgbm_clf 3,4"
     "german lgbm_clf 5,6"
-    "diabetes lgbm_clf 1,2"
-    "diabetes lgbm_clf 3,4"
-    "diabetes lgbm_clf 5,6"
 )
 
 TEMPLATE_FILE="../cluster/run_baselines/run-baselines-template.sbatch"

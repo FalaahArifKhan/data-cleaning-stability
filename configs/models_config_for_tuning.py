@@ -32,9 +32,9 @@ def get_models_params_for_tuning(models_tuning_seed):
             'model': LGBMClassifier(random_state=models_tuning_seed, n_jobs=48, num_threads=48),
             'params': {
                 'n_estimators': [50, 100, 200, 500],
-                'max_depth' : [i for i in range(3, 12)] + [-1],
-                'num_leaves' : [int(x) for x in np.linspace(start = 20, stop = 3000, num = 10)],
-                'min_data_in_leaf' : [int(x) for x in np.linspace(start = 100, stop = 1000, num = 10)],
+                'max_depth' : [i for i in range(3, 10)] + [-1],
+                'num_leaves' : [int(x) for x in np.linspace(start = 20, stop = 3000, num = 8)],
+                'min_data_in_leaf' : [int(x) for x in np.linspace(start = 100, stop = 1000, num = 8)],
                 'verbosity': [-1]
             }
         },
