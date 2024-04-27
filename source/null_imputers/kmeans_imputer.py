@@ -17,22 +17,13 @@ from ..utils.dataframe_utils import _get_mask
 
 def get_kmeans_imputer_params_for_tuning(seed: int):
     return {
-        # "KMeansImputer": {
-        #     "model": KPrototypes(random_state=seed),
-        #     "params": {
-        #         "n_clusters": [2, 3, 4, 5, 6, 7, 8, 9, 10],
-        #         "max_iter": [100, 200],
-        #         "init": ["Huang", "Cao", "random"],
-        #         "n_init": [1, 5, 10],
-        #     }
-        # }
         "KMeansImputer": {
             "model": KPrototypes(random_state=seed),
             "params": {
-                "n_clusters": [2, 10],
+                "n_clusters": [2, 3, 4, 5, 6, 7, 8, 9, 10],
                 "max_iter": [100, 200],
-                "init": ["Cao"],
-                "n_init": [5],
+                "init": ["Huang", "Cao", "random"],
+                "n_init": [1, 5, 10],
             }
         }
     }
