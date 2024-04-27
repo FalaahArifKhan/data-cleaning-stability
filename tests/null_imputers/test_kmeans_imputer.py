@@ -59,6 +59,30 @@ def test_kmeans_imputer_no_change(acs_income_dataset_categorical_columns_idxs, c
     np.testing.assert_array_equal(injected_df.loc[not_null_indices].values, X_imputed_df.loc[not_null_indices].values, "Rows with no nulls have changed")
 
 
+def test_kmeans_no_change_in_col_with_nulls_for_values_without_nulls(acs_income_dataset_params, common_seed, kmeans_acs_income_hyperparams):
+    (X_train_val_with_nulls_wo_sensitive_attrs, X_tests_with_nulls_wo_sensitive_attrs_lst,
+            train_numerical_null_columns, train_categorical_null_columns,
+            numerical_columns_wo_sensitive_attrs, categorical_columns_wo_sensitive_attrs) = acs_income_dataset_params
+    not_null_indices = X_train_val_with_nulls_wo_sensitive_attrs.index[X_train_val_with_nulls_wo_sensitive_attrs.notnull().all(axis=1)]
+    categorical_columns_idxs = get_object_columns_indexes(X_train_val_with_nulls_wo_sensitive_attrs)
+    
+    # Initialize KMeansImputer
+    imputer = KMeansImputer(seed=common_seed, imputer_mode="kmodes", hyperparameters=kmeans_acs_income_hyperparams)
+    
+    # Fit and transform the dataset
+    X_imputed = imputer.fit_transform(X_train_val_with_nulls_wo_sensitive_attrs, cat_vars=categorical_columns_idxs)
+    
+    X_imputed_df = pd.DataFrame(X_imputed, columns=X_train_val_with_nulls_wo_sensitive_attrs.columns, index=X_train_val_with_nulls_wo_sensitive_attrs.index)
+    X_imputed_df.iloc[:, categorical_columns_idxs] = X_imputed_df.iloc[:, categorical_columns_idxs].astype(int).astype('str')
+    
+    # check if the rows that had no nulls are the same
+    for col in train_categorical_null_columns:
+        np.testing.assert_array_equal(X_train_val_with_nulls_wo_sensitive_attrs.loc[not_null_indices, col].values, X_imputed_df.loc[not_null_indices, col].values, "Rows with no nulls have changed")
+        
+    for col in train_numerical_null_columns:
+        np.testing.assert_allclose(X_train_val_with_nulls_wo_sensitive_attrs.loc[not_null_indices, col].values, X_imputed_df.loc[not_null_indices, col].values, atol=1e-9, rtol=1e-9, err_msg="Rows with no nulls have changed")
+
+
 # Run the tests
 if __name__ == "__main__":
     pytest.main([__file__])
