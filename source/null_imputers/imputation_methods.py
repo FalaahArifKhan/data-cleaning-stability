@@ -5,7 +5,7 @@ from sklearn.impute import SimpleImputer
 from source.null_imputers.automl_imputer import AutoMLImputer
 from source.null_imputers.missforest_imputer import MissForestImputer
 from source.null_imputers.kmeans_imputer import KMeansImputer
-from source.utils.dataframe_utils import get_object_columns_indexes
+from source.utils.dataframe_utils import get_object_columns_indexes, get_numerical_columns_indexes
 
 
 def impute_with_deletion(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: list,
@@ -126,9 +126,16 @@ def impute_with_kmeans(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst:
     X_train_imputed = copy.deepcopy(X_train_with_nulls)
     X_tests_imputed_lst = list(map(lambda X_test_with_nulls: copy.deepcopy(X_test_with_nulls), X_tests_with_nulls_lst))
     
-    # Impute numerical columns
-    kmeans_imputer = KMeansImputer(seed=seed, hyperparameters=hyperparams)
     categorical_columns_idxs = get_object_columns_indexes(X_train_imputed)
+    numerical_columns_idxs = get_numerical_columns_indexes(X_train_imputed)
+    
+    if len(numerical_columns_idxs) == len(numeric_columns_with_nulls):
+        kmeans_imputer_mode = "kmodes"
+    else:
+        kmeans_imputer_mode = "kprototypes"
+    
+    # Impute numerical columns
+    kmeans_imputer = KMeansImputer(seed=seed, imputer_mode=kmeans_imputer_mode, hyperparameters=hyperparams)
     
     X_train_imputed_values = kmeans_imputer.fit_transform(X_train_imputed, cat_vars=categorical_columns_idxs)
     X_train_imputed = pd.DataFrame(X_train_imputed_values, columns=X_train_imputed.columns, index=X_train_imputed.index)

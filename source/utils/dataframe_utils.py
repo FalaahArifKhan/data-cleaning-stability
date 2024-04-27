@@ -54,6 +54,22 @@ def get_object_columns_indexes(df):
     return object_indexes
 
 
+def get_numerical_columns_indexes(df):
+    """
+    Get the indexes of columns with numerical dtype in a pandas DataFrame.
+
+    Parameters:
+    df (pd.DataFrame): Input pandas DataFrame.
+
+    Returns:
+    list: Indexes of columns with numerical dtype.
+    """
+    numerical_columns = df.select_dtypes(include=['int', 'float']).columns
+    numerical_indexes = [df.columns.get_loc(col) for col in numerical_columns]
+    
+    return numerical_indexes
+
+
 def _get_mask(X, value_to_mask):
     """Compute the boolean mask X == missing_values."""
     if value_to_mask == "NaN" or np.isnan(value_to_mask):
