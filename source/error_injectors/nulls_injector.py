@@ -67,11 +67,11 @@ class NullsInjector(AbstractErrorInjector):
             df_condition = df[condition_col].isin(condition_val) if include_val else ~df[condition_col].isin(condition_val)
         elif isinstance(condition_val, dict):
             # Validate condition
-            symbol_counts = dict()
+            symbol_counts = {'g': 0, 'l': 0}
             for key in condition_val.keys():
                 if key not in ('ge', 'gt', 'le', 'lt'):
                     raise ValueError(f"Condition symbol {key} is not in ('ge', 'gt', 'le', 'lt')")
-                symbol_counts[key[0]] = symbol_counts.get(key[0], 0) + 1
+                symbol_counts[key[0]] += 1
 
             if symbol_counts['g'] > 1 or symbol_counts['l'] > 1:
                 raise ValueError(f"Condition should not include more than one greater symbol "

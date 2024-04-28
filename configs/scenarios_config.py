@@ -176,19 +176,19 @@ ERROR_INJECTION_SCENARIOS_CONFIG = {
             },
             {
                 'missing_features': ['fam_inc'],
-                'setting': {'condition': ('fam_inc', {'ge': 4}), 'error_rates': [0.02, 0.08, 0.10, 0.12, 0.15]},
+                'setting': {'condition': ('fam_inc', ['4', '5']), 'error_rates': [0.02, 0.08, 0.10, 0.12, 0.15]},
             },
             {
                 'missing_features': ['fam_inc'],
-                'setting': {'condition': ('fam_inc', {'lt': 4}), 'error_rates': [0.08, 0.12, 0.20, 0.28, 0.35]},
+                'setting': {'condition': ('fam_inc', ['1', '2', '3']), 'error_rates': [0.08, 0.12, 0.20, 0.28, 0.35]},
             },
             {
                 'missing_features': ['tier'],
-                'setting': {'condition': ('tier', {'ge': 4}), 'error_rates': [0.02, 0.08, 0.10, 0.12, 0.15]},
+                'setting': {'condition': ('tier', ['4', '5', '6']), 'error_rates': [0.02, 0.08, 0.10, 0.12, 0.15]},
             },
             {
                 'missing_features': ['tier'],
-                'setting': {'condition': ('tier', {'lt': 4}), 'error_rates': [0.08, 0.12, 0.20, 0.28, 0.35]},
+                'setting': {'condition': ('tier', ['1', '2', '3']), 'error_rates': [0.08, 0.12, 0.20, 0.28, 0.35]},
             },
         ]
     }
