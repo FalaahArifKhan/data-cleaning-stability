@@ -2,6 +2,8 @@
 
 ## Development on the Cluster
 
+NYU HPC dashboard -- [https://ood-4.hpc.nyu.edu/pun/sys/dashboard](https://ood-4.hpc.nyu.edu/pun/sys/dashboard)
+
 Commands for development on the cluster using GPUs:
 ```shell
 # To request one GPU card, 16 GB memory, and 12 hour running duration
