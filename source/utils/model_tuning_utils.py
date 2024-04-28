@@ -1,3 +1,4 @@
+import lightgbm
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -12,22 +13,28 @@ from sklearn.metrics import make_scorer, accuracy_score, f1_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
 
 from virny.custom_classes.base_dataset import BaseFlowDataset
+from source.custom_classes.grid_search_cv_with_early_stopping import GridSearchCVWithEarlyStopping
 
 
 def validate_model(model, x, y, params, n_folds):
     """
     Use GridSearchCV for a special model to find the best hyperparameters based on validation set
     """
-    grid_search = GridSearchCV(estimator=model,
-                               param_grid=params,
-                               scoring={
-                                   "F1_Score": make_scorer(f1_score, average='macro'),
-                                   "Accuracy_Score": make_scorer(accuracy_score),
-                               },
-                               refit="F1_Score",
-                               n_jobs=-1,
-                               cv=n_folds,
-                               verbose=0)
+    if isinstance(model, lightgbm.LGBMClassifier):
+        grid_search_cv_class = GridSearchCVWithEarlyStopping
+    else:
+        grid_search_cv_class = GridSearchCV
+
+    grid_search = grid_search_cv_class(estimator=model,
+                                       param_grid=params,
+                                       scoring={
+                                           "F1_Score": make_scorer(f1_score, average='macro'),
+                                           "Accuracy_Score": make_scorer(accuracy_score),
+                                       },
+                                       refit="F1_Score",
+                                       n_jobs=-1,
+                                       cv=n_folds,
+                                       verbose=0)
     grid_search.fit(x, y.values.ravel())
     best_index = grid_search.best_index_
 
