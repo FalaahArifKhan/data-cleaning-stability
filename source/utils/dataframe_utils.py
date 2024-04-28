@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from scipy.stats import entropy
+from scipy.stats import entropy, gaussian_kde
 
 from source.preprocessing import get_simple_preprocessor
 
@@ -91,7 +91,31 @@ def get_columns_sorted_by_nulls(mask):
     return sorted_columns_names
 
 
-def calculate_kl_divergence(true: pd.DataFrame, pred: pd.DataFrame):
+def calculate_kl_divergence(true: pd.DataFrame, pred: pd.DataFrame, column_type: str):
+    # ========================================================
+    # Compute KL divergence for continuous numerical features
+    # ========================================================
+    if column_type == 'numerical':
+        real_n_unique = true.nunique()
+        int_n_unique = true.astype(int).nunique()
+
+        if real_n_unique != int_n_unique:
+            # Estimate probability density functions using kernel density estimation
+            true_kde = gaussian_kde(true)
+            pred_kde = gaussian_kde(pred)
+
+            # Evaluate KDEs at a set of points
+            x = np.linspace(min(min(true), min(pred)), max(max(true), max(pred)), 1000)
+            true_dist = true_kde.evaluate(x)
+            pred_dist = pred_kde.evaluate(x)
+
+            # Calculate KL divergence from true_dist to pred_dist
+            # KL(P || Q) where P is the true distribution and Q is the approximation
+            return entropy(true_dist, pred_dist)
+
+    # ======================================================================
+    # Compute KL divergence for categorical and discrete numerical features
+    # ======================================================================
     # Get the value counts normalized to probability distributions
     true_dist = true.value_counts(normalize=True)
     pred_dist = pred.value_counts(normalize=True)

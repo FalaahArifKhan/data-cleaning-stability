@@ -108,11 +108,11 @@ ERROR_INJECTION_SCENARIOS_CONFIG = {
             },
             {
                 'missing_features': ['WKHP'],  # TODO: check
-                'setting': {'condition': ('WKHP', [i * 1.0 for i in range(1, 40)]), 'error_rates': [0.09, 0.18, 0.25, 0.30, 0.35]},
+                'setting': {'condition': ('WKHP', {'lt': 40.0}), 'error_rates': [0.09, 0.18, 0.25, 0.30, 0.35]},
             },
             {
                 'missing_features': ['WKHP'],
-                'setting': {'condition': ('WKHP', [i * 1.0 for i in range(40, 101)]), 'error_rates': [0.01, 0.02, 0.05, 0.10, 0.15]},
+                'setting': {'condition': ('WKHP', {'ge': 40.0}), 'error_rates': [0.01, 0.02, 0.05, 0.10, 0.15]},
             },
             {
                 'missing_features': ['AGEP'],
@@ -132,4 +132,64 @@ ERROR_INJECTION_SCENARIOS_CONFIG = {
             },
         ],
     },
+    LAW_SCHOOL_DATASET: {
+        "MCAR": [
+            {
+                'missing_features': ['zfygpa', 'ugpa', 'fam_inc', 'tier'],
+                'setting': {'error_rates': [0.1, 0.2, 0.3, 0.4, 0.5]},
+            },
+        ],
+        "MAR": [
+            {
+                'missing_features': ['ugpa', 'zfygpa'],
+                'setting': {'condition': ('male', '1'), 'error_rates': [0.02, 0.08, 0.10, 0.12, 0.15]},
+            },
+            {
+                'missing_features': ['ugpa', 'zfygpa'],
+                'setting': {'condition': ('male', '0'), 'error_rates': [0.08, 0.12, 0.20, 0.28, 0.35]},
+            },
+            {
+                'missing_features': ['fam_inc', 'tier'],
+                'setting': {'condition': ('race', 'White'), 'error_rates': [0.02, 0.08, 0.15, 0.25, 0.35]},
+            },
+            {
+                'missing_features': ['fam_inc', 'tier'],
+                'setting': {'condition': ('race', 'Non-White'), 'error_rates': [0.08, 0.12, 0.15, 0.15, 0.15]},
+            },
+        ],
+        "MNAR": [
+            {
+                'missing_features': ['ugpa'],
+                'setting': {'condition': ('ugpa', {'ge': 3.0}), 'error_rates': [0.02, 0.08, 0.10, 0.12, 0.15]},
+            },
+            {
+                'missing_features': ['ugpa'],
+                'setting': {'condition': ('ugpa', {'lt': 3.0}), 'error_rates': [0.08, 0.12, 0.20, 0.28, 0.35]},
+            },
+            {
+                'missing_features': ['zfygpa'],
+                'setting': {'condition': ('zfygpa', {'gt': 0.0}), 'error_rates': [0.02, 0.08, 0.10, 0.12, 0.15]},
+            },
+            {
+                'missing_features': ['zfygpa'],
+                'setting': {'condition': ('zfygpa', {'le': 0.0}), 'error_rates': [0.08, 0.12, 0.20, 0.28, 0.35]},
+            },
+            {
+                'missing_features': ['fam_inc'],
+                'setting': {'condition': ('fam_inc', {'ge': 4}), 'error_rates': [0.02, 0.08, 0.10, 0.12, 0.15]},
+            },
+            {
+                'missing_features': ['fam_inc'],
+                'setting': {'condition': ('fam_inc', {'lt': 4}), 'error_rates': [0.08, 0.12, 0.20, 0.28, 0.35]},
+            },
+            {
+                'missing_features': ['tier'],
+                'setting': {'condition': ('tier', {'ge': 4}), 'error_rates': [0.02, 0.08, 0.10, 0.12, 0.15]},
+            },
+            {
+                'missing_features': ['tier'],
+                'setting': {'condition': ('tier', {'lt': 4}), 'error_rates': [0.08, 0.12, 0.20, 0.28, 0.35]},
+            },
+        ]
+    }
 }

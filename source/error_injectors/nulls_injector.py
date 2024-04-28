@@ -52,9 +52,43 @@ class NullsInjector(AbstractErrorInjector):
         if self.columns_with_nulls[0] != self.condition[0]:
             raise ValueError(f"Invalid input for columns_with_nulls '{self.columns_with_nulls}'. It should be the same as the condition column.")
 
+    def _get_condition_by_symbol(self, df, condition_col, symbol, condition_val):
+        if symbol == 'ge':
+            return df[condition_col] >= condition_val
+        elif symbol == 'gt':
+            return df[condition_col] > condition_val
+        elif symbol == 'le':
+            return df[condition_col] <= condition_val
+        elif symbol == 'lt':
+            return df[condition_col] < condition_val
+
     def _filter_df_by_condition(self, df: pd.DataFrame, condition_col: str, condition_val, include_val: bool):
         if isinstance(condition_val, list):
             df_condition = df[condition_col].isin(condition_val) if include_val else ~df[condition_col].isin(condition_val)
+        elif isinstance(condition_val, dict):
+            # Validate condition
+            symbol_counts = dict()
+            for key in condition_val.keys():
+                if key not in ('ge', 'gt', 'le', 'lt'):
+                    raise ValueError(f"Condition symbol {key} is not in ('ge', 'gt', 'le', 'lt')")
+                symbol_counts[key[0]] = symbol_counts.get(key[0], 0) + 1
+
+            if symbol_counts['g'] > 1 or symbol_counts['l'] > 1:
+                raise ValueError(f"Condition should not include more than one greater symbol "
+                                 f"or more than one less symbol")
+
+            df_condition = None
+            for symbol in condition_val.keys():
+                val = condition_val[symbol]
+                cur_df_condition = self._get_condition_by_symbol(df=df,
+                                                                 condition_col=condition_col,
+                                                                 symbol=symbol,
+                                                                 condition_val=val)
+                if df_condition is None:
+                    df_condition = cur_df_condition
+                else:
+                    df_condition &= cur_df_condition
+
         else:
             df_condition = df[condition_col] == condition_val if include_val else df[condition_col] != condition_val
 

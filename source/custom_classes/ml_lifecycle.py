@@ -214,9 +214,10 @@ class MLLifecycle:
             pred = imputed.loc[indexes, column_name]
 
             # Column type agnostic metrics
-            kl_divergence_pred = calculate_kl_divergence(true, pred)
+            kl_divergence_pred = calculate_kl_divergence(true, pred, column_type=column_type)
             print('Predictive KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_pred))
-            kl_divergence_total = calculate_kl_divergence(real[column_name], imputed[column_name])
+            kl_divergence_total = calculate_kl_divergence(real[column_name], imputed[column_name],
+                                                          column_type=column_type)
             print('Total KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_total))
 
             rmse = None
