@@ -174,7 +174,7 @@ def _fit_and_score(
     try:
         # Create the early stopping callback
         early_stopping_cb = lgb.callback.early_stopping(
-            stopping_rounds=10,
+            stopping_rounds=int(estimator.n_estimators * 0.1),
             verbose=False
         )
         if y_train is None:
