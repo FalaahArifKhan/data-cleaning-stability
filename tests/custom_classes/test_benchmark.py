@@ -21,7 +21,7 @@ def folk_benchmark():
 # Test error injection
 # ====================================================================
 def test_inject_nulls_should_be_the_same_mcar_train_sets_with_nulls(folk_benchmark):
-    evaluation_scenarios = ['exp3_mcar3', 'exp3_mcar3']
+    evaluation_scenarios = ['exp1_mcar3', 'exp1_mcar3']
     experiment_seed = 100
     dataset_pairs_with_nulls = []
     for evaluation_scenario in evaluation_scenarios:
@@ -46,7 +46,7 @@ def test_inject_nulls_should_be_the_same_mcar_train_sets_with_nulls(folk_benchma
 
 
 def test_inject_nulls_should_be_the_same_mnar_train_sets_with_nulls(folk_benchmark):
-    evaluation_scenarios = ['exp3_mnar3', 'exp3_mnar3']
+    evaluation_scenarios = ['exp1_mnar3', 'exp1_mnar3']
     experiment_seed = 200
     dataset_pairs_with_nulls = []
     for evaluation_scenario in evaluation_scenarios:
@@ -71,7 +71,7 @@ def test_inject_nulls_should_be_the_same_mnar_train_sets_with_nulls(folk_benchma
 
 def test_inject_nulls_into_one_set_for_mcar_evaluation_scenario(folk_benchmark):
     experiment_seed = 300
-    evaluation_scenario = 'exp3_mcar3'
+    evaluation_scenario = 'exp1_mcar3'
     train_injection_scenario, _ = get_injection_scenarios(evaluation_scenario)
 
     X_train_val, X_test, _, _ = train_test_split(folk_benchmark.init_data_loader.X_data,
@@ -150,7 +150,7 @@ def test_inject_nulls_into_one_set_should_apply_mnar_scenario_for_multiple_colum
 # Test sequence of test sets with nulls
 # ====================================================================
 def test_inject_nulls_should_preserve_mcar_scenario_test_sets_sequence(folk_benchmark):
-    evaluation_scenario = 'exp3_mcar3'
+    evaluation_scenario = 'exp1_mcar3'
     experiment_seed = 100
     data_loader = folk_benchmark.init_data_loader
 
@@ -165,7 +165,7 @@ def test_inject_nulls_should_preserve_mcar_scenario_test_sets_sequence(folk_benc
                                                                                   evaluation_scenario=evaluation_scenario,
                                                                                   experiment_seed=experiment_seed)
 
-    expected_test_injection_scenarios = ['MCAR2', 'MAR2', 'MNAR2']
+    expected_test_injection_scenarios = ['MCAR3', 'MAR3', 'MNAR3']
     for test_set_idx, injection_scenario in enumerate(expected_test_injection_scenarios):
         X_test_with_nulls = X_tests_with_nulls_lst[test_set_idx]
         injection_strategy, error_rate_str = injection_scenario[:-1], injection_scenario[-1]
@@ -189,7 +189,7 @@ def test_inject_nulls_should_preserve_mcar_scenario_test_sets_sequence(folk_benc
 
 
 def test_inject_nulls_should_preserve_mar_scenario_test_sets_sequence(folk_benchmark):
-    evaluation_scenario = 'exp1&2_mar5'
+    evaluation_scenario = 'exp2&3_mar5'
     experiment_seed = 200
     data_loader = folk_benchmark.init_data_loader
 
@@ -204,7 +204,7 @@ def test_inject_nulls_should_preserve_mar_scenario_test_sets_sequence(folk_bench
                                                                                   evaluation_scenario=evaluation_scenario,
                                                                                   experiment_seed=experiment_seed)
 
-    expected_test_injection_scenarios = ['MCAR2', 'MAR2', 'MNAR2']
+    expected_test_injection_scenarios = ['MCAR3', 'MAR3', 'MNAR3']
     for test_set_idx, injection_scenario in enumerate(expected_test_injection_scenarios):
         X_test_with_nulls = X_tests_with_nulls_lst[test_set_idx]
         injection_strategy, error_rate_str = injection_scenario[:-1], injection_scenario[-1]
@@ -228,7 +228,7 @@ def test_inject_nulls_should_preserve_mar_scenario_test_sets_sequence(folk_bench
 
 
 def test_inject_nulls_should_preserve_mnar_scenario_test_sets_sequence(folk_benchmark):
-    evaluation_scenario = 'exp1&2_mnar3'
+    evaluation_scenario = 'exp2&3_mnar3'
     experiment_seed = 300
     data_loader = folk_benchmark.init_data_loader
 

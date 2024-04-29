@@ -30,7 +30,7 @@ def common_seed():
 
 @pytest.fixture(scope="function")
 def mcar_evaluation_scenario():
-    return 'exp3_mcar3'
+    return 'exp1_mcar3'
 
 
 # Fixture to load the dataset
