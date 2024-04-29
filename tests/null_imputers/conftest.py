@@ -13,13 +13,27 @@ from source.utils.dataframe_utils import get_object_columns_indexes
 
 @pytest.fixture(scope="function")
 def missforest_acs_income_hyperparams():
-    hyperparams = NULL_IMPUTERS_HYPERPARAMS.get(ErrorRepairMethod.miss_forest.value).get(ACS_INCOME_DATASET).get(ErrorInjectionStrategy.mcar.value)
+    hyperparams = {
+        "RandomForestClassifier": {
+            'n_estimators': 100, 'max_depth': 10,
+            'min_samples_split': 5, 'min_samples_leaf': 2
+        },
+        "RandomForestRegressor": {
+            'n_estimators': 100, 'max_depth': 10,
+            'min_samples_split': 5, 'min_samples_leaf': 2
+        }
+    }
     return hyperparams
 
 
 @pytest.fixture(scope="function")
 def kmeans_acs_income_hyperparams():
-    hyperparams = NULL_IMPUTERS_HYPERPARAMS.get(ErrorRepairMethod.k_means_clustering.value).get(ACS_INCOME_DATASET).get(ErrorInjectionStrategy.mcar.value)
+    hyperparams = {
+        "n_clusters": 2,
+        "max_iter": 100,
+        "init": "Cao",
+        "n_init": 5
+    }
     return hyperparams
 
 
