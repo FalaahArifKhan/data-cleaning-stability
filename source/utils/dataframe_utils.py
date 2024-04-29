@@ -113,8 +113,6 @@ def calculate_kl_divergence_with_histograms(true: pd.DataFrame, pred: pd.DataFra
 
 
 def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame):
-    print('Compute KL divergence using KDE...')
-
     # Normalize true and pred series
     scaler = StandardScaler().set_output(transform="pandas")
     true_scaled = scaler.fit_transform(true.to_frame())
@@ -123,6 +121,8 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame):
     pred_scaled = pred_scaled[pred_scaled.columns[0]]
 
     if pred.nunique() == 1:
+        print('Compute KL divergence using KDE and discrete uniform PMF...')
+
         # Estimate probability density functions using kernel density estimation
         true_kde = gaussian_kde(true_scaled)
 
@@ -140,6 +140,8 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame):
         pred_dist[pred_dist == 0.] = 0.000000001  # replace zeros to avoid NaNs in scipy.entropy
 
     else:
+        print('Compute KL divergence using KDE...')
+
         # Estimate probability density functions using kernel density estimation
         true_kde = gaussian_kde(true_scaled)
         pred_kde = gaussian_kde(pred_scaled)

@@ -38,6 +38,18 @@ NULL_IMPUTERS_HYPERPARAMS = {
                         'min_samples_split': 5, 'min_samples_leaf': 2
                     }
             }
+        },
+        LAW_SCHOOL_DATASET: {
+            'MCAR3': {
+                "RandomForestClassifier": {
+                    'n_estimators': 100, 'max_depth': 10,
+                    'min_samples_split': 5, 'min_samples_leaf': 2
+                },
+                "RandomForestRegressor": {
+                    'n_estimators': 100, 'max_depth': 10,
+                    'min_samples_split': 5, 'min_samples_leaf': 2
+                }
+            }
         }
     },
     ErrorRepairMethod.k_means_clustering.value: {
