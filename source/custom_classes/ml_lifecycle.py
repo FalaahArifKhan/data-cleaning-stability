@@ -205,34 +205,43 @@ class MLLifecycle:
     def _evaluate_imputation(self, real, imputed, corrupted, numerical_columns, null_imputer_name, null_imputer_params_dct):
         group_indexes_dct = create_test_protected_groups(real, real, self.virny_config.sensitive_attributes_dct)
         overall_grp = 'overall'
-        subgroups = [overall_grp] + [group_indexes_dct.keys()]
+        subgroups = [overall_grp] + list(group_indexes_dct.keys())
         columns_with_nulls = corrupted.columns[corrupted.isna().any()].tolist()
         metrics_df = pd.DataFrame(columns=('Dataset_Name', 'Null_Imputer_Name', 'Null_Imputer_Params',
-                                           'Column_Type', 'Column_With_Nulls', 'Subgroup', 'KL_Divergence_Pred',
-                                           'KL_Divergence_Total', 'RMSE', 'Precision', 'Recall', 'F1_Score'))
+                                           'Column_Type', 'Column_With_Nulls', 'Subgroup', 'Sample_Size',
+                                           'KL_Divergence_Pred', 'KL_Divergence_Total',
+                                           'RMSE', 'Precision', 'Recall', 'F1_Score'))
         for column_idx, column_name in enumerate(columns_with_nulls):
             column_type = 'numerical' if column_name in numerical_columns else 'categorical'
 
             for subgroup_idx, subgroup_name in enumerate(subgroups):
-                print('=' * 30 + f' Metrics for {subgroup_name} subgroup ' + '=' * 30)
+                verbose = True if subgroup_name == overall_grp else False
                 indexes = corrupted[column_name].isna() if subgroup_name == overall_grp \
-                    else corrupted[column_name].isna() & group_indexes_dct[subgroup_name]
+                    else corrupted[corrupted[column_name].isna()].index.intersection(group_indexes_dct[subgroup_name].index)
+                if len(indexes) == 0:
+                    print(f'Nulls were not injected to any {subgroup_name} row. Skipping...')
+                    continue
+
                 true = real.loc[indexes, column_name]
                 pred = imputed.loc[indexes, column_name]
 
                 # Column type agnostic metrics
-                kl_divergence_pred = calculate_kl_divergence(true, pred, column_type=column_type)
-                print('Predictive KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_pred))
+                kl_divergence_pred = calculate_kl_divergence(true, pred, column_type=column_type, verbose=verbose)
+                if verbose:
+                    print('Predictive KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_pred))
 
                 if subgroup_name == overall_grp:
                     kl_divergence_total = calculate_kl_divergence(real[column_name],
                                                                   imputed[column_name],
-                                                                  column_type=column_type)
+                                                                  column_type=column_type,
+                                                                  verbose=verbose)
                 else:
-                    kl_divergence_total = calculate_kl_divergence(real.loc[group_indexes_dct[subgroup_name], column_name],
-                                                                  imputed.loc[group_indexes_dct[subgroup_name], column_name],
-                                                                  column_type=column_type)
-                print('Total KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_total))
+                    kl_divergence_total = calculate_kl_divergence(real.loc[group_indexes_dct[subgroup_name].index, column_name],
+                                                                  imputed.loc[group_indexes_dct[subgroup_name].index, column_name],
+                                                                  column_type=column_type,
+                                                                  verbose=verbose)
+                if verbose:
+                    print('Total KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_total))
 
                 rmse = None
                 precision = None
@@ -241,21 +250,25 @@ class MLLifecycle:
                 if column_type == 'numerical':
                     null_imputer_params = null_imputer_params_dct[column_name] if null_imputer_params_dct is not None else None
                     rmse = mean_squared_error(true, pred, squared=False)
-                    print('RMSE for {}: {:.2f}'.format(column_name, rmse))
+                    if verbose:
+                        print('RMSE for {}: {:.2f}'.format(column_name, rmse))
                 else:
                     null_imputer_params = null_imputer_params_dct[column_name] if null_imputer_params_dct is not None else None
                     precision, recall, f1, _ = precision_recall_fscore_support(true, pred, average="micro")
-                    print('Precision for {}: {:.2f}'.format(column_name, precision))
-                    print('Recall for {}: {:.2f}'.format(column_name, recall))
-                    print('F1 score for {}: {:.2f}'.format(column_name, f1))
+                    if verbose:
+                        print('Precision for {}: {:.2f}'.format(column_name, precision))
+                        print('Recall for {}: {:.2f}'.format(column_name, recall))
+                        print('F1 score for {}: {:.2f}'.format(column_name, f1))
 
-                print('\n')
+                if verbose:
+                    print('\n')
 
                 # Save imputation performance metric of the imputer in a dataframe
                 new_row_idx = column_idx * len(subgroups) + subgroup_idx
                 metrics_df.loc[new_row_idx] = [self.dataset_name, null_imputer_name, null_imputer_params,
-                                               column_type, column_name, subgroup_name, kl_divergence_pred,
-                                               kl_divergence_total, rmse, precision, recall, f1]
+                                               column_type, column_name, subgroup_name, true.shape[0],
+                                               kl_divergence_pred, kl_divergence_total,
+                                               rmse, precision, recall, f1]
 
         return metrics_df
 

@@ -93,8 +93,9 @@ def get_columns_sorted_by_nulls(mask):
     return sorted_columns_names
 
 
-def calculate_kl_divergence_with_histograms(true: pd.DataFrame, pred: pd.DataFrame):
-    print('Compute KL divergence using histograms...')
+def calculate_kl_divergence_with_histograms(true: pd.DataFrame, pred: pd.DataFrame, verbose: bool = False):
+    if verbose:
+        print('Compute KL divergence using histograms...')
 
     # Get the value counts normalized to probability distributions
     true_dist = true.value_counts(normalize=True)
@@ -112,7 +113,7 @@ def calculate_kl_divergence_with_histograms(true: pd.DataFrame, pred: pd.DataFra
     return kl_div
 
 
-def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame):
+def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame, verbose: bool = False):
     # Normalize true and pred series
     scaler = StandardScaler().set_output(transform="pandas")
     true_scaled = scaler.fit_transform(true.to_frame())
@@ -121,7 +122,8 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame):
     pred_scaled = pred_scaled[pred_scaled.columns[0]]
 
     if pred.nunique() == 1:
-        print('Compute KL divergence using KDE and discrete uniform PMF...')
+        if verbose:
+            print('Compute KL divergence using KDE and discrete uniform PMF...')
 
         # Estimate probability density functions using kernel density estimation
         true_kde = gaussian_kde(true_scaled)
@@ -140,7 +142,8 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame):
         pred_dist[pred_dist == 0.] = 0.000000001  # replace zeros to avoid NaNs in scipy.entropy
 
     else:
-        print('Compute KL divergence using KDE...')
+        if verbose:
+            print('Compute KL divergence using KDE...')
 
         # Estimate probability density functions using kernel density estimation
         true_kde = gaussian_kde(true_scaled)
@@ -156,16 +159,16 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame):
     return entropy(true_dist, pred_dist)
 
 
-def calculate_kl_divergence(true: pd.DataFrame, pred: pd.DataFrame, column_type: str):
+def calculate_kl_divergence(true: pd.DataFrame, pred: pd.DataFrame, column_type: str, verbose: bool = False):
     # Compute KL divergence for continuous numerical features
     if column_type == 'numerical':
         real_n_unique = true.nunique()
         int_n_unique = true.astype(int).nunique()
 
         if real_n_unique != int_n_unique:
-            kl_div = calculate_kl_divergence_with_kde(true, pred)
+            kl_div = calculate_kl_divergence_with_kde(true, pred, verbose=verbose)
             return kl_div
 
     # Compute KL divergence for categorical and discrete numerical features
-    kl_div = calculate_kl_divergence_with_histograms(true, pred)
+    kl_div = calculate_kl_divergence_with_histograms(true, pred, verbose=verbose)
     return kl_div
