@@ -3,43 +3,43 @@ from configs.constants import (GERMAN_CREDIT_DATASET, BANK_MARKETING_DATASET, CA
 
 
 EVALUATION_SCENARIOS_CONFIG = {
-    'exp3_mcar3': {
+    'exp1_mcar3': {
         'train_injection_scenario': 'MCAR3',
-        'test_injection_scenarios': ['MCAR2', 'MAR2', 'MNAR2'],
+        'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
-    'exp3_mar3': {
+    'exp1_mar3': {
         'train_injection_scenario': 'MAR3',
-        'test_injection_scenarios': ['MCAR2', 'MAR2', 'MNAR2'],
+        'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
-    'exp3_mnar3': {
+    'exp1_mnar3': {
         'train_injection_scenario': 'MNAR3',
-        'test_injection_scenarios': ['MCAR2', 'MAR2', 'MNAR2'],
+        'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
-    'exp1&2_mcar1': {
+    'exp2&3_mcar1': {
         'train_injection_scenario': 'MCAR1',
-        'test_injection_scenarios': ['MCAR2', 'MAR2', 'MNAR2'],
+        'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
-    'exp1&2_mcar5': {
+    'exp2&3_mcar5': {
         'train_injection_scenario': 'MCAR5',
-        'test_injection_scenarios': ['MCAR2', 'MAR2', 'MNAR2'],
+        'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
-    'exp1&2_mar1': {
+    'exp2&3_mar1': {
         'train_injection_scenario': 'MAR1',
-        'test_injection_scenarios': ['MCAR2', 'MAR2', 'MNAR2'],
+        'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
-    'exp1&2_mar5': {
+    'exp2&3_mar5': {
         'train_injection_scenario': 'MAR5',
-        'test_injection_scenarios': ['MCAR2', 'MAR2', 'MNAR2'],
+        'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
-    'exp1&2_mnar1': {
+    'exp2&3_mnar1': {
         'train_injection_scenario': 'MNAR1',
-        'test_injection_scenarios': ['MCAR2', 'MAR2', 'MNAR2'],
+        'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
-    'exp1&2_mnar5': {
+    'exp2&3_mnar5': {
         'train_injection_scenario': 'MNAR5',
-        'test_injection_scenarios': ['MCAR2', 'MAR2', 'MNAR2'],
+        'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
-    'exp1&2_mcar3': {
+    'exp2&3_mcar3': {
         'train_injection_scenario': 'MCAR3',
         'test_injection_scenarios': [
             'MCAR1', 'MAR1', 'MNAR1',
@@ -49,7 +49,7 @@ EVALUATION_SCENARIOS_CONFIG = {
             'MCAR5', 'MAR5', 'MNAR5',
         ],
     },
-    'exp1&2_mar3': {
+    'exp2&3_mar3': {
         'train_injection_scenario': 'MAR3',
         'test_injection_scenarios': [
             'MCAR1', 'MAR1', 'MNAR1',
@@ -59,7 +59,7 @@ EVALUATION_SCENARIOS_CONFIG = {
             'MCAR5', 'MAR5', 'MNAR5',
         ],
     },
-    'exp1&2_mnar3': {
+    'exp2&3_mnar3': {
         'train_injection_scenario': 'MNAR3',
         'test_injection_scenarios': [
             'MCAR1', 'MAR1', 'MNAR1',
@@ -107,7 +107,7 @@ ERROR_INJECTION_SCENARIOS_CONFIG = {
                 'setting': {'condition': ('MAR', ['2', '3', '4', '5']), 'error_rates': [0.09, 0.18, 0.25, 0.30, 0.35]},
             },
             {
-                'missing_features': ['WKHP'],  # TODO: check
+                'missing_features': ['WKHP'],
                 'setting': {'condition': ('WKHP', {'lt': 40.0}), 'error_rates': [0.09, 0.18, 0.25, 0.30, 0.35]},
             },
             {
