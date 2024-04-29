@@ -13,7 +13,7 @@ python ./scripts/evaluate_models.py \
     --run_nums \[1\] \
     --tune_imputers true \
     --ml_impute true \
-    --evaluation_scenarios \[\"exp3_mcar3\"\]
+    --evaluation_scenarios \[\"exp1_mcar3\"\]
 
 python ./scripts/evaluate_models.py \
     --dataset folk \
@@ -22,7 +22,7 @@ python ./scripts/evaluate_models.py \
     --run_nums \[1\] \
     --tune_imputers true \
     --ml_impute true \
-    --evaluation_scenarios \[\"exp3_mcar3\"\]
+    --evaluation_scenarios \[\"exp1_mcar3\"\]
 
 python ./scripts/impute_nulls_with_predictor.py \
     --dataset folk \
@@ -30,7 +30,7 @@ python ./scripts/impute_nulls_with_predictor.py \
     --run_nums \[1\] \
     --tune_imputers true \
     --save_imputed_datasets true \
-    --evaluation_scenarios \[\"exp3_mcar3\"\]
+    --evaluation_scenarios \[\"exp1_mcar3\"\]
 
 python ./scripts/impute_nulls_with_predictor.py \
     --dataset folk \
