@@ -1,6 +1,6 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "law_school \'deletion\',\'median-mode\',\'median-dummy\' \'exp1_mcar3\' \'dt_clf\' 1,2,3,4,5,6"
+    "law_school deletion,median-mode,median-dummy \"'exp1_mcar3'\" \"'dt_clf'\" 1,2,3,4,5,6"
 )
 
 TEMPLATE_FILE="../cluster/run_exp1/run-exp1-template.sbatch"
@@ -21,7 +21,7 @@ do
     touch $output_file
 
     # Use sed to replace placeholders with actual values
-    sed -e "s/<DATASET>/${dataset}/g" -e "s/<NULL_IMPUTERS>/${null_imputers}/g" -e "s/<EVALUATION_SCENARIO>/${evaluation_scenario}/g" -e "s/<MODEL>/${model}/g" -e "s/<RUN_NUMS>/${run_nums}/g" $TEMPLATE_FILE > $output_file
+    sed -e "s/<DATASET>/${dataset}/g" -e "s/<EVALUATION_SCENARIO>/${evaluation_scenario}/g" -e "s/<MODEL>/${model}/g" -e "s/<RUN_NUMS>/${run_nums}/g" $TEMPLATE_FILE > $output_file
 
     # Execute a SLURM job
     sbatch $output_file
