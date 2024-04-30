@@ -1,6 +1,6 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "law_school deletion,median-mode,median-dummy \\"'exp1_mcar3'\\" \\"'dt_clf'\\" 1,2,3,4,5,6"
+    "law_school deletion,median-mode,median-dummy exp1_mcar3 dt_clf 1,2,3,4,5,6"
 )
 
 TEMPLATE_FILE="../cluster/run_exp1/run-exp1-template.sbatch"

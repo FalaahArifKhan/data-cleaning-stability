@@ -16,11 +16,11 @@ EXECUTION_COMMAND="
 python ../scripts/evaluate_models.py \
     --dataset <DATASET> \
     --null_imputers \[\"'deletion'\",\"'median-mode'\",\"'median-dummy'\"\] \
-    --models \[<MODEL>\] \
+    --models \[\"'<MODEL>'\"\] \
     --run_nums \[<RUN_NUMS>\] \
     --tune_imputers true \
     --ml_impute true \
-    --evaluation_scenarios \[<EVALUATION_SCENARIO>\]
+    --evaluation_scenarios \[\"'<EVALUATION_SCENARIO>'\"\]
 "
 
 singularity exec \
