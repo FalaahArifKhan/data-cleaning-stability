@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --nodes=1
-#SBATCH --mem=4GB
-#SBATCH --cpus-per-task=2
+#SBATCH --mem=48GB
+#SBATCH --cpus-per-task=24
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=END
 #SBATCH --mail-user=dh3553@nyu.edu
