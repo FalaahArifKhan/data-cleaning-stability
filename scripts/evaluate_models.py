@@ -46,11 +46,6 @@ def parse_input_args():
                         default=str(list(EVALUATION_SCENARIOS_CONFIG.keys())))
 
     args = parser.parse_args()
-    print('args.dataset --', args.dataset)
-    print('args.null_imputers --', args.null_imputers)
-    print('args.models --', args.models)
-    print('args.run_nums --', args.run_nums)
-    print('args.evaluation_scenarios --', args.evaluation_scenarios)
     args = validate_args(exp_config_obj=args)
 
     print(

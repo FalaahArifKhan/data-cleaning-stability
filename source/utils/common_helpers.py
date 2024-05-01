@@ -64,8 +64,7 @@ def create_base_flow_dataset(data_loader, dataset_sensitive_attrs,
                            y_test=y_test,
                            target=data_loader.target,
                            numerical_columns=numerical_columns_wo_sensitive_attrs,
-                           categorical_columns=categorical_columns_wo_sensitive_attrs,
-                           ordered_categories_dct=data_loader.ordered_categories_dct)
+                           categorical_columns=categorical_columns_wo_sensitive_attrs)
 
 
 def create_virny_base_flow_datasets(data_loader, dataset_sensitive_attrs,

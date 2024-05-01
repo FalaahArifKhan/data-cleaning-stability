@@ -2,9 +2,9 @@
 # Local
 # =======================================================================================
 python ./scripts/evaluate_baseline.py \
-    --dataset german \
-    --models \[\"lgbm_clf\"\] \
-    --run_nums \[1\]
+    --dataset diabetes \
+    --models \[\"rf_clf\"\] \
+    --run_nums \[2\]
 
 python ./scripts/evaluate_models.py \
     --dataset folk \
