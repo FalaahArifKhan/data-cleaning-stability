@@ -118,7 +118,7 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame, ver
     scaler = StandardScaler().set_output(transform="pandas")
     true_scaled = scaler.fit_transform(true.to_frame())
     true_scaled = true_scaled[true_scaled.columns[0]]
-    pred_scaled = scaler.fit_transform(pred.to_frame())
+    pred_scaled = scaler.transform(pred.to_frame())
     pred_scaled = pred_scaled[pred_scaled.columns[0]]
 
     if pred.nunique() == 1:

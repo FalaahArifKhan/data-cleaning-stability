@@ -1,5 +1,6 @@
 import os
 import pathlib
+import certifi
 import pandas as pd
 
 from dotenv import load_dotenv
@@ -18,7 +19,7 @@ class DatabaseClient:
 
     def connect(self):
         # Create a connection using MongoClient
-        self.client = MongoClient(self.connection_string)
+        self.client = MongoClient(self.connection_string, tlsCAFile=certifi.where())
 
     def _get_collection(self, collection_name):
         return self.client[self.db_name][collection_name]

@@ -21,3 +21,4 @@ fancyimpute~=0.7.0
 missingpy~=0.2.0
 impyute~=0.0.8
 autoimpute~=0.14.1
+certifi~=2024.2.2

@@ -17,7 +17,7 @@ from sklearn.model_selection import GridSearchCV
 
 from .abstract_null_imputer import AbstractNullImputer
 from ..utils.dataframe_utils import _get_mask
-  
+
 
 def get_missforest_params_for_tuning(models_tuning_seed):
     return {

@@ -5,6 +5,7 @@ import pandas as pd
 
 from datetime import datetime, timezone
 from sklearn.metrics import mean_squared_error, precision_recall_fscore_support
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from virny.utils.custom_initializers import create_config_obj
 from virny.utils import create_test_protected_groups
@@ -249,7 +250,13 @@ class MLLifecycle:
                 f1 = None
                 if column_type == 'numerical':
                     null_imputer_params = null_imputer_params_dct[column_name] if null_imputer_params_dct is not None else None
-                    rmse = mean_squared_error(true, pred, squared=False)
+
+                    # Scale numerical features before computing RMSE
+                    scaler = StandardScaler()
+                    true_scaled = scaler.fit_transform(true.to_frame()).flatten().astype(float)
+                    pred_scaled = scaler.transform(pred.to_frame()).flatten().astype(float)
+
+                    rmse = mean_squared_error(true_scaled, pred_scaled, squared=False)
                     if verbose:
                         print('RMSE for {}: {:.2f}'.format(column_name, rmse))
                 else:
