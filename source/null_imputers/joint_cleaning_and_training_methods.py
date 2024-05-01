@@ -42,6 +42,7 @@ def prepare_cpclean(X_train_val: pd.DataFrame, y_train_val: pd.DataFrame, X_trai
 def prepare_boostclean(X_train_val: pd.DataFrame, y_train_val: pd.DataFrame, X_train_val_with_nulls: pd.DataFrame,
                        numerical_columns: list, categorical_columns: list, experiment_seed: int, **kwargs):
     save_dir = kwargs['save_dir']
+    tuning = kwargs['tune']
     
     val_set_ratio = 0.2
     X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val,
@@ -59,6 +60,7 @@ def prepare_boostclean(X_train_val: pd.DataFrame, y_train_val: pd.DataFrame, X_t
                                            X_val=X_val,
                                            y_val=y_val,
                                            random_state=experiment_seed,
+                                           tune=tuning,
                                            save_dir=save_dir)
     
     models_config = {
