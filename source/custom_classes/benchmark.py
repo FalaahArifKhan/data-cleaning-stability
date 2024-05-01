@@ -239,6 +239,7 @@ class Benchmark(MLLifecycle):
         # Read imputed train and test sets from save_sets_dir_path
         save_sets_dir_path = (pathlib.Path(__file__).parent.parent.parent
                                   .joinpath('results')
+                                  .joinpath('imputed_datasets')
                                   .joinpath(self.dataset_name)
                                   .joinpath(null_imputer_name)
                                   .joinpath(evaluation_scenario)
@@ -303,7 +304,9 @@ class Benchmark(MLLifecycle):
                                                                                 data_loader=data_loader)
 
         # Define a directory path to save an intermediate state
-        save_dir = (pathlib.Path(__file__).parent.parent.parent.joinpath('results')
+        save_dir = (pathlib.Path(__file__).parent.parent.parent
+                        .joinpath('results')
+                        .joinpath('intermediate_state')
                         .joinpath(null_imputer_name)
                         .joinpath(self.dataset_name)
                         .joinpath(evaluation_scenario)

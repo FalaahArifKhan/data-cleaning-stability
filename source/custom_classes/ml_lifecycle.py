@@ -157,7 +157,9 @@ class MLLifecycle:
 
         imputation_start_time = datetime.now()
         if null_imputer_name == ErrorRepairMethod.datawig.value:
-            output_path = (pathlib.Path(__file__).parent.parent.parent.joinpath('results')
+            output_path = (pathlib.Path(__file__).parent.parent.parent
+                           .joinpath('results')
+                           .joinpath('intermediate_state')
                            .joinpath(null_imputer_name)
                            .joinpath(self.dataset_name)
                            .joinpath(evaluation_scenario)
@@ -174,7 +176,9 @@ class MLLifecycle:
                                   **imputation_kwargs))
 
         elif null_imputer_name == ErrorRepairMethod.automl.value:
-            output_path = (pathlib.Path(__file__).parent.parent.parent.joinpath('results')
+            output_path = (pathlib.Path(__file__).parent.parent.parent
+                           .joinpath('results')
+                           .joinpath('intermediate_state')
                            .joinpath(null_imputer_name)
                            .joinpath(self.dataset_name)
                            .joinpath(evaluation_scenario)
@@ -330,6 +334,7 @@ class MLLifecycle:
                                      null_imputer_name: str, evaluation_scenario: str, experiment_seed: int):
         save_sets_dir_path = (pathlib.Path(__file__).parent.parent.parent
                               .joinpath('results')
+                              .joinpath('imputed_datasets')
                               .joinpath(self.dataset_name)
                               .joinpath(null_imputer_name)
                               .joinpath(evaluation_scenario)
