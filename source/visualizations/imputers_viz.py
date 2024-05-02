@@ -41,12 +41,11 @@ def create_box_plots_for_diff_imputers_and_single_eval_scenario(dataset_name: st
                                                 group=group)
     to_plot = imputers_metric_df[imputers_metric_df['Dataset_Part'].str.contains('X_test')]
     to_plot['Test_Injection_Strategy'] = to_plot['Dataset_Part'].apply(lambda x: x.split('_')[-1][:-1])
-    print(f'{evaluation_scenario} scenario')
 
     metric_title = metric_name.replace('_', ' ') if metric_name.lower() != 'rmse' else 'RMSE'
-    print(f'[{evaluation_scenario} scenario] {metric_title} top 5 rows:')
+    print(f'{evaluation_scenario} scenario')
     print('to_plot.shape[0] --', to_plot.shape[0])
-    print(to_plot[metric_name].head())
+    print("to_plot['Null_Imputer_Name'].value_counts():\n", to_plot['Null_Imputer_Name'].value_counts())
 
     chart = (
         alt.Chart(to_plot).mark_boxplot(
