@@ -13,7 +13,7 @@
 module purge
 
 EXECUTION_COMMAND="
-python ./scripts/impute_nulls_with_predictor.py \
+python ../scripts/impute_nulls_with_predictor.py \
     --dataset <DATASET> \
     --null_imputers \[\"'<NULL_IMPUTER>'\"] \
     --run_nums \[<RUN_NUMS>\] \
