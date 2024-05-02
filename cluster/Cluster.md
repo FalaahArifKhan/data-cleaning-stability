@@ -36,6 +36,11 @@ SSH to a bash SLURM job:
 ssh dh3553@cs223
 ```
 
+Count the number of files in each directory:
+```shell
+du -a | cut -d/ -f2 | sort | uniq -c | sort -nr
+```
+
 
 ## Setup
 

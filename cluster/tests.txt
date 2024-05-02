@@ -78,12 +78,12 @@ python ../scripts/evaluate_baseline.py \
     --run_nums [1]
 
 python ../scripts/impute_nulls_with_predictor.py \
-    --dataset folk \
-    --null_imputers [\"datawig\"] \
-    --run_nums [1] \
+    --dataset law_school \
+    --null_imputers [\"deletion\",\"median-mode\",\"median-dummy\"] \
+    --run_nums [1,2,3,4,5,6] \
     --tune_imputers true \
     --save_imputed_datasets true \
-    --evaluation_scenarios [\"mcar_mcar1\"]
+    --evaluation_scenarios [\"exp1_mcar3\",\"exp1_mar3\",\"exp1_mnar3\"]
 
 python ../scripts/evaluate_models.py \
     --dataset folk \
