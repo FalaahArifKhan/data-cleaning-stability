@@ -155,15 +155,11 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame, ver
 
 
 def calculate_kl_divergence(true: pd.DataFrame, pred: pd.DataFrame, column_type: str, verbose: bool = False):
-    # Compute KL divergence for continuous numerical features
     if column_type == 'numerical':
-        real_n_unique = true.nunique()
-        int_n_unique = true.astype(int).nunique()
+        # Compute KL divergence for numerical features
+        kl_div = calculate_kl_divergence_with_kde(true, pred, verbose=verbose)
+    else:
+        # Compute KL divergence for categorical features
+        kl_div = calculate_kl_divergence_with_histograms(true, pred, verbose=verbose)
 
-        if real_n_unique != int_n_unique:
-            kl_div = calculate_kl_divergence_with_kde(true, pred, verbose=verbose)
-            return kl_div
-
-    # Compute KL divergence for categorical and discrete numerical features
-    kl_div = calculate_kl_divergence_with_histograms(true, pred, verbose=verbose)
     return kl_div
