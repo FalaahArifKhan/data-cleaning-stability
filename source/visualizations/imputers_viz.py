@@ -2,7 +2,7 @@ import altair as alt
 import seaborn as sns
 from altair.utils.schemapi import Undefined
 
-from configs.constants import IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME
+from configs.constants import IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME, ErrorRepairMethod
 
 
 def get_imputers_metric_df(db_client, dataset_name: str, evaluation_scenario: str,
@@ -28,10 +28,12 @@ def create_box_plots_for_diff_imputers_and_single_eval_scenario(dataset_name: st
                                                                 column_name: str, metric_name: str,
                                                                 db_client, title: str,
                                                                 group: str = 'overall', base_font_size: int = 18,
-                                                                ylim=Undefined):
+                                                                without_dummy: bool = False, ylim=Undefined):
     sns.set_style("whitegrid")
     imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
                       'k_means_clustering', 'datawig', 'automl']
+    if without_dummy:
+        imputers_order = [t for t in imputers_order if t != ErrorRepairMethod.median_dummy.value]
 
     metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')])
     imputers_metric_df = get_imputers_metric_df(db_client=db_client,
@@ -39,13 +41,24 @@ def create_box_plots_for_diff_imputers_and_single_eval_scenario(dataset_name: st
                                                 evaluation_scenario=evaluation_scenario,
                                                 column_name=column_name,
                                                 group=group)
-    to_plot = imputers_metric_df[imputers_metric_df['Dataset_Part'].str.contains('X_test')]
+    if without_dummy:
+        to_plot = imputers_metric_df[
+                    (imputers_metric_df['Dataset_Part'].str.contains('X_test')) &
+                    (imputers_metric_df['Null_Imputer_Name'] != ErrorRepairMethod.median_dummy.value)
+                  ]
+    else:
+        to_plot = imputers_metric_df[imputers_metric_df['Dataset_Part'].str.contains('X_test')]
+
     to_plot['Test_Injection_Strategy'] = to_plot['Dataset_Part'].apply(lambda x: x.split('_')[-1][:-1])
 
-    metric_title = metric_name.replace('_', ' ') if metric_name.lower() != 'rmse' else 'RMSE'
-    print(f'{evaluation_scenario} scenario')
-    print('to_plot.shape[0] --', to_plot.shape[0])
-    print("to_plot['Null_Imputer_Name'].value_counts():\n", to_plot['Null_Imputer_Name'].value_counts())
+    if metric_name.lower() == 'rmse':
+        metric_title = 'RMSE'
+    elif metric_name.lower() == 'kl_divergence_pred':
+        metric_title = 'KL divergence pred'
+    elif metric_name.lower() == 'kl_divergence_total':
+        metric_title = 'KL divergence total'
+    else:
+        metric_title = metric_name.replace('_', ' ') if metric_name.lower() != 'rmse' else 'RMSE'
 
     chart = (
         alt.Chart(to_plot).mark_boxplot(
@@ -65,7 +78,7 @@ def create_box_plots_for_diff_imputers_and_single_eval_scenario(dataset_name: st
                               sort=['MCAR', 'MAR', 'MNAR'])
         ).properties(
             width=120,
-            title=alt.TitleParams(text=title, fontSize=base_font_size + 6, anchor='middle', align='center', dx=35),
+            title=alt.TitleParams(text=title, fontSize=base_font_size + 6, anchor='middle', align='center', dx=40),
         )
     )
 
@@ -74,7 +87,8 @@ def create_box_plots_for_diff_imputers_and_single_eval_scenario(dataset_name: st
 
 def create_box_plots_for_diff_imputers(dataset_name: str, column_name: str,
                                        metric_name: str, db_client,
-                                       group: str = 'overall', ylim=Undefined):
+                                       group: str = 'overall', without_dummy: bool = False,
+                                       ylim=Undefined):
     base_font_size = 20
     base_chart1 = create_box_plots_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
                                                                               evaluation_scenario='exp1_mcar3',
@@ -84,6 +98,7 @@ def create_box_plots_for_diff_imputers(dataset_name: str, column_name: str,
                                                                               db_client=db_client,
                                                                               group=group,
                                                                               base_font_size=base_font_size,
+                                                                              without_dummy=without_dummy,
                                                                               ylim=ylim)
     base_chart2 = create_box_plots_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
                                                                               evaluation_scenario='exp1_mar3',
@@ -93,6 +108,7 @@ def create_box_plots_for_diff_imputers(dataset_name: str, column_name: str,
                                                                               db_client=db_client,
                                                                               group=group,
                                                                               base_font_size=base_font_size,
+                                                                              without_dummy=without_dummy,
                                                                               ylim=ylim)
     base_chart3 = create_box_plots_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
                                                                               evaluation_scenario='exp1_mnar3',
@@ -102,6 +118,7 @@ def create_box_plots_for_diff_imputers(dataset_name: str, column_name: str,
                                                                               db_client=db_client,
                                                                               group=group,
                                                                               base_font_size=base_font_size,
+                                                                              without_dummy=without_dummy,
                                                                               ylim=ylim)
 
     # Concatenate two base charts
