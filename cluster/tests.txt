@@ -25,7 +25,7 @@ python ./scripts/evaluate_models.py \
     --evaluation_scenarios \[\"exp1_mcar3\"\]
 
 python ./scripts/impute_nulls_with_predictor.py \
-    --dataset folk \
+    --dataset law_school \
     --null_imputers \[\"median-mode\"\] \
     --run_nums \[1\] \
     --tune_imputers true \

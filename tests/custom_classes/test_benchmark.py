@@ -1,11 +1,15 @@
+import os
 import copy
 import pytest
+import pathlib
+from unittest import mock
+from unittest.mock import MagicMock
 from sklearn.model_selection import train_test_split
 
-from tests import compare_dfs, get_df_condition
+from tests import compare_dfs, get_df_condition, compare_base_flow_datasets
 from source.custom_classes.benchmark import Benchmark
 from source.utils.common_helpers import get_injection_scenarios
-from configs.constants import ACS_INCOME_DATASET, ErrorRepairMethod, MLModels, ErrorInjectionStrategy
+from configs.constants import ACS_INCOME_DATASET, LAW_SCHOOL_DATASET, ErrorRepairMethod, MLModels, ErrorInjectionStrategy
 from configs.scenarios_config import ERROR_INJECTION_SCENARIOS_CONFIG
 
 
@@ -270,3 +274,295 @@ def test_inject_nulls_should_preserve_mnar_scenario_test_sets_sequence(folk_benc
                                                 include_val=True)
                 actual_column_nulls_count = X_test_with_nulls[df_condition][missing_features].isnull().sum().sum()
                 assert actual_column_nulls_count == int(X_test[df_condition].shape[0] * error_rate)
+
+
+# ====================================================================
+# Test load_imputed_train_test_sets
+# ====================================================================
+@mock.patch.multiple(Benchmark,
+                     _save_imputation_metrics_to_db=MagicMock())
+def test_load_imputed_train_test_sets_for_median_mode_and_law_school_mcar3():
+    dataset_name = LAW_SCHOOL_DATASET
+    null_imputer_name = ErrorRepairMethod.median_mode.value
+    evaluation_scenario = 'exp1_mcar3'
+    experiment_seed = 100
+    tune_imputers = True
+    save_imputed_datasets = False
+
+    save_sets_dir_path = (pathlib.Path(__file__).parent.parent
+                          .joinpath('files_for_tests')
+                          .joinpath('results')
+                          .joinpath('imputed_datasets')
+                          .joinpath(dataset_name)
+                          .joinpath(null_imputer_name)
+                          .joinpath(evaluation_scenario)
+                          .joinpath(str(experiment_seed)))
+    benchmark = Benchmark(dataset_name=dataset_name,
+                          null_imputers=[null_imputer_name],
+                          model_names=[])
+
+    # Create a mock for save_sets_dir_path in benchmark.load_imputed_train_test_sets()
+    with mock.patch('source.custom_classes.benchmark.pathlib.Path') as mock_path:
+        # Setup the mock to return a specific path when joined
+        instance = mock_path.return_value  # this is the instance returned when Path() is called
+        instance.parent.parent.parent.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value = save_sets_dir_path
+
+        expected_main_base_flow_dataset, expected_extra_base_flow_datasets = (
+            benchmark.inject_and_impute_nulls(data_loader=copy.deepcopy(benchmark.init_data_loader),
+                                              null_imputer_name=null_imputer_name,
+                                              evaluation_scenario=evaluation_scenario,
+                                              tune_imputers=tune_imputers,
+                                              experiment_seed=experiment_seed,
+                                              save_imputed_datasets=save_imputed_datasets))
+
+        actual_main_base_flow_dataset, actual_extra_base_flow_datasets = (
+            benchmark.load_imputed_train_test_sets(data_loader=copy.deepcopy(benchmark.init_data_loader),
+                                                   null_imputer_name=null_imputer_name,
+                                                   evaluation_scenario=evaluation_scenario,
+                                                   experiment_seed=experiment_seed))
+
+        compare_base_flow_datasets(expected_main_base_flow_dataset, actual_main_base_flow_dataset)
+
+        for idx in range(len(expected_extra_base_flow_datasets)):
+            compare_base_flow_datasets(expected_extra_base_flow_datasets[idx], actual_extra_base_flow_datasets[idx])
+
+
+@mock.patch.multiple(Benchmark,
+                     _save_imputation_metrics_to_db=MagicMock())
+def test_load_imputed_train_test_sets_for_median_mode_and_law_school_mar3():
+    dataset_name = LAW_SCHOOL_DATASET
+    null_imputer_name = ErrorRepairMethod.median_mode.value
+    evaluation_scenario = 'exp1_mar3'
+    experiment_seed = 100
+    tune_imputers = True
+    save_imputed_datasets = False
+
+    save_sets_dir_path = (pathlib.Path(__file__).parent.parent
+                          .joinpath('files_for_tests')
+                          .joinpath('results')
+                          .joinpath('imputed_datasets')
+                          .joinpath(dataset_name)
+                          .joinpath(null_imputer_name)
+                          .joinpath(evaluation_scenario)
+                          .joinpath(str(experiment_seed)))
+    benchmark = Benchmark(dataset_name=dataset_name,
+                          null_imputers=[null_imputer_name],
+                          model_names=[])
+
+    # Create a mock for save_sets_dir_path in benchmark.load_imputed_train_test_sets()
+    with mock.patch('source.custom_classes.benchmark.pathlib.Path') as mock_path:
+        # Setup the mock to return a specific path when joined
+        instance = mock_path.return_value  # this is the instance returned when Path() is called
+        instance.parent.parent.parent.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value = save_sets_dir_path
+
+        expected_main_base_flow_dataset, expected_extra_base_flow_datasets = (
+            benchmark.inject_and_impute_nulls(data_loader=copy.deepcopy(benchmark.init_data_loader),
+                                              null_imputer_name=null_imputer_name,
+                                              evaluation_scenario=evaluation_scenario,
+                                              tune_imputers=tune_imputers,
+                                              experiment_seed=experiment_seed,
+                                              save_imputed_datasets=save_imputed_datasets))
+
+        actual_main_base_flow_dataset, actual_extra_base_flow_datasets = (
+            benchmark.load_imputed_train_test_sets(data_loader=copy.deepcopy(benchmark.init_data_loader),
+                                                   null_imputer_name=null_imputer_name,
+                                                   evaluation_scenario=evaluation_scenario,
+                                                   experiment_seed=experiment_seed))
+
+        compare_base_flow_datasets(expected_main_base_flow_dataset, actual_main_base_flow_dataset)
+
+        for idx in range(len(expected_extra_base_flow_datasets)):
+            compare_base_flow_datasets(expected_extra_base_flow_datasets[idx], actual_extra_base_flow_datasets[idx])
+
+
+@mock.patch.multiple(Benchmark,
+                     _save_imputation_metrics_to_db=MagicMock())
+def test_load_imputed_train_test_sets_for_median_mode_and_law_school_mnar3():
+    dataset_name = LAW_SCHOOL_DATASET
+    null_imputer_name = ErrorRepairMethod.median_mode.value
+    evaluation_scenario = 'exp1_mnar3'
+    experiment_seed = 100
+    tune_imputers = True
+    save_imputed_datasets = False
+
+    save_sets_dir_path = (pathlib.Path(__file__).parent.parent
+                          .joinpath('files_for_tests')
+                          .joinpath('results')
+                          .joinpath('imputed_datasets')
+                          .joinpath(dataset_name)
+                          .joinpath(null_imputer_name)
+                          .joinpath(evaluation_scenario)
+                          .joinpath(str(experiment_seed)))
+    benchmark = Benchmark(dataset_name=dataset_name,
+                          null_imputers=[null_imputer_name],
+                          model_names=[])
+
+    # Create a mock for save_sets_dir_path in benchmark.load_imputed_train_test_sets()
+    with mock.patch('source.custom_classes.benchmark.pathlib.Path') as mock_path:
+        # Setup the mock to return a specific path when joined
+        instance = mock_path.return_value  # this is the instance returned when Path() is called
+        instance.parent.parent.parent.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value = save_sets_dir_path
+
+        expected_main_base_flow_dataset, expected_extra_base_flow_datasets = (
+            benchmark.inject_and_impute_nulls(data_loader=copy.deepcopy(benchmark.init_data_loader),
+                                              null_imputer_name=null_imputer_name,
+                                              evaluation_scenario=evaluation_scenario,
+                                              tune_imputers=tune_imputers,
+                                              experiment_seed=experiment_seed,
+                                              save_imputed_datasets=save_imputed_datasets))
+
+        actual_main_base_flow_dataset, actual_extra_base_flow_datasets = (
+            benchmark.load_imputed_train_test_sets(data_loader=copy.deepcopy(benchmark.init_data_loader),
+                                                   null_imputer_name=null_imputer_name,
+                                                   evaluation_scenario=evaluation_scenario,
+                                                   experiment_seed=experiment_seed))
+
+        compare_base_flow_datasets(expected_main_base_flow_dataset, actual_main_base_flow_dataset)
+
+        for idx in range(len(expected_extra_base_flow_datasets)):
+            compare_base_flow_datasets(expected_extra_base_flow_datasets[idx], actual_extra_base_flow_datasets[idx])
+
+
+@mock.patch.multiple(Benchmark,
+                     _save_imputation_metrics_to_db=MagicMock())
+def test_load_imputed_train_test_sets_for_median_mode_and_acs_income_mcar3():
+    dataset_name = ACS_INCOME_DATASET
+    null_imputer_name = ErrorRepairMethod.median_mode.value
+    evaluation_scenario = 'exp1_mcar3'
+    experiment_seed = 500
+    tune_imputers = True
+    save_imputed_datasets = False
+
+    save_sets_dir_path = (pathlib.Path(__file__).parent.parent
+                          .joinpath('files_for_tests')
+                          .joinpath('results')
+                          .joinpath('imputed_datasets')
+                          .joinpath(dataset_name)
+                          .joinpath(null_imputer_name)
+                          .joinpath(evaluation_scenario)
+                          .joinpath(str(experiment_seed)))
+    benchmark = Benchmark(dataset_name=dataset_name,
+                          null_imputers=[null_imputer_name],
+                          model_names=[])
+
+    # Create a mock for save_sets_dir_path in benchmark.load_imputed_train_test_sets()
+    with mock.patch('source.custom_classes.benchmark.pathlib.Path') as mock_path:
+        # Setup the mock to return a specific path when joined
+        instance = mock_path.return_value  # this is the instance returned when Path() is called
+        instance.parent.parent.parent.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value = save_sets_dir_path
+
+        expected_main_base_flow_dataset, expected_extra_base_flow_datasets = (
+            benchmark.inject_and_impute_nulls(data_loader=copy.deepcopy(benchmark.init_data_loader),
+                                              null_imputer_name=null_imputer_name,
+                                              evaluation_scenario=evaluation_scenario,
+                                              tune_imputers=tune_imputers,
+                                              experiment_seed=experiment_seed,
+                                              save_imputed_datasets=save_imputed_datasets))
+
+        actual_main_base_flow_dataset, actual_extra_base_flow_datasets = (
+            benchmark.load_imputed_train_test_sets(data_loader=copy.deepcopy(benchmark.init_data_loader),
+                                                   null_imputer_name=null_imputer_name,
+                                                   evaluation_scenario=evaluation_scenario,
+                                                   experiment_seed=experiment_seed))
+
+        compare_base_flow_datasets(expected_main_base_flow_dataset, actual_main_base_flow_dataset)
+
+        for idx in range(len(expected_extra_base_flow_datasets)):
+            compare_base_flow_datasets(expected_extra_base_flow_datasets[idx], actual_extra_base_flow_datasets[idx])
+
+
+@mock.patch.multiple(Benchmark,
+                     _save_imputation_metrics_to_db=MagicMock())
+def test_load_imputed_train_test_sets_for_median_mode_and_acs_income_mar3():
+    dataset_name = ACS_INCOME_DATASET
+    null_imputer_name = ErrorRepairMethod.median_mode.value
+    evaluation_scenario = 'exp1_mar3'
+    experiment_seed = 500
+    tune_imputers = True
+    save_imputed_datasets = False
+
+    save_sets_dir_path = (pathlib.Path(__file__).parent.parent
+                          .joinpath('files_for_tests')
+                          .joinpath('results')
+                          .joinpath('imputed_datasets')
+                          .joinpath(dataset_name)
+                          .joinpath(null_imputer_name)
+                          .joinpath(evaluation_scenario)
+                          .joinpath(str(experiment_seed)))
+    benchmark = Benchmark(dataset_name=dataset_name,
+                          null_imputers=[null_imputer_name],
+                          model_names=[])
+
+    # Create a mock for save_sets_dir_path in benchmark.load_imputed_train_test_sets()
+    with mock.patch('source.custom_classes.benchmark.pathlib.Path') as mock_path:
+        # Setup the mock to return a specific path when joined
+        instance = mock_path.return_value  # this is the instance returned when Path() is called
+        instance.parent.parent.parent.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value = save_sets_dir_path
+
+        expected_main_base_flow_dataset, expected_extra_base_flow_datasets = (
+            benchmark.inject_and_impute_nulls(data_loader=copy.deepcopy(benchmark.init_data_loader),
+                                              null_imputer_name=null_imputer_name,
+                                              evaluation_scenario=evaluation_scenario,
+                                              tune_imputers=tune_imputers,
+                                              experiment_seed=experiment_seed,
+                                              save_imputed_datasets=save_imputed_datasets))
+
+        actual_main_base_flow_dataset, actual_extra_base_flow_datasets = (
+            benchmark.load_imputed_train_test_sets(data_loader=copy.deepcopy(benchmark.init_data_loader),
+                                                   null_imputer_name=null_imputer_name,
+                                                   evaluation_scenario=evaluation_scenario,
+                                                   experiment_seed=experiment_seed))
+
+        compare_base_flow_datasets(expected_main_base_flow_dataset, actual_main_base_flow_dataset)
+
+        for idx in range(len(expected_extra_base_flow_datasets)):
+            compare_base_flow_datasets(expected_extra_base_flow_datasets[idx], actual_extra_base_flow_datasets[idx])
+
+
+@mock.patch.multiple(Benchmark,
+                     _save_imputation_metrics_to_db=MagicMock())
+def test_load_imputed_train_test_sets_for_median_mode_and_acs_income_mnar3():
+    dataset_name = ACS_INCOME_DATASET
+    null_imputer_name = ErrorRepairMethod.median_mode.value
+    evaluation_scenario = 'exp1_mnar3'
+    experiment_seed = 500
+    tune_imputers = True
+    save_imputed_datasets = False
+
+    save_sets_dir_path = (pathlib.Path(__file__).parent.parent
+                              .joinpath('files_for_tests')
+                              .joinpath('results')
+                              .joinpath('imputed_datasets')
+                              .joinpath(dataset_name)
+                              .joinpath(null_imputer_name)
+                              .joinpath(evaluation_scenario)
+                              .joinpath(str(experiment_seed)))
+    benchmark = Benchmark(dataset_name=dataset_name,
+                          null_imputers=[null_imputer_name],
+                          model_names=[])
+
+    # Create a mock for save_sets_dir_path in benchmark.load_imputed_train_test_sets()
+    with mock.patch('source.custom_classes.benchmark.pathlib.Path') as mock_path:
+
+        # Setup the mock to return a specific path when joined
+        instance = mock_path.return_value  # this is the instance returned when Path() is called
+        instance.parent.parent.parent.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value.joinpath.return_value = save_sets_dir_path
+
+        expected_main_base_flow_dataset, expected_extra_base_flow_datasets = (
+            benchmark.inject_and_impute_nulls(data_loader=copy.deepcopy(benchmark.init_data_loader),
+                                              null_imputer_name=null_imputer_name,
+                                              evaluation_scenario=evaluation_scenario,
+                                              tune_imputers=tune_imputers,
+                                              experiment_seed=experiment_seed,
+                                              save_imputed_datasets=save_imputed_datasets))
+
+        actual_main_base_flow_dataset, actual_extra_base_flow_datasets = (
+            benchmark.load_imputed_train_test_sets(data_loader=copy.deepcopy(benchmark.init_data_loader),
+                                                   null_imputer_name=null_imputer_name,
+                                                   evaluation_scenario=evaluation_scenario,
+                                                   experiment_seed=experiment_seed))
+
+        compare_base_flow_datasets(expected_main_base_flow_dataset, actual_main_base_flow_dataset)
+
+        for idx in range(len(expected_extra_base_flow_datasets)):
+            compare_base_flow_datasets(expected_extra_base_flow_datasets[idx], actual_extra_base_flow_datasets[idx])
