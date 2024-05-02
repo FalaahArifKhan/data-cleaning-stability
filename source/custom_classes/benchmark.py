@@ -256,6 +256,10 @@ class Benchmark(MLLifecycle):
         X_train_val_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs] = (
             X_train_val_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs].astype(str))
 
+        # Subset y_train_val to align with X_train_val_imputed_wo_sensitive_attrs
+        if null_imputer_name == ErrorRepairMethod.deletion.value:
+            y_train_val = y_train_val.loc[X_train_val_imputed_wo_sensitive_attrs.index]
+
         # Read X_test sets
         X_tests_imputed_wo_sensitive_attrs_lst = list()
         _, test_injection_scenarios_lst = get_injection_scenarios(evaluation_scenario)
