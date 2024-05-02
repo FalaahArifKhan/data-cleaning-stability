@@ -29,7 +29,7 @@ do
     read -r dataset null_imputers evaluation_scenario model run_nums <<< "$job_config"
 
     # Define the output file name
-    output_file="../cluster/run_exp1/sbatch_files/run-exp1-${dataset}_${null_imputers}_${evaluation_scenario}_${model}_${index}.sbatch"
+    output_file="../cluster/run_exp1/sbatch_files/models/run-exp1-${dataset}_${null_imputers}_${evaluation_scenario}_${model}_${index}.sbatch"
 
     # Create an empty file
     touch $output_file
