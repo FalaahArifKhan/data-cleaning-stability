@@ -6,9 +6,9 @@
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=END
 #SBATCH --mail-user=dh3553@nyu.edu
-#SBATCH --job-name=law_school_datawig_exp1_mar3_mlp_clf
-#SBATCH --output=%j_law_school_datawig_exp1_mar3_mlp_clf.out
-#SBATCH --error=%j_law_school_datawig_exp1_mar3_mlp_clf.err
+#SBATCH --job-name=law_school_datawig_exp1_mcar3_rf_clf
+#SBATCH --output=%j_law_school_datawig_exp1_mcar3_rf_clf.out
+#SBATCH --error=%j_law_school_datawig_exp1_mcar3_rf_clf.err
 
 module purge
 
@@ -16,11 +16,11 @@ EXECUTION_COMMAND="
 python ../scripts/evaluate_models.py \
     --dataset law_school \
     --null_imputers \[\"'datawig'\"] \
-    --models \[\"'mlp_clf'\"\] \
-    --run_nums \[4,5,6\] \
+    --models \[\"'rf_clf'\"\] \
+    --run_nums \[1,2,3,4,5,6\] \
     --tune_imputers true \
     --ml_impute false \
-    --evaluation_scenarios \[\"'exp1_mar3'\"\]
+    --evaluation_scenarios \[\"'exp1_mcar3'\"\]
 "
 
 singularity exec \

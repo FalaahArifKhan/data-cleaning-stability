@@ -6,16 +6,16 @@
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=END
 #SBATCH --mail-user=dh3553@nyu.edu
-#SBATCH --job-name=law_school_datawig_exp1_mar3_mlp_clf
-#SBATCH --output=%j_law_school_datawig_exp1_mar3_mlp_clf.out
-#SBATCH --error=%j_law_school_datawig_exp1_mar3_mlp_clf.err
+#SBATCH --job-name=law_school_k_means_clustering_exp1_mar3_mlp_clf
+#SBATCH --output=%j_law_school_k_means_clustering_exp1_mar3_mlp_clf.out
+#SBATCH --error=%j_law_school_k_means_clustering_exp1_mar3_mlp_clf.err
 
 module purge
 
 EXECUTION_COMMAND="
 python ../scripts/evaluate_models.py \
     --dataset law_school \
-    --null_imputers \[\"'datawig'\"] \
+    --null_imputers \[\"'k_means_clustering'\"] \
     --models \[\"'mlp_clf'\"\] \
     --run_nums \[4,5,6\] \
     --tune_imputers true \

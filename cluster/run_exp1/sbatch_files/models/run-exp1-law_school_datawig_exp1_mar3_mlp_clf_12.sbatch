@@ -17,7 +17,7 @@ python ../scripts/evaluate_models.py \
     --dataset law_school \
     --null_imputers \[\"'datawig'\"] \
     --models \[\"'mlp_clf'\"\] \
-    --run_nums \[4,5,6\] \
+    --run_nums \[1,2,3\] \
     --tune_imputers true \
     --ml_impute false \
     --evaluation_scenarios \[\"'exp1_mar3'\"\]
