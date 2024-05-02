@@ -5,15 +5,18 @@ from altair.utils.schemapi import Undefined
 from configs.constants import IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME
 
 
-def get_imputers_metric_df(db_client, dataset_name: str, column_name: str, group: str):
+def get_imputers_metric_df(db_client, dataset_name: str, evaluation_scenario: str,
+                           column_name: str, group: str):
     query = {
         'dataset_name': dataset_name,
+        'evaluation_scenario': evaluation_scenario,
         'column_with_nulls': column_name,
         'subgroup': group,
         'tag': 'OK',
     }
     metric_df = db_client.read_metric_df_from_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                                  query=query)
+
     # Check uniqueness
     duplicates_mask = metric_df.duplicated(subset=['Imputation_Guid'], keep=False)
     assert len(metric_df[duplicates_mask]) == 0, 'Metric df contains duplicates'
@@ -21,31 +24,33 @@ def get_imputers_metric_df(db_client, dataset_name: str, column_name: str, group
     return metric_df
 
 
-def create_box_plots_for_diff_imputers(dataset_name: str, column_name: str,
-                                       metric_name: str, db_client,
-                                       group: str = 'overall', ylim=Undefined):
+def create_box_plots_for_diff_imputers_and_single_eval_scenario(dataset_name: str, evaluation_scenario: str,
+                                                                column_name: str, metric_name: str,
+                                                                db_client, title: str,
+                                                                group: str = 'overall', base_font_size: int = 18,
+                                                                ylim=Undefined):
     sns.set_style("whitegrid")
-    base_font_size = 18
     imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
                       'k_means_clustering', 'datawig', 'automl']
 
     metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')])
     imputers_metric_df = get_imputers_metric_df(db_client=db_client,
                                                 dataset_name=dataset_name,
+                                                evaluation_scenario=evaluation_scenario,
                                                 column_name=column_name,
                                                 group=group)
     to_plot = imputers_metric_df[imputers_metric_df['Dataset_Part'].str.contains('X_test')]
     to_plot['Test_Injection_Strategy'] = to_plot['Dataset_Part'].apply(lambda x: x.split('_')[-1][:-1])
-    print('to_plot.shape[0] --', to_plot.shape[0])
+    print(f'{evaluation_scenario} scenario')
 
     metric_title = metric_name.replace('_', ' ') if metric_name.lower() != 'rmse' else 'RMSE'
-    print(f'{metric_title} top 5 rows:')
+    print(f'[{evaluation_scenario} scenario] {metric_title} top 5 rows:')
+    print('to_plot.shape[0] --', to_plot.shape[0])
     print(to_plot[metric_name].head())
 
     chart = (
         alt.Chart(to_plot).mark_boxplot(
             ticks=True,
-            size=20,
             median={'stroke': 'black', 'strokeWidth': 0.7},
         ).encode(
             x=alt.X("Null_Imputer_Name:N",
@@ -59,10 +64,74 @@ def create_box_plots_for_diff_imputers(dataset_name: str, column_name: str,
             column=alt.Column('Test_Injection_Strategy:N',
                               title=None,
                               sort=['MCAR', 'MAR', 'MNAR'])
-        ).resolve_scale(
-            x='independent'
         ).properties(
-            width=180
+            width=120,
+            title=alt.TitleParams(text=title, fontSize=base_font_size + 6, anchor='middle', align='center', dx=35),
+        )
+    )
+
+    return chart
+
+
+def create_box_plots_for_diff_imputers(dataset_name: str, column_name: str,
+                                       metric_name: str, db_client,
+                                       group: str = 'overall', ylim=Undefined):
+    base_font_size = 20
+    base_chart1 = create_box_plots_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
+                                                                              evaluation_scenario='exp1_mcar3',
+                                                                              title='MCAR train set',
+                                                                              column_name=column_name,
+                                                                              metric_name=metric_name,
+                                                                              db_client=db_client,
+                                                                              group=group,
+                                                                              base_font_size=base_font_size,
+                                                                              ylim=ylim)
+    base_chart2 = create_box_plots_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
+                                                                              evaluation_scenario='exp1_mar3',
+                                                                              title='MAR train set',
+                                                                              column_name=column_name,
+                                                                              metric_name=metric_name,
+                                                                              db_client=db_client,
+                                                                              group=group,
+                                                                              base_font_size=base_font_size,
+                                                                              ylim=ylim)
+    base_chart3 = create_box_plots_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
+                                                                              evaluation_scenario='exp1_mnar3',
+                                                                              title='MNAR train set',
+                                                                              column_name=column_name,
+                                                                              metric_name=metric_name,
+                                                                              db_client=db_client,
+                                                                              group=group,
+                                                                              base_font_size=base_font_size,
+                                                                              ylim=ylim)
+
+    # Concatenate two base charts
+    main_base_chart = alt.vconcat()
+    row = alt.hconcat()
+    row |= base_chart1
+    row |= base_chart2
+    row |= base_chart3
+    main_base_chart &= row
+
+    final_grid_chart = (
+        main_base_chart.configure_axis(
+            labelFontSize=base_font_size + 4,
+            titleFontSize=base_font_size + 6,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        ).configure_title(
+            fontSize=base_font_size + 2
+        ).configure_legend(
+            titleFontSize=base_font_size + 4,
+            labelFontSize=base_font_size + 2,
+            symbolStrokeWidth=10,
+            labelLimit=400,
+            titleLimit=300,
+            columns=4,
+            orient='top',
+            direction='horizontal',
+            titleAnchor='middle',
+            symbolOffset=110,
         ).configure_facet(
             spacing=10
         ).configure_view(
@@ -77,19 +146,7 @@ def create_box_plots_for_diff_imputers(dataset_name: str, column_name: str,
             titleFontSize=base_font_size + 6,
             labelFontWeight='normal',
             titleFontWeight='normal',
-        ).configure_title(
-            fontSize=base_font_size + 2
-        ).configure_legend(
-            titleFontSize=base_font_size + 4,
-            labelFontSize=base_font_size + 2,
-            symbolStrokeWidth=5,
-            labelLimit=400,
-            titleLimit=300,
-            columns=4,
-            orient='top',
-            direction='horizontal',
-            titleAnchor='middle'
         )
     )
 
-    return chart
+    return final_grid_chart
