@@ -6,9 +6,9 @@
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=END
 #SBATCH --mail-user=dh3553@nyu.edu
-#SBATCH --job-name=law_school_automl_exp1_mcar3_dt_clf
-#SBATCH --output=%j_law_school_automl_exp1_mcar3_dt_clf.out
-#SBATCH --error=%j_law_school_automl_exp1_mcar3_dt_clf.err
+#SBATCH --job-name=law_school_automl_exp1_mnar3_dt_clf
+#SBATCH --output=%j_law_school_automl_exp1_mnar3_dt_clf.out
+#SBATCH --error=%j_law_school_automl_exp1_mnar3_dt_clf.err
 
 module purge
 
@@ -20,7 +20,7 @@ python ../scripts/evaluate_models.py \
     --run_nums \[1,2,3,4,5,6\] \
     --tune_imputers true \
     --ml_impute false \
-    --evaluation_scenarios \[\"'exp1_mcar3'\"\]
+    --evaluation_scenarios \[\"'exp1_mnar3'\"\]
 "
 
 singularity exec \
