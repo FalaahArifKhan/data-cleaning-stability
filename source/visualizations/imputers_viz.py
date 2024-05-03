@@ -1,3 +1,4 @@
+import pandas as pd
 import altair as alt
 import seaborn as sns
 from altair.utils.schemapi import Undefined
@@ -24,6 +25,35 @@ def get_imputers_metric_df(db_client, dataset_name: str, evaluation_scenario: st
     return metric_df
 
 
+def get_imputers_disparity_metric_df(db_client, dataset_name: str, evaluation_scenario: str,
+                                     column_name: str, metric_name: str, group: str):
+    dis_grp_imputers_metric_df = get_imputers_metric_df(db_client=db_client,
+                                                        dataset_name=dataset_name,
+                                                        evaluation_scenario=evaluation_scenario,
+                                                        column_name=column_name,
+                                                        group=group + '_dis')
+    priv_grp_imputers_metric_df = get_imputers_metric_df(db_client=db_client,
+                                                         dataset_name=dataset_name,
+                                                         evaluation_scenario=evaluation_scenario,
+                                                         column_name=column_name,
+                                                         group=group + '_priv')
+
+    columns_subset = ['Dataset_Name', 'Null_Imputer_Name', 'Evaluation_Scenario',
+                      'Experiment_Seed', 'Dataset_Part', 'Column_With_Nulls', metric_name]
+    dis_grp_imputers_metric_df = dis_grp_imputers_metric_df[columns_subset]
+    priv_grp_imputers_metric_df = priv_grp_imputers_metric_df[columns_subset]
+
+    merged_imputers_metric_df = pd.merge(dis_grp_imputers_metric_df, priv_grp_imputers_metric_df,
+                                         on=['Dataset_Name', 'Null_Imputer_Name', 'Evaluation_Scenario',
+                                             'Experiment_Seed', 'Dataset_Part', 'Column_With_Nulls'],
+                                         how='left',
+                                         suffixes=('_dis', '_priv'))
+    merged_imputers_metric_df[metric_name + '_Difference'] = \
+            merged_imputers_metric_df[metric_name + '_dis'] - merged_imputers_metric_df[metric_name + '_priv']
+
+    return merged_imputers_metric_df
+
+
 def create_box_plots_for_diff_imputers_and_single_eval_scenario(dataset_name: str, evaluation_scenario: str,
                                                                 column_name: str, metric_name: str,
                                                                 db_client, title: str,
@@ -36,11 +66,21 @@ def create_box_plots_for_diff_imputers_and_single_eval_scenario(dataset_name: st
         imputers_order = [t for t in imputers_order if t != ErrorRepairMethod.median_dummy.value]
 
     metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')])
-    imputers_metric_df = get_imputers_metric_df(db_client=db_client,
-                                                dataset_name=dataset_name,
-                                                evaluation_scenario=evaluation_scenario,
-                                                column_name=column_name,
-                                                group=group)
+    if group == 'overall':
+        imputers_metric_df = get_imputers_metric_df(db_client=db_client,
+                                                    dataset_name=dataset_name,
+                                                    evaluation_scenario=evaluation_scenario,
+                                                    column_name=column_name,
+                                                    group=group)
+    else:
+        imputers_metric_df = get_imputers_disparity_metric_df(db_client=db_client,
+                                                              dataset_name=dataset_name,
+                                                              evaluation_scenario=evaluation_scenario,
+                                                              column_name=column_name,
+                                                              metric_name=metric_name,
+                                                              group=group)
+        metric_name = metric_name + '_Difference'
+
     if without_dummy:
         to_plot = imputers_metric_df[
                     (imputers_metric_df['Dataset_Part'].str.contains('X_test')) &
@@ -51,14 +91,12 @@ def create_box_plots_for_diff_imputers_and_single_eval_scenario(dataset_name: st
 
     to_plot['Test_Injection_Strategy'] = to_plot['Dataset_Part'].apply(lambda x: x.split('_')[-1][:-1])
 
-    if metric_name.lower() == 'rmse':
-        metric_title = 'RMSE'
-    elif metric_name.lower() == 'kl_divergence_pred':
-        metric_title = 'KL divergence pred'
-    elif metric_name.lower() == 'kl_divergence_total':
-        metric_title = 'KL divergence total'
-    else:
-        metric_title = metric_name.replace('_', ' ') if metric_name.lower() != 'rmse' else 'RMSE'
+    metric_title = metric_name.replace('_', ' ')
+    metric_title = (
+        metric_title.replace('Rmse', 'RMSE')
+            .replace('Kl Divergence Pred', 'KL Divergence Pred')
+            .replace('Kl Divergence Total', 'KL Divergence Total')
+    )
 
     chart = (
         alt.Chart(to_plot).mark_boxplot(
