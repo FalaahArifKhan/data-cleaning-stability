@@ -33,6 +33,28 @@ def get_overall_metric_from_disparity_metric(disparity_metric):
             return overall_metric
 
 
+def get_baseline_models_metric_df(db_client, dataset_name: str, metric_name: str, group: str):
+    query = {
+        'dataset_name': dataset_name,
+        'null_imputer_name': 'baseline',
+        'subgroup': group,
+        'metric': metric_name,
+        'tag': 'OK',
+    }
+    metric_df = db_client.read_metric_df_from_db(collection_name=EXP_COLLECTION_NAME,
+                                                 query=query)
+
+    # Check uniqueness
+    duplicates_mask = metric_df.duplicated(subset=['Exp_Pipeline_Guid', 'Model_Name', 'Subgroup', 'Metric'], keep=False)
+    assert len(metric_df[duplicates_mask]) == 0, 'Metric df contains duplicates'
+
+    columns_subset = ['Dataset_Name', 'Null_Imputer_Name', 'Virny_Random_State',
+                      'Model_Name', 'Subgroup', 'Metric', 'Metric_Value']
+    metric_df = metric_df[columns_subset]
+
+    return metric_df
+
+
 def get_models_metric_df(db_client, dataset_name: str, evaluation_scenario: str,
                          metric_name: str, group: str):
     query = {
@@ -54,6 +76,48 @@ def get_models_metric_df(db_client, dataset_name: str, evaluation_scenario: str,
     metric_df = metric_df[columns_subset]
 
     return metric_df
+
+
+def get_baseline_models_disparity_metric_df(db_client, dataset_name: str, metric_name: str, group: str):
+    dis_grp_models_metric_df = get_baseline_models_metric_df(db_client=db_client,
+                                                             dataset_name=dataset_name,
+                                                             metric_name=metric_name,
+                                                             group=group + '_dis')
+    priv_grp_models_metric_df = get_baseline_models_metric_df(db_client=db_client,
+                                                              dataset_name=dataset_name,
+                                                              metric_name=metric_name,
+                                                              group=group + '_priv')
+    grp_models_metric_df = pd.concat([dis_grp_models_metric_df, priv_grp_models_metric_df])
+
+    # Compose group metrics
+    disparity_metric_df = pd.DataFrame()
+    for null_imputer_name in grp_models_metric_df['Null_Imputer_Name'].unique():
+        for exp_seed in grp_models_metric_df['Virny_Random_State'].unique():
+            for model_name in grp_models_metric_df['Model_Name'].unique():
+                model_subgroup_metrics_df = grp_models_metric_df[
+                    (grp_models_metric_df['Null_Imputer_Name'] == null_imputer_name) &
+                    (grp_models_metric_df['Virny_Random_State'] == exp_seed) &
+                    (grp_models_metric_df['Model_Name'] == model_name)
+                    ]
+
+                # Create columns based on values in the Subgroup column
+                pivoted_model_subgroup_metrics_df = model_subgroup_metrics_df.pivot(columns='Subgroup', values='Metric_Value',
+                                                                                    index=[col for col in model_subgroup_metrics_df.columns
+                                                                                           if col not in ('Subgroup', 'Metric_Value')]).reset_index()
+                pivoted_model_subgroup_metrics_df = pivoted_model_subgroup_metrics_df.rename_axis(None, axis=1)
+
+                metrics_composer = MetricsComposer(
+                    {model_name: pivoted_model_subgroup_metrics_df},
+                    sensitive_attributes_dct={group: None}
+                )
+                model_group_metrics_df = metrics_composer.compose_metrics()
+                model_group_metrics_df['Null_Imputer_Name'] = null_imputer_name
+                model_group_metrics_df['Virny_Random_State'] = exp_seed
+                model_group_metrics_df['Model_Name'] = model_name
+
+                disparity_metric_df = pd.concat([disparity_metric_df, model_group_metrics_df])
+
+    return disparity_metric_df
 
 
 def get_models_disparity_metric_df(db_client, dataset_name: str, evaluation_scenario: str, metric_name: str, group: str):
@@ -188,12 +252,7 @@ def create_scatter_plots_for_diff_models(dataset_name: str, metric_name: str, db
     main_base_chart &= row
 
     final_grid_chart = (
-        main_base_chart.configure_axis(
-            labelFontSize=base_font_size + 4,
-            titleFontSize=base_font_size + 6,
-            labelFontWeight='normal',
-            titleFontWeight='normal',
-        ).configure_title(
+        main_base_chart.configure_title(
             fontSize=base_font_size + 2
         ).configure_legend(
             titleFontSize=base_font_size + 4,
@@ -226,6 +285,76 @@ def create_scatter_plots_for_diff_models(dataset_name: str, metric_name: str, db
     return final_grid_chart
 
 
+def create_box_plots_for_diff_baseline_models(dataset_name: str, metric_name: str, db_client,
+                                              group: str = 'overall', base_font_size: int = 18, ylim=Undefined):
+    sns.set_style("whitegrid")
+    null_imputer_name = 'baseline'
+    models_order = ['dt_clf', 'lr_clf', 'lgbm_clf', 'rf_clf', 'mlp_clf']
+
+    metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) if 'equalized_odds' not in metric_name.lower() else metric_name
+    if group == 'overall':
+        models_metric_df = get_baseline_models_metric_df(db_client=db_client,
+                                                         dataset_name=dataset_name,
+                                                         metric_name=metric_name,
+                                                         group=group)
+    else:
+        overall_metric = get_overall_metric_from_disparity_metric(disparity_metric=metric_name)
+        models_metric_df = get_baseline_models_disparity_metric_df(db_client=db_client,
+                                                                   dataset_name=dataset_name,
+                                                                   metric_name=overall_metric,
+                                                                   group=group)
+        models_metric_df = models_metric_df[models_metric_df['Metric'] == metric_name]
+        models_metric_df = models_metric_df.rename(columns={group: 'Metric_Value'})
+
+    models_metric_df = models_metric_df[models_metric_df['Null_Imputer_Name'] == null_imputer_name]
+    metric_title = metric_name.replace('_', ' ')
+    chart = (
+        alt.Chart(models_metric_df).mark_boxplot(
+            ticks=True,
+            median={'stroke': 'black', 'strokeWidth': 0.7},
+        ).encode(
+            x=alt.X("Model_Name:N",
+                    title=None,
+                    sort=models_order,
+                    axis=alt.Axis(labels=False)),
+            y=alt.Y(f"Metric_Value:Q",
+                    title=metric_title,
+                    scale=alt.Scale(zero=False, domain=ylim)),
+            color=alt.Color("Model_Name:N", title=None, sort=models_order),
+        ).properties(
+            width=360,
+        ).configure_title(
+            fontSize=base_font_size + 2
+        ).configure_legend(
+            titleFontSize=base_font_size + 4,
+            labelFontSize=base_font_size + 2,
+            symbolStrokeWidth=10,
+            labelLimit=400,
+            titleLimit=300,
+            columns=5,
+            orient='top',
+            direction='horizontal',
+            titleAnchor='middle',
+        ).configure_facet(
+            spacing=10
+        ).configure_view(
+            stroke=None
+        ).configure_header(
+            labelOrient='bottom',
+            labelPadding=5,
+            labelFontSize=base_font_size + 2,
+            titleFontSize=base_font_size + 2,
+        ).configure_axis(
+            labelFontSize=base_font_size + 4,
+            titleFontSize=base_font_size + 6,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        )
+    )
+
+    return chart
+
+
 def create_box_plots_for_diff_models_and_single_eval_scenario(dataset_name: str, evaluation_scenario: str,
                                                               null_imputer_name: str, metric_name: str, db_client,
                                                               title: str, group: str = 'overall',
@@ -233,12 +362,23 @@ def create_box_plots_for_diff_models_and_single_eval_scenario(dataset_name: str,
     sns.set_style("whitegrid")
     models_order = ['dt_clf', 'lr_clf', 'lgbm_clf', 'rf_clf', 'mlp_clf']
 
-    metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')])
-    models_metric_df = get_models_metric_df(db_client=db_client,
-                                            dataset_name=dataset_name,
-                                            evaluation_scenario=evaluation_scenario,
-                                            metric_name=metric_name,
-                                            group=group)
+    metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) if 'equalized_odds' not in metric_name.lower() else metric_name
+    if group == 'overall':
+        models_metric_df = get_models_metric_df(db_client=db_client,
+                                                dataset_name=dataset_name,
+                                                evaluation_scenario=evaluation_scenario,
+                                                metric_name=metric_name,
+                                                group=group)
+    else:
+        overall_metric = get_overall_metric_from_disparity_metric(disparity_metric=metric_name)
+        models_metric_df = get_models_disparity_metric_df(db_client=db_client,
+                                                          dataset_name=dataset_name,
+                                                          evaluation_scenario=evaluation_scenario,
+                                                          metric_name=overall_metric,
+                                                          group=group)
+        models_metric_df = models_metric_df[models_metric_df['Metric'] == metric_name]
+        models_metric_df = models_metric_df.rename(columns={group: 'Metric_Value'})
+
     models_metric_df = models_metric_df[models_metric_df['Null_Imputer_Name'] == null_imputer_name]
     models_metric_df['Test_Injection_Strategy'] = models_metric_df.apply(
         lambda row: EVALUATION_SCENARIOS_CONFIG[row['Evaluation_Scenario']]['test_injection_scenarios'][row['Test_Set_Index']][:-1],
@@ -283,6 +423,7 @@ def create_box_plots_for_diff_models(dataset_name: str, null_imputer_name: str, 
                                                                             group=group,
                                                                             base_font_size=base_font_size,
                                                                             ylim=ylim)
+    print('Prepared a plot for an MCAR train set')
     base_chart2 = create_box_plots_for_diff_models_and_single_eval_scenario(dataset_name=dataset_name,
                                                                             evaluation_scenario='exp1_mar3',
                                                                             title='MAR train set',
@@ -292,6 +433,7 @@ def create_box_plots_for_diff_models(dataset_name: str, null_imputer_name: str, 
                                                                             group=group,
                                                                             base_font_size=base_font_size,
                                                                             ylim=ylim)
+    print('Prepared a plot for an MAR train set')
     base_chart3 = create_box_plots_for_diff_models_and_single_eval_scenario(dataset_name=dataset_name,
                                                                             evaluation_scenario='exp1_mnar3',
                                                                             title='MNAR train set',
@@ -301,6 +443,7 @@ def create_box_plots_for_diff_models(dataset_name: str, null_imputer_name: str, 
                                                                             group=group,
                                                                             base_font_size=base_font_size,
                                                                             ylim=ylim)
+    print('Prepared a plot for an MNAR train set')
 
     # Concatenate two base charts
     main_base_chart = alt.vconcat()
@@ -311,12 +454,7 @@ def create_box_plots_for_diff_models(dataset_name: str, null_imputer_name: str, 
     main_base_chart &= row
 
     final_grid_chart = (
-        main_base_chart.configure_axis(
-            labelFontSize=base_font_size + 4,
-            titleFontSize=base_font_size + 6,
-            labelFontWeight='normal',
-            titleFontWeight='normal',
-        ).configure_title(
+        main_base_chart.configure_title(
             fontSize=base_font_size + 2
         ).configure_legend(
             titleFontSize=base_font_size + 4,
@@ -449,12 +587,7 @@ def create_box_plots_for_diff_imputers_v2(dataset_name: str, model_name: str, me
     main_base_chart &= row
 
     final_grid_chart = (
-        main_base_chart.configure_axis(
-            labelFontSize=base_font_size + 4,
-            titleFontSize=base_font_size + 6,
-            labelFontWeight='normal',
-            titleFontWeight='normal',
-        ).configure_title(
+        main_base_chart.configure_title(
             fontSize=base_font_size + 2
         ).configure_legend(
             titleFontSize=base_font_size + 4,
