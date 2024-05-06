@@ -1,5 +1,6 @@
 import os
 import uuid
+import shutil
 import pathlib
 import pandas as pd
 
@@ -174,6 +175,8 @@ class MLLifecycle:
                                   hyperparams=hyperparams,
                                   output_path=output_path,
                                   **imputation_kwargs))
+            # Remove all files created by datawig to save storage space
+            shutil.rmtree(output_path)
 
         elif null_imputer_name == ErrorRepairMethod.automl.value:
             output_path = (pathlib.Path(__file__).parent.parent.parent
@@ -191,6 +194,8 @@ class MLLifecycle:
                                   categorical_columns_with_nulls=train_categorical_null_columns,
                                   hyperparams=hyperparams,
                                   **imputation_kwargs))
+            # Remove all files created by automl to save storage space
+            shutil.rmtree(output_path)
 
         else:
             X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct = (
