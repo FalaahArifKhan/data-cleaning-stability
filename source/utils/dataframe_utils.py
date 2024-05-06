@@ -116,7 +116,10 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame, ver
     pred_scaled = scaler.transform(pred.to_frame())
     pred_scaled = pred_scaled[pred_scaled.columns[0]]
 
-    if pred.nunique() == 1:
+    if true.nunique() == 1:
+        # In case when subgroup true df has only one sample, return None
+        return None
+    elif pred.nunique() == 1:
         if verbose:
             print('Compute KL divergence using KDE and discrete uniform PMF...')
 
