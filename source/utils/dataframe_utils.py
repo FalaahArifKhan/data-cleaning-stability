@@ -2,7 +2,7 @@ import scipy
 import numpy as np
 import pandas as pd
 from scipy.stats import entropy, gaussian_kde
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OrdinalEncoder
 
 from source.preprocessing import get_simple_preprocessor
 
@@ -49,6 +49,38 @@ def get_object_columns_indexes(df):
     object_indexes = [df.columns.get_loc(col) for col in object_columns]
     
     return object_indexes
+
+
+def encode_cat(X_c):
+    data = X_c.copy()
+    nonulls = data.dropna().values
+    impute_reshape = nonulls.reshape(-1,1)
+    encoder = OrdinalEncoder()
+    impute_ordinal = encoder.fit_transform(impute_reshape)
+    data.loc[data.notnull()] = np.squeeze(impute_ordinal)
+
+    return data, encoder
+
+
+def encode_cat_with_existing_encoder(X_c, encoder):
+    data = X_c.copy()
+    nonulls = data.dropna().values
+    impute_reshape = nonulls.reshape(-1,1)
+    impute_ordinal = encoder.transform(impute_reshape)
+    data.loc[data.notnull()] = np.squeeze(impute_ordinal)
+
+    return data
+
+
+def decode_cat(X_c, encoder):
+    data = X_c.copy()
+    nonulls = data.dropna().values.reshape(-1,1)
+    n_cat = len(encoder.categories_[0])
+    nonulls = np.round(nonulls).clip(0, n_cat-1)
+    nonulls = encoder.inverse_transform(nonulls)
+    data.loc[data.notnull()] = np.squeeze(nonulls)
+
+    return data
 
 
 def get_numerical_columns_indexes(df):
