@@ -260,5 +260,65 @@ ERROR_INJECTION_SCENARIOS_CONFIG = {
                 'setting': {'condition': ('credit-amount', {'le': 5000}), 'error_rates': [0.01, 0.02, 0.05, 0.10, 0.15]},
             },
         ],
+    },
+    DIABETES_DATASET: {
+        "MCAR": [
+            {
+                'missing_features': ['SoundSleep', 'Family_Diabetes', 'PhysicallyActive', 'RegularMedicine'],
+                'setting': {'error_rates': [0.1, 0.2, 0.3, 0.4, 0.5]},
+            },
+        ],
+        "MAR": [
+            {
+                'missing_features': ['Family_Diabetes', 'RegularMedicine'],
+                'setting': {'condition': ('Gender', 'Female'), 'error_rates': [0.08, 0.15, 0.20, 0.25, 0.30]},
+            },
+            {
+                'missing_features': ['Family_Diabetes', 'RegularMedicine'],
+                'setting': {'condition': ('Gender', 'Male'), 'error_rates': [0.02, 0.05, 0.10, 0.15, 0.20]},
+            },
+            {
+                'missing_features': ['PhysicallyActive', 'SoundSleep'],
+                'setting': {'condition': ('Age', 'less than 40'), 'error_rates': [0.02, 0.05, 0.10, 0.15, 0.20]},
+            },
+            {
+                'missing_features': ['PhysicallyActive', 'SoundSleep'],
+                'setting': {'condition': ('Age', ['40-49', '50-59', '60 or older']), 'error_rates': [0.08, 0.15, 0.20, 0.25, 0.30]},
+            },
+        ],
+        "MNAR": [
+            {
+                'missing_features': ['Family_Diabetes'],
+                'setting': {'condition': ('Family_Diabetes', 'yes'), 'error_rates': [0.09, 0.18, 0.25, 0.30, 0.35]},
+            },
+            {
+                'missing_features': ['Family_Diabetes'],
+                'setting': {'condition': ('Family_Diabetes', 'no'), 'error_rates': [0.01, 0.02, 0.05, 0.10, 0.15]},
+            },
+            {
+                'missing_features': ['RegularMedicine'],
+                'setting': {'condition': ('RegularMedicine', 'yes'), 'error_rates': [0.08, 0.15, 0.20, 0.25, 0.30]},
+            },
+            {
+                'missing_features': ['RegularMedicine'],
+                'setting': {'condition': ('RegularMedicine', 'no'), 'error_rates': [0.02, 0.05, 0.10, 0.15, 0.20]},
+            },
+            {
+                'missing_features': ['PhysicallyActive'],
+                'setting': {'condition': ('PhysicallyActive', ['none', 'less than half an hr']), 'error_rates': [0.09, 0.18, 0.25, 0.30, 0.35]},
+            },
+            {
+                'missing_features': ['PhysicallyActive'],
+                'setting': {'condition': ('PhysicallyActive', ['one hr or more', 'more than half an hr']), 'error_rates': [0.01, 0.02, 0.05, 0.10, 0.15]},
+            },
+            {
+                'missing_features': ['SoundSleep'],
+                'setting': {'condition': ('SoundSleep', {'lt': 5}), 'error_rates': [0.08, 0.15, 0.20, 0.25, 0.30]},
+            },
+            {
+                'missing_features': ['SoundSleep'],
+                'setting': {'condition': ('SoundSleep', {'ge': 5}), 'error_rates': [0.02, 0.05, 0.10, 0.15, 0.20]},
+            },
+        ],
     }
 }
