@@ -16,7 +16,7 @@ EXECUTION_COMMAND="
 python ../scripts/impute_nulls_with_predictor.py \
     --dataset german \
     --null_imputers \[\"'automl'\"] \
-    --run_nums \[5,6\] \
+    --run_nums \[6\] \
     --tune_imputers true \
     --save_imputed_datasets true \
     --evaluation_scenarios \[\"'exp1_mar3'\"\]
