@@ -191,5 +191,74 @@ ERROR_INJECTION_SCENARIOS_CONFIG = {
                 'setting': {'condition': ('tier', ['1', '2', '3']), 'error_rates': [0.08, 0.12, 0.20, 0.28, 0.35]},
             },
         ]
+    },
+    GERMAN_CREDIT_DATASET: {
+        "MCAR": [
+            {
+                'missing_features': ['duration', 'credit-amount', 'checking-account',
+                                     'savings-account', 'employment-since'],
+                'setting': {'error_rates': [0.1, 0.2, 0.3, 0.4, 0.5]},
+            },
+        ],
+        "MAR": [
+            {
+                'missing_features': ['savings-account', 'checking-account', 'credit-amount'],
+                'setting': {'condition': ('age', {'le': 25}), 'error_rates': [0.08, 0.12, 0.18, 0.18, 0.18]},
+            },
+            {
+                'missing_features': ['savings-account', 'checking-account', 'credit-amount'],
+                'setting': {'condition': ('age', {'gt': 25}), 'error_rates': [0.02, 0.08, 0.12, 0.22, 0.32]},
+            },
+            {
+                'missing_features': ['employment-since', 'duration'],
+                'setting': {'condition': ('sex', 'female'), 'error_rates': [0.08, 0.12, 0.20, 0.28, 0.3]},
+            },
+            {
+                'missing_features': ['employment-since', 'duration'],
+                'setting': {'condition': ('sex', 'male'), 'error_rates': [0.02, 0.08, 0.10, 0.12, 0.2]},
+            },
+        ],
+        "MNAR": [
+            {
+                'missing_features': ['checking-account'],
+                'setting': {'condition': ('checking-account', 'no account'), 'error_rates': [0.09, 0.18, 0.25, 0.30, 0.35]},
+            },
+            {
+                'missing_features': ['checking-account'],
+                'setting': {'condition': ('checking-account', ['<0 DM', '0 <= <200 DM', '>= 200 DM']), 'error_rates': [0.01, 0.02, 0.05, 0.10, 0.15]},
+            },
+            {
+                'missing_features': ['duration'],
+                'setting': {'condition': ('duration', {'le': 20}), 'error_rates': [0.09, 0.18, 0.25, 0.30, 0.35]},
+            },
+            {
+                'missing_features': ['duration'],
+                'setting': {'condition': ('duration', {'gt': 20}), 'error_rates': [0.01, 0.02, 0.05, 0.10, 0.15]},
+            },
+            {
+                'missing_features': ['savings-account'],
+                'setting': {'condition': ('savings-account', 'no savings account'), 'error_rates': [0.08, 0.12, 0.10, 0.15, 0.15]},
+            },
+            {
+                'missing_features': ['savings-account'],
+                'setting': {'condition': ('savings-account', ['<100 DM', '500 <= < 1000 DM', '>= 1000 DM', '100 <= <500 DM']), 'error_rates': [0.02, 0.08, 0.20, 0.25, 0.35]},
+            },
+            {
+                'missing_features': ['employment-since'],
+                'setting': {'condition': ('employment-since', ['<1 years', 'unemployed']), 'error_rates': [0.09, 0.18, 0.20, 0.20, 0.20]},
+            },
+            {
+                'missing_features': ['employment-since'],
+                'setting': {'condition': ('employment-since', ['1<= < 4 years', '4<= <7 years', '>=7 years']), 'error_rates': [0.01, 0.02, 0.10, 0.20, 0.30]},
+            },
+            {
+                'missing_features': ['credit-amount'],
+                'setting': {'condition': ('credit-amount', {'gt': 5000}), 'error_rates': [0.09, 0.18, 0.25, 0.30, 0.35]},
+            },
+            {
+                'missing_features': ['credit-amount'],
+                'setting': {'condition': ('credit-amount', {'le': 5000}), 'error_rates': [0.01, 0.02, 0.05, 0.10, 0.15]},
+            },
+        ],
     }
 }
