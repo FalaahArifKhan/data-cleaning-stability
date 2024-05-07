@@ -285,7 +285,8 @@ class Benchmark(MLLifecycle):
         return main_base_flow_dataset, extra_base_flow_datasets
 
     def _run_exp_iter_for_joint_cleaning_and_training(self, data_loader, experiment_seed: int, evaluation_scenario: str,
-                                                      null_imputer_name: str, model_names: list, custom_table_fields_dct: dict):
+                                                      null_imputer_name: str, tune_imputers: bool,
+                                                      model_names: list, custom_table_fields_dct: dict):
         if len(model_names) > 0 and null_imputer_name == ErrorRepairMethod.cp_clean.value:
             self._logger.warning(f'model_names argument is ignored for {ErrorRepairMethod.cp_clean.value} '
                                  f'since only KNN is supported for this null imputation method')
@@ -323,7 +324,24 @@ class Benchmark(MLLifecycle):
         # Use a method, kwargs, and hyperparams from NULL_IMPUTERS_CONFIG
         joint_cleaning_and_training_func = NULL_IMPUTERS_CONFIG[null_imputer_name]["method"]
         imputation_kwargs = NULL_IMPUTERS_CONFIG[null_imputer_name]["kwargs"]
-        imputation_kwargs.update({'save_dir': save_dir})
+        imputation_kwargs.update({'save_dir': save_dir})       
+        imputation_kwargs['tune'] = tune_imputers
+        
+        # Make paths for the imputed datasets
+        imputed_datasets_paths = []
+        results_dir = pathlib.Path(__file__).parent.parent.parent.joinpath('results')
+        for imputer_dir in results_dir.iterdir():
+            for dataset_dir in imputer_dir.iterdir():
+                for scenario_dir in dataset_dir.iterdir():
+                    if scenario_dir.name == evaluation_scenario:
+                        for seed_dir in scenario_dir.iterdir():
+                            if seed_dir.name == str(experiment_seed):
+                                for file in seed_dir.iterdir():
+                                    if file.is_file() and "train" in file.name:
+                                        imputed_datasets_paths.append(file)
+                                        
+        print('imputed_datasets_paths -- ', imputed_datasets_paths)
+        imputation_kwargs['computed_repaired_datasets_paths'] = imputed_datasets_paths if len(imputed_datasets_paths) > 0 else None                                
 
         # Create a wrapper for the input joint cleaning-and-training method
         # to conduct in-depth performance profiling with Virny
@@ -430,6 +448,7 @@ class Benchmark(MLLifecycle):
                                                                evaluation_scenario=evaluation_scenario,
                                                                null_imputer_name=null_imputer_name,
                                                                model_names=model_names,
+                                                               tune_imputers=tune_imputers,
                                                                custom_table_fields_dct=custom_table_fields_dct)
         else:
             self._run_exp_iter_for_standard_imputation(data_loader=data_loader,
