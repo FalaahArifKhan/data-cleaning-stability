@@ -121,11 +121,8 @@ def impute_with_kmeans(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst:
                        hyperparams: dict, **kwargs):
     seed = kwargs['experiment_seed']
     
-    X_train_imputed = copy.deepcopy(X_train_with_nulls)
-    X_tests_imputed_lst = list(map(lambda X_test_with_nulls: copy.deepcopy(X_test_with_nulls), X_tests_with_nulls_lst))
-    
-    categorical_columns_idxs = get_object_columns_indexes(X_train_imputed)
-    numerical_columns_idxs = get_numerical_columns_indexes(X_train_imputed)
+    X_train_encoded, cat_encoders, categorical_columns_idxs = encode_dataset_for_missforest(X_train_with_nulls)
+    numerical_columns_idxs = get_numerical_columns_indexes(X_train_encoded)
     
     if len(numerical_columns_idxs) == len(numeric_columns_with_nulls):
         kmeans_imputer_mode = "kmodes"
@@ -135,19 +132,26 @@ def impute_with_kmeans(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst:
     # Impute numerical columns
     kmeans_imputer = KMeansImputer(seed=seed, imputer_mode=kmeans_imputer_mode, hyperparameters=hyperparams)
     
-    X_train_imputed_values = kmeans_imputer.fit_transform(X_train_imputed, cat_vars=categorical_columns_idxs)
-    X_train_imputed = pd.DataFrame(X_train_imputed_values, columns=X_train_imputed.columns, index=X_train_imputed.index)
+    X_train_repaired_values = kmeans_imputer.fit_transform(X_train_encoded.values.astype(float), cat_vars=categorical_columns_idxs)
+    X_train_repaired = pd.DataFrame(X_train_repaired_values, columns=X_train_encoded.columns, index=X_train_encoded.index)
+    X_train_imputed = decode_dataset_for_missforest(X_train_repaired, cat_encoders)
+    
     # Set the same columns types as in the original dataset
-    X_train_imputed[categorical_columns_with_nulls] = X_train_imputed[categorical_columns_with_nulls].astype(int).astype('str')
+    # X_train_imputed[categorical_columns_with_nulls] = X_train_imputed[categorical_columns_with_nulls].astype(int).astype('str')
 
-    for i in range(len(X_tests_imputed_lst)):
-        X_test_imputed = X_tests_imputed_lst[i]
+    X_tests_imputed_lst = []
+    for i in range(len(X_tests_with_nulls_lst)):
+        X_test_with_nulls = X_tests_with_nulls_lst[i]
 
-        X_test_imputed_values = kmeans_imputer.transform(X_test_imputed)
-        X_test_imputed = pd.DataFrame(X_test_imputed_values, columns=X_test_imputed.columns, index=X_test_imputed.index)
-        X_test_imputed[categorical_columns_with_nulls] = X_test_imputed[categorical_columns_with_nulls].astype(int).astype('str')
+        X_test_encoded, _, _ = encode_dataset_for_missforest(X_test_with_nulls, cat_encoders=cat_encoders)
 
-        X_tests_imputed_lst[i] = X_test_imputed
+        X_test_repaired_values = kmeans_imputer.transform(X_test_encoded.values.astype(float))
+        X_test_repaired = pd.DataFrame(X_test_repaired_values, columns=X_test_encoded.columns, index=X_test_encoded.index)
+        X_test_imputed = decode_dataset_for_missforest(X_test_repaired, cat_encoders)
+
+        X_tests_imputed_lst.append(X_test_imputed)
+    
+    print(f"X_test_imputed_list length: {len(X_tests_imputed_lst)}")
     
     null_imp_params_dct = {col: kmeans_imputer.get_predictors_params() for col in X_train_with_nulls.columns}    
     return X_train_imputed, X_tests_imputed_lst, null_imp_params_dct
