@@ -4,6 +4,8 @@ import pandas as pd
 from datetime import datetime
 from virny.custom_classes.base_inprocessing_wrapper import BaseInprocessingWrapper
 
+from sklearn.ensemble import RandomForestClassifier
+
 from external_dependencies.CPClean.training.knn import KNN
 from external_dependencies.CPClean.cleaner.boost_clean import transform_y, train_classifiers
 from external_dependencies.CPClean.repair.repair import repair
@@ -20,8 +22,8 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         self.tune = tune
         
         self.model_metadata = {
-            "fn": KNN,
-            "params": {"n_neighbors": 3}
+            "fn": RandomForestClassifier,
+            "params": {}
         }
         
     def __copy__(self):
