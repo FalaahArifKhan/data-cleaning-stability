@@ -9,7 +9,7 @@ from sklearn.ensemble import RandomForestClassifier
 from external_dependencies.CPClean.training.knn import KNN
 from external_dependencies.CPClean.cleaner.boost_clean import transform_y, train_classifiers
 from external_dependencies.CPClean.repair.repair import repair
-from external_dependencies.CPClean.training.preprocess import preprocess_boostclean, read_repaired_datasets
+from external_dependencies.CPClean.training.preprocess import preprocess_boostclean
 
 
 class BoostCleanWrapper(BaseInprocessingWrapper):
