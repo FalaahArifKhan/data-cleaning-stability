@@ -164,12 +164,13 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
 
         return data_dct
         
-    def _read_repaired_datasets(self, paths):
+    def _read_repaired_datasets(self, X_train, paths):
         # Read imputed train sets from paths
         X_train_repairs = {}
         for path in paths:
             repair_method = os.path.basename(path).split('.')[-3]
-            X_train_repairs[repair_method] = pd.read_csv(path, index_col=0)
+            X_train_repaired = pd.read_csv(path, index_col=0)
+            X_train_repairs[repair_method] = X_train_repaired.loc[X_train.index]
             
         return X_train_repairs
         
@@ -179,7 +180,7 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         if self.computed_repaired_datasets_paths is None:
             data_dct["X_train_repairs"] = repair(data_dct["X_train_dirty"], save_dir=self.save_dir)
         else:
-            data_dct["X_train_repairs"] = self._read_repaired_datasets(self.computed_repaired_datasets_paths)
+            data_dct["X_train_repairs"] = self._read_repaired_datasets(X_train, self.computed_repaired_datasets_paths)
         
         data_dct, self.preprocessor = preprocess_boostclean(data_dct)
         
