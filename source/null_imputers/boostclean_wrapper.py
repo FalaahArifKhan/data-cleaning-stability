@@ -7,12 +7,11 @@ from virny.custom_classes.base_inprocessing_wrapper import BaseInprocessingWrapp
 from external_dependencies.CPClean.training.knn import KNN
 from external_dependencies.CPClean.cleaner.boost_clean import transform_y, train_classifiers
 from external_dependencies.CPClean.repair.repair import repair
-from external_dependencies.CPClean.training.preprocess import preprocess
+from external_dependencies.CPClean.training.preprocess import preprocess_boostclean
 
 
 class BoostCleanWrapper(BaseInprocessingWrapper):
-    def __init__(self, X_train_full, X_val, y_val, random_state, save_dir, T=5, tune=False):
-        self.X_train_full = X_train_full
+    def __init__(self, X_val, y_val, random_state, save_dir, T=5, tune=False):
         self.X_val = X_val
         self.y_val = y_val
         self.random_state = random_state
@@ -26,16 +25,14 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         }
         
     def __copy__(self):
-        return BoostCleanWrapper(X_train_full=self.X_train_full.copy(deep=False),
-                                 X_val=self.X_val.copy(deep=False),
+        return BoostCleanWrapper(X_val=self.X_val.copy(deep=False),
                                  y_val=self.y_val.copy(deep=False),
                                  random_state=self.random_state,
                                  save_dir=self.save_dir,
                                  T=self.T)
         
     def __deepcopy__(self, memo):
-        return BoostCleanWrapper(X_train_full=self.X_train_full.copy(deep=True),
-                                 X_val=self.X_val.copy(deep=True),
+        return BoostCleanWrapper(X_val=self.X_val.copy(deep=True),
                                  y_val=self.y_val.copy(deep=True),
                                  random_state=self.random_state,
                                  save_dir=self.save_dir,
@@ -49,8 +46,7 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         }
         
     def set_params(self, random_state):
-        return BoostCleanWrapper(X_train_full=self.X_train_full,
-                                 X_val=self.X_val,
+        return BoostCleanWrapper(X_val=self.X_val,
                                  y_val=self.y_val,
                                  random_state=random_state,
                                  save_dir=self.save_dir,
@@ -158,13 +154,8 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         return y_pred_test
         
     def _build_dataset_objects(self, X_train_with_nulls, y_train):
-        # X_train_clean will not be used but left for compatibility with preprocessing from CPClean
-        X_train_clean = self.X_train_full.loc[X_train_with_nulls.index]
-        ind_mv = X_train_with_nulls.isna()
         data_dct = {
-            "X_train_clean": X_train_clean, "y_train": y_train,
-            "X_train_dirty": X_train_with_nulls, "indicator": ind_mv,
-            "X_full": None, "y_full": None,
+            "X_train_dirty": X_train_with_nulls, "y_train": y_train,
             "X_val": self.X_val, "y_val": self.y_val,
         }
 
@@ -175,7 +166,7 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         
         data_dct["X_train_repairs"] = repair(data_dct["X_train_dirty"], save_dir=self.save_dir)
         
-        data_dct, self.preprocessor = preprocess(data_dct)
+        data_dct, self.preprocessor = preprocess_boostclean(data_dct)
         
         if self.tune:
             boost_clean_result = self._tune_boost_clean(
@@ -202,7 +193,11 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         X_copy = X.copy(deep=True)
         X_preprocessed = self.preprocessor.transform(X_copy)
         
-        return self._predict_boost_clean(X_preprocessed)
+        preds = self._predict_boost_clean(X_preprocessed)
+        preds = np.squeeze(preds)
+        print(f"BoostClean predictions shape: {preds.shape}")
+        
+        return preds
     
     def predict_proba(self, X):
         pass

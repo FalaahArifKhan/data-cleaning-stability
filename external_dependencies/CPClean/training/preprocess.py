@@ -65,6 +65,31 @@ class Preprocessor(object):
         else:
             return X, y
 
+def preprocess_boostclean(data):
+    X_train_dirty = data["X_train_dirty"]
+    y_train = data["y_train"]
+    X_val, y_val = data["X_val"], data["y_val"]
+    
+    # preprocess data
+    preprocessor = Preprocessor()
+    preprocessor.fit(X_train_dirty, y_train)
+    
+    X_val, y_val = preprocessor.transform(X_val, y_val)
+    _, y_train = preprocessor.transform(X_train_dirty, y_train)
+
+    X_train_repairs = {}
+    for name, X in data["X_train_repairs"].items():
+        X_train_repairs[name] = preprocessor.transform(X=X)
+        
+    data_after = {}
+    data_after["X_train_mv"] = X_train_dirty 
+    data_after["X_train_repairs"] = X_train_repairs
+    data_after["y_train"] = y_train
+    data_after["X_val"] = X_val
+    data_after["y_val"] = y_val
+    
+    return data_after, preprocessor
+    
 def preprocess(data):
     X_full, y_full = data["X_full"], data["y_full"]
     X_train_dirty = data["X_train_dirty"]

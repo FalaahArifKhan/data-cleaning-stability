@@ -276,7 +276,8 @@ class Benchmark(MLLifecycle):
         return main_base_flow_dataset, extra_base_flow_datasets
 
     def _run_exp_iter_for_joint_cleaning_and_training(self, data_loader, experiment_seed: int, evaluation_scenario: str,
-                                                      null_imputer_name: str, model_names: list, custom_table_fields_dct: dict):
+                                                      null_imputer_name: str, tune_imputers: bool,
+                                                      model_names: list, custom_table_fields_dct: dict):
         if len(model_names) > 0 and null_imputer_name == ErrorRepairMethod.cp_clean.value:
             self._logger.warning(f'model_names argument is ignored for {ErrorRepairMethod.cp_clean.value} '
                                  f'since only KNN is supported for this null imputation method')
@@ -312,7 +313,8 @@ class Benchmark(MLLifecycle):
         # Use a method, kwargs, and hyperparams from NULL_IMPUTERS_CONFIG
         joint_cleaning_and_training_func = NULL_IMPUTERS_CONFIG[null_imputer_name]["method"]
         imputation_kwargs = NULL_IMPUTERS_CONFIG[null_imputer_name]["kwargs"]
-        imputation_kwargs.update({'save_dir': save_dir})
+        imputation_kwargs.update({'save_dir': save_dir})       
+        imputation_kwargs['tune'] = tune_imputers
 
         # Create a wrapper for the input joint cleaning-and-training method
         # to conduct in-depth performance profiling with Virny
@@ -419,6 +421,7 @@ class Benchmark(MLLifecycle):
                                                                evaluation_scenario=evaluation_scenario,
                                                                null_imputer_name=null_imputer_name,
                                                                model_names=model_names,
+                                                               tune_imputers=tune_imputers,
                                                                custom_table_fields_dct=custom_table_fields_dct)
         else:
             self._run_exp_iter_for_standard_imputation(data_loader=data_loader,

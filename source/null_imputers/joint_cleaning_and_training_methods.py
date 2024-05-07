@@ -56,8 +56,7 @@ def prepare_boostclean(X_train_val: pd.DataFrame, y_train_val: pd.DataFrame, X_t
     assert X_train_with_nulls.index.isin(X_train.index).all(), \
         "Not all indexes of X_train_with_nulls are present in X_train"
         
-    boostclean_wrapper = BoostCleanWrapper(X_train_full=X_train,
-                                           X_val=X_val,
+    boostclean_wrapper = BoostCleanWrapper(X_val=X_val,
                                            y_val=y_val,
                                            random_state=experiment_seed,
                                            tune=tuning,
