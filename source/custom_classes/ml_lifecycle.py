@@ -1,12 +1,15 @@
 import os
 import uuid
+import shutil
 import pathlib
 import pandas as pd
 
 from datetime import datetime, timezone
 from sklearn.metrics import mean_squared_error, precision_recall_fscore_support
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from virny.utils.custom_initializers import create_config_obj
+from virny.utils import create_test_protected_groups
 
 from configs.models_config_for_tuning import get_models_params_for_tuning
 from configs.null_imputers_config import NULL_IMPUTERS_CONFIG, NULL_IMPUTERS_HYPERPARAMS
@@ -155,7 +158,9 @@ class MLLifecycle:
 
         imputation_start_time = datetime.now()
         if null_imputer_name == ErrorRepairMethod.datawig.value:
-            output_path = (pathlib.Path(__file__).parent.parent.parent.joinpath('results')
+            output_path = (pathlib.Path(__file__).parent.parent.parent
+                           .joinpath('results')
+                           .joinpath('intermediate_state')
                            .joinpath(null_imputer_name)
                            .joinpath(self.dataset_name)
                            .joinpath(evaluation_scenario)
@@ -170,9 +175,13 @@ class MLLifecycle:
                                   hyperparams=hyperparams,
                                   output_path=output_path,
                                   **imputation_kwargs))
+            # Remove all files created by datawig to save storage space
+            shutil.rmtree(output_path)
 
         elif null_imputer_name == ErrorRepairMethod.automl.value:
-            output_path = (pathlib.Path(__file__).parent.parent.parent.joinpath('results')
+            output_path = (pathlib.Path(__file__).parent.parent.parent
+                           .joinpath('results')
+                           .joinpath('intermediate_state')
                            .joinpath(null_imputer_name)
                            .joinpath(self.dataset_name)
                            .joinpath(evaluation_scenario)
@@ -185,6 +194,8 @@ class MLLifecycle:
                                   categorical_columns_with_nulls=train_categorical_null_columns,
                                   hyperparams=hyperparams,
                                   **imputation_kwargs))
+            # Remove all files created by automl to save storage space
+            shutil.rmtree(output_path)
 
         else:
             X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct = (
@@ -202,54 +213,89 @@ class MLLifecycle:
         return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct, imputation_runtime
 
     def _evaluate_imputation(self, real, imputed, corrupted, numerical_columns, null_imputer_name, null_imputer_params_dct):
+        group_indexes_dct = create_test_protected_groups(real, real, self.virny_config.sensitive_attributes_dct)
+        overall_grp = 'overall'
+        subgroups = [overall_grp] + list(group_indexes_dct.keys())
         columns_with_nulls = corrupted.columns[corrupted.isna().any()].tolist()
         metrics_df = pd.DataFrame(columns=('Dataset_Name', 'Null_Imputer_Name', 'Null_Imputer_Params',
-                                           'Column_Type', 'Column_With_Nulls', 'KL_Divergence_Pred',
-                                           'KL_Divergence_Total', 'RMSE', 'Precision', 'Recall', 'F1_Score'))
+                                           'Column_Type', 'Column_With_Nulls', 'Subgroup', 'Sample_Size',
+                                           'KL_Divergence_Pred', 'KL_Divergence_Total',
+                                           'RMSE', 'Precision', 'Recall', 'F1_Score'))
         for column_idx, column_name in enumerate(columns_with_nulls):
             column_type = 'numerical' if column_name in numerical_columns else 'categorical'
 
-            indexes = corrupted[column_name].isna()
-            true = real.loc[indexes, column_name]
-            pred = imputed.loc[indexes, column_name]
+            for subgroup_idx, subgroup_name in enumerate(subgroups):
+                verbose = True if subgroup_name == overall_grp else False
+                indexes = corrupted[column_name].isna() if subgroup_name == overall_grp \
+                    else corrupted[corrupted[column_name].isna()].index.intersection(group_indexes_dct[subgroup_name].index)
+                if len(indexes) == 0:
+                    print(f'Nulls were not injected to any {subgroup_name} row. Skipping...')
+                    continue
 
-            # Column type agnostic metrics
-            kl_divergence_pred = calculate_kl_divergence(true, pred, column_type=column_type)
-            print('Predictive KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_pred))
-            kl_divergence_total = calculate_kl_divergence(real[column_name], imputed[column_name],
-                                                          column_type=column_type)
-            print('Total KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_total))
+                true = real.loc[indexes, column_name]
+                pred = imputed.loc[indexes, column_name]
 
-            rmse = None
-            precision = None
-            recall = None
-            f1 = None
-            if column_type == 'numerical':
-                null_imputer_params = null_imputer_params_dct[column_name] if null_imputer_params_dct is not None else None
-                rmse = mean_squared_error(true, pred, squared=False)
-                print('RMSE for {}: {:.2f}'.format(column_name, rmse))
-                print()
-            else:
-                null_imputer_params = null_imputer_params_dct[column_name] if null_imputer_params_dct is not None else None
-                precision, recall, f1, _ = precision_recall_fscore_support(true, pred, average="micro")
-                print('Precision for {}: {:.2f}'.format(column_name, precision))
-                print('Recall for {}: {:.2f}'.format(column_name, recall))
-                print('F1 score for {}: {:.2f}'.format(column_name, f1))
-                print()
+                # Column type agnostic metrics
+                kl_divergence_pred = calculate_kl_divergence(true, pred, column_type=column_type, verbose=verbose)
+                if verbose:
+                    print('Predictive KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_pred))
 
-            # Save imputation performance metric of the imputer in a dataframe
-            metrics_df.loc[column_idx] = [self.dataset_name, null_imputer_name, null_imputer_params,
-                                          column_type, column_name, kl_divergence_pred, kl_divergence_total,
-                                          rmse, precision, recall, f1]
+                if subgroup_name == overall_grp:
+                    kl_divergence_total = calculate_kl_divergence(real[column_name],
+                                                                  imputed[column_name],
+                                                                  column_type=column_type,
+                                                                  verbose=verbose)
+                else:
+                    kl_divergence_total = calculate_kl_divergence(real.loc[group_indexes_dct[subgroup_name].index, column_name],
+                                                                  imputed.loc[group_indexes_dct[subgroup_name].index, column_name],
+                                                                  column_type=column_type,
+                                                                  verbose=verbose)
+                if verbose:
+                    print('Total KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_total))
+
+                rmse = None
+                precision = None
+                recall = None
+                f1 = None
+                if column_type == 'numerical':
+                    null_imputer_params = null_imputer_params_dct[column_name] if null_imputer_params_dct is not None else None
+
+                    # Scale numerical features before computing RMSE
+                    scaler = StandardScaler()
+                    true_scaled = scaler.fit_transform(true.to_frame()).flatten().astype(float)
+                    pred_scaled = scaler.transform(pred.to_frame()).flatten().astype(float)
+
+                    rmse = mean_squared_error(true_scaled, pred_scaled, squared=False)
+                    if verbose:
+                        print('RMSE for {}: {:.2f}'.format(column_name, rmse))
+                else:
+                    null_imputer_params = null_imputer_params_dct[column_name] if null_imputer_params_dct is not None else None
+                    precision, recall, f1, _ = precision_recall_fscore_support(true, pred, average="micro")
+                    if verbose:
+                        print('Precision for {}: {:.2f}'.format(column_name, precision))
+                        print('Recall for {}: {:.2f}'.format(column_name, recall))
+                        print('F1 score for {}: {:.2f}'.format(column_name, f1))
+
+                if verbose:
+                    print('\n')
+
+                # Save imputation performance metric of the imputer in a dataframe
+                new_row_idx = column_idx * len(subgroups) + subgroup_idx
+                metrics_df.loc[new_row_idx] = [self.dataset_name, null_imputer_name, null_imputer_params,
+                                               column_type, column_name, subgroup_name, true.shape[0],
+                                               kl_divergence_pred, kl_divergence_total,
+                                               rmse, precision, recall, f1]
 
         return metrics_df
 
     def _save_imputation_metrics_to_db(self, train_imputation_metrics_df: pd.DataFrame, test_imputation_metrics_dfs_lst: list,
                                        imputation_runtime: float, null_imputer_name: str, evaluation_scenario: str, experiment_seed: int):
-        train_imputation_metrics_df['Imputation_Guid'] = train_imputation_metrics_df['Column_With_Nulls'].apply(
-            lambda column_with_nulls: generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name,
-                                                                           evaluation_scenario, experiment_seed,
-                                                                           'X_train_val', column_with_nulls])
+        train_imputation_metrics_df['Imputation_Guid'] = train_imputation_metrics_df.apply(
+            lambda row: generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name,
+                                                             evaluation_scenario, experiment_seed,
+                                                             'X_train_val', row['Column_With_Nulls'],
+                                                             row['Subgroup']]),
+            axis=1
         )
         self._db.write_pandas_df_into_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                          df=train_imputation_metrics_df,
@@ -268,11 +314,12 @@ class MLLifecycle:
         test_record_create_date_time = datetime.now(timezone.utc)
         for test_set_idx, test_imputation_metrics_df in enumerate(test_imputation_metrics_dfs_lst):
             test_injection_scenario = test_injection_scenarios_lst[test_set_idx]
-            test_imputation_metrics_df['Imputation_Guid'] = test_imputation_metrics_df['Column_With_Nulls'].apply(
-                lambda column_with_nulls: generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name,
-                                                                               evaluation_scenario, experiment_seed,
-                                                                               f'X_test_{test_injection_scenario}',
-                                                                               column_with_nulls])
+            test_imputation_metrics_df['Imputation_Guid'] = test_imputation_metrics_df.apply(
+                lambda row: generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name,
+                                                                 evaluation_scenario, experiment_seed,
+                                                                 f'X_test_{test_injection_scenario}',
+                                                                 row['Column_With_Nulls'], row['Subgroup']]),
+                axis=1
             )
             self._db.write_pandas_df_into_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                              df=test_imputation_metrics_df,
@@ -292,6 +339,7 @@ class MLLifecycle:
                                      null_imputer_name: str, evaluation_scenario: str, experiment_seed: int):
         save_sets_dir_path = (pathlib.Path(__file__).parent.parent.parent
                               .joinpath('results')
+                              .joinpath('imputed_datasets')
                               .joinpath(self.dataset_name)
                               .joinpath(null_imputer_name)
                               .joinpath(evaluation_scenario)

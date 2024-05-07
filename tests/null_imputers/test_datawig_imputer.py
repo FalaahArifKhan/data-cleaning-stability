@@ -31,7 +31,7 @@ def test_datawig_imputer_no_nulls(acs_income_dataset_params, null_imputer_name,
 
     train_injection_scenario, _ = get_injection_scenarios(evaluation_scenario)
     train_injection_strategy = train_injection_scenario[:-1]
-    hyperparams = NULL_IMPUTERS_HYPERPARAMS.get(null_imputer_name, {}).get(dataset_name, {}).get(train_injection_strategy, {})
+    hyperparams = {'final_fc_hidden_units': None}
 
     (X_train_with_nulls, X_tests_with_nulls_lst,
      train_numerical_null_columns, train_categorical_null_columns,
@@ -74,7 +74,7 @@ def test_datawig_imputer_same_seed(acs_income_dataset_params, null_imputer_name,
 
     train_injection_scenario, _ = get_injection_scenarios(evaluation_scenario)
     train_injection_strategy = train_injection_scenario[:-1]
-    hyperparams = NULL_IMPUTERS_HYPERPARAMS.get(null_imputer_name, {}).get(dataset_name, {}).get(train_injection_strategy, {})
+    hyperparams = {'final_fc_hidden_units': None}
 
     (X_train_with_nulls, X_tests_with_nulls_lst,
      train_numerical_null_columns, train_categorical_null_columns,
@@ -131,7 +131,7 @@ def test_datawig_imputer_diff_seed(acs_income_dataset_params, null_imputer_name,
 
     train_injection_scenario, _ = get_injection_scenarios(evaluation_scenario)
     train_injection_strategy = train_injection_scenario[:-1]
-    hyperparams = NULL_IMPUTERS_HYPERPARAMS.get(null_imputer_name, {}).get(dataset_name, {}).get(train_injection_strategy, {})
+    hyperparams = {'final_fc_hidden_units': None}
 
     (X_train_with_nulls, X_tests_with_nulls_lst,
      train_numerical_null_columns, train_categorical_null_columns,

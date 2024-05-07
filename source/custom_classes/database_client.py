@@ -1,5 +1,6 @@
 import os
 import pathlib
+import certifi
 import pandas as pd
 
 from dotenv import load_dotenv
@@ -18,7 +19,7 @@ class DatabaseClient:
 
     def connect(self):
         # Create a connection using MongoClient
-        self.client = MongoClient(self.connection_string)
+        self.client = MongoClient(self.connection_string, tlsCAFile=certifi.where())
 
     def _get_collection(self, collection_name):
         return self.client[self.db_name][collection_name]
@@ -53,18 +54,19 @@ class DatabaseClient:
         self.execute_write_query(df.to_dict('records'), collection_name)
         print('Dataframe is successfully written into a database')
 
-    def read_model_metric_dfs_from_db(self, session_uuid):
-        records = self.execute_read_query(query={'session_uuid': session_uuid, 'tag': 'OK'})
-        model_metric_dfs = pd.DataFrame(records)
+    def read_metric_df_from_db(self, collection_name: str, query: dict):
+        records = self.execute_read_query(query=query,
+                                          collection_name=collection_name)
+        metric_df = pd.DataFrame(records)
 
         # Capitalize column names to be consistent across the whole library
         new_column_names = []
-        for col in model_metric_dfs.columns:
+        for col in metric_df.columns:
             new_col_name = '_'.join([c.capitalize() for c in col.split('_')])
             new_column_names.append(new_col_name)
 
-        model_metric_dfs.columns = new_column_names
-        return model_metric_dfs
+        metric_df.columns = new_column_names
+        return metric_df
 
     def get_db_writer(self, collection_name: str):
         collection_obj = self._get_collection(collection_name)

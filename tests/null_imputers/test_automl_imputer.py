@@ -5,7 +5,6 @@ from source.utils.common_helpers import get_injection_scenarios
 from source.null_imputers.imputation_methods import impute_with_automl
 from configs.constants import ErrorRepairMethod
 from configs.datasets_config import ACS_INCOME_DATASET
-from configs.null_imputers_config import NULL_IMPUTERS_HYPERPARAMS
 
 from tests import assert_nested_dicts_equal
 
@@ -31,7 +30,7 @@ def test_automl_imputer_no_nulls(acs_income_dataset_params, null_imputer_name,
 
     train_injection_scenario, _ = get_injection_scenarios(evaluation_scenario)
     train_injection_strategy = train_injection_scenario[:-1]
-    hyperparams = NULL_IMPUTERS_HYPERPARAMS.get(null_imputer_name, {}).get(dataset_name, {}).get(train_injection_strategy, {})
+    hyperparams = dict()
 
     (X_train_with_nulls, X_tests_with_nulls_lst,
      train_numerical_null_columns, train_categorical_null_columns,
@@ -73,7 +72,7 @@ def test_automl_imputer_same_seed(acs_income_dataset_params, null_imputer_name,
 
     train_injection_scenario, _ = get_injection_scenarios(evaluation_scenario)
     train_injection_strategy = train_injection_scenario[:-1]
-    hyperparams = NULL_IMPUTERS_HYPERPARAMS.get(null_imputer_name, {}).get(dataset_name, {}).get(train_injection_strategy, {})
+    hyperparams = dict()
 
     (X_train_with_nulls, X_tests_with_nulls_lst,
      train_numerical_null_columns, train_categorical_null_columns,
@@ -126,7 +125,7 @@ def test_automl_imputer_diff_seed(acs_income_dataset_params, null_imputer_name,
 
     train_injection_scenario, _ = get_injection_scenarios(evaluation_scenario)
     train_injection_strategy = train_injection_scenario[:-1]
-    hyperparams = NULL_IMPUTERS_HYPERPARAMS.get(null_imputer_name, {}).get(dataset_name, {}).get(train_injection_strategy, {})
+    hyperparams = dict()
 
     (X_train_with_nulls, X_tests_with_nulls_lst,
      train_numerical_null_columns, train_categorical_null_columns,

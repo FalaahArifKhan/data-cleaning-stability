@@ -2,7 +2,7 @@ import scipy
 import numpy as np
 import pandas as pd
 from scipy.stats import entropy, gaussian_kde
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OrdinalEncoder
 
 from source.preprocessing import get_simple_preprocessor
 
@@ -23,11 +23,6 @@ def preprocess_mult_base_flow_datasets(main_base_flow_dataset, extra_base_flow_d
     # Preprocess main_base_flow_dataset
     main_base_flow_dataset.X_train_val = column_transformer.fit_transform(main_base_flow_dataset.X_train_val)
     main_base_flow_dataset.X_test = column_transformer.transform(main_base_flow_dataset.X_test)
-
-    print('preprocessed ordinal columns\n',
-          main_base_flow_dataset.X_train_val[
-              ['ord__' + col for col in list(main_base_flow_dataset.ordered_categories_dct.keys())]
-          ].head(20))
 
     # Preprocess extra_base_flow_datasets
     extra_test_sets = []
@@ -54,6 +49,38 @@ def get_object_columns_indexes(df):
     object_indexes = [df.columns.get_loc(col) for col in object_columns]
     
     return object_indexes
+
+
+def encode_cat(X_c):
+    data = X_c.copy()
+    nonulls = data.dropna().values
+    impute_reshape = nonulls.reshape(-1,1)
+    encoder = OrdinalEncoder()
+    impute_ordinal = encoder.fit_transform(impute_reshape)
+    data.loc[data.notnull()] = np.squeeze(impute_ordinal)
+
+    return data, encoder
+
+
+def encode_cat_with_existing_encoder(X_c, encoder):
+    data = X_c.copy()
+    nonulls = data.dropna().values
+    impute_reshape = nonulls.reshape(-1,1)
+    impute_ordinal = encoder.transform(impute_reshape)
+    data.loc[data.notnull()] = np.squeeze(impute_ordinal)
+
+    return data
+
+
+def decode_cat(X_c, encoder):
+    data = X_c.copy()
+    nonulls = data.dropna().values.reshape(-1,1)
+    n_cat = len(encoder.categories_[0])
+    nonulls = np.round(nonulls).clip(0, n_cat-1)
+    nonulls = encoder.inverse_transform(nonulls)
+    data.loc[data.notnull()] = np.squeeze(nonulls)
+
+    return data
 
 
 def get_numerical_columns_indexes(df):
@@ -93,8 +120,9 @@ def get_columns_sorted_by_nulls(mask):
     return sorted_columns_names
 
 
-def calculate_kl_divergence_with_histograms(true: pd.DataFrame, pred: pd.DataFrame):
-    print('Compute KL divergence using histograms...')
+def calculate_kl_divergence_with_histograms(true: pd.DataFrame, pred: pd.DataFrame, verbose: bool = False):
+    if verbose:
+        print('Compute KL divergence using histograms...')
 
     # Get the value counts normalized to probability distributions
     true_dist = true.value_counts(normalize=True)
@@ -112,16 +140,20 @@ def calculate_kl_divergence_with_histograms(true: pd.DataFrame, pred: pd.DataFra
     return kl_div
 
 
-def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame):
+def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame, verbose: bool = False):
     # Normalize true and pred series
     scaler = StandardScaler().set_output(transform="pandas")
     true_scaled = scaler.fit_transform(true.to_frame())
     true_scaled = true_scaled[true_scaled.columns[0]]
-    pred_scaled = scaler.fit_transform(pred.to_frame())
+    pred_scaled = scaler.transform(pred.to_frame())
     pred_scaled = pred_scaled[pred_scaled.columns[0]]
 
-    if pred.nunique() == 1:
-        print('Compute KL divergence using KDE and discrete uniform PMF...')
+    if true.nunique() == 1:
+        # In case when subgroup true df has only one sample, return None
+        return None
+    elif pred.nunique() == 1:
+        if verbose:
+            print('Compute KL divergence using KDE and discrete uniform PMF...')
 
         # Estimate probability density functions using kernel density estimation
         true_kde = gaussian_kde(true_scaled)
@@ -140,7 +172,8 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame):
         pred_dist[pred_dist == 0.] = 0.000000001  # replace zeros to avoid NaNs in scipy.entropy
 
     else:
-        print('Compute KL divergence using KDE...')
+        if verbose:
+            print('Compute KL divergence using KDE...')
 
         # Estimate probability density functions using kernel density estimation
         true_kde = gaussian_kde(true_scaled)
@@ -156,16 +189,12 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame):
     return entropy(true_dist, pred_dist)
 
 
-def calculate_kl_divergence(true: pd.DataFrame, pred: pd.DataFrame, column_type: str):
-    # Compute KL divergence for continuous numerical features
+def calculate_kl_divergence(true: pd.DataFrame, pred: pd.DataFrame, column_type: str, verbose: bool = False):
     if column_type == 'numerical':
-        real_n_unique = true.nunique()
-        int_n_unique = true.astype(int).nunique()
+        # Compute KL divergence for numerical features
+        kl_div = calculate_kl_divergence_with_kde(true, pred, verbose=verbose)
+    else:
+        # Compute KL divergence for categorical features
+        kl_div = calculate_kl_divergence_with_histograms(true, pred, verbose=verbose)
 
-        if real_n_unique != int_n_unique:
-            kl_div = calculate_kl_divergence_with_kde(true, pred)
-            return kl_div
-
-    # Compute KL divergence for categorical and discrete numerical features
-    kl_div = calculate_kl_divergence_with_histograms(true, pred)
     return kl_div

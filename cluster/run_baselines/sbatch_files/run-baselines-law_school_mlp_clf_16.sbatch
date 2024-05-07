@@ -16,7 +16,7 @@ EXECUTION_COMMAND="
 python ../scripts/evaluate_baseline.py \
     --dataset law_school \
     --models \[\"'mlp_clf'\"\] \
-    --run_nums \[3,4\]
+    --run_nums \[1,2,3\]
 "
 
 singularity exec \

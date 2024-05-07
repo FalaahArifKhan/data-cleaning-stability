@@ -9,7 +9,7 @@ Commands for development on the cluster using GPUs:
 # To request one GPU card, 16 GB memory, and 12 hour running duration
 srun -t12:00:00 --mem=16000 --gres=gpu:rtx8000:1 --pty /bin/bash
 
-singularity exec --nv --overlay /scratch/dh3553/ml_life_cycle_project/vldb_env.ext3:rw /scratch/work/public/singularity/cuda11.0-cudnn8-devel-ubuntu18.04.sif /bin/bash
+singularity exec --nv --overlay /scratch/dh3553/ml_life_cycle_project/vldb_env.ext3:ro /scratch/work/public/singularity/cuda11.0-cudnn8-devel-ubuntu18.04.sif /bin/bash
 
 Singularity> source /ext3/env.sh
 ```
@@ -19,7 +19,7 @@ Commands for development on the cluster using CPUs:
 # To request 32 CPUs, 16 GB memory, and 12 hour running duration
 srun -t12:00:00 --mem=16000 --ntasks-per-node=1 --cpus-per-task=48 --pty /bin/bash
 
-singularity exec --overlay /scratch/dh3553/ml_life_cycle_project/vldb_env.ext3:rw /scratch/work/public/singularity/ubuntu-20.04.1.sif /bin/bash
+singularity exec --overlay /scratch/dh3553/ml_life_cycle_project/vldb_env.ext3:ro /scratch/work/public/singularity/ubuntu-20.04.1.sif /bin/bash
 
 Singularity> source /ext3/env.sh
 ```
@@ -34,6 +34,11 @@ SSH to a bash SLURM job:
 ```shell
 # Pattern: ssh username@hostname
 ssh dh3553@cs223
+```
+
+Count the number of files in each directory:
+```shell
+du -a | cut -d/ -f2 | sort | uniq -c | sort -nr
 ```
 
 

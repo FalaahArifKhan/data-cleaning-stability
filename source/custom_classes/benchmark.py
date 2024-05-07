@@ -239,15 +239,26 @@ class Benchmark(MLLifecycle):
         # Read imputed train and test sets from save_sets_dir_path
         save_sets_dir_path = (pathlib.Path(__file__).parent.parent.parent
                                   .joinpath('results')
+                                  .joinpath('imputed_datasets')
                                   .joinpath(self.dataset_name)
                                   .joinpath(null_imputer_name)
                                   .joinpath(evaluation_scenario)
                                   .joinpath(str(experiment_seed)))
 
+        # Create a base flow dataset for Virny to compute metrics
+        numerical_columns_wo_sensitive_attrs = [col for col in data_loader.numerical_columns if col not in self.dataset_sensitive_attrs]
+        categorical_columns_wo_sensitive_attrs = [col for col in data_loader.categorical_columns if col not in self.dataset_sensitive_attrs]
+
         # Read X_train_val set
         train_set_filename = f'imputed_{self.dataset_name}_{null_imputer_name}_{evaluation_scenario}_{experiment_seed}_X_train_val.csv'
         X_train_val_imputed_wo_sensitive_attrs = pd.read_csv(os.path.join(save_sets_dir_path, train_set_filename),
                                                              header=0, index_col=0)
+        X_train_val_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs] = (
+            X_train_val_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs].astype(str))
+
+        # Subset y_train_val to align with X_train_val_imputed_wo_sensitive_attrs
+        if null_imputer_name == ErrorRepairMethod.deletion.value:
+            y_train_val = y_train_val.loc[X_train_val_imputed_wo_sensitive_attrs.index]
 
         # Read X_test sets
         X_tests_imputed_wo_sensitive_attrs_lst = list()
@@ -256,11 +267,9 @@ class Benchmark(MLLifecycle):
             test_set_filename = f'imputed_{self.dataset_name}_{null_imputer_name}_{evaluation_scenario}_{experiment_seed}_X_test_{test_injection_scenario}.csv'
             X_test_imputed_wo_sensitive_attrs = pd.read_csv(os.path.join(save_sets_dir_path, test_set_filename),
                                                             header=0, index_col=0)
+            X_test_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs] = (
+                X_test_imputed_wo_sensitive_attrs[categorical_columns_wo_sensitive_attrs].astype(str))
             X_tests_imputed_wo_sensitive_attrs_lst.append(X_test_imputed_wo_sensitive_attrs)
-
-        # Create a base flow dataset for Virny to compute metrics
-        numerical_columns_wo_sensitive_attrs = [col for col in data_loader.numerical_columns if col not in self.dataset_sensitive_attrs]
-        categorical_columns_wo_sensitive_attrs = [col for col in data_loader.categorical_columns if col not in self.dataset_sensitive_attrs]
 
         # Create base flow datasets for Virny to compute metrics
         main_base_flow_dataset, extra_base_flow_datasets = \
@@ -304,7 +313,9 @@ class Benchmark(MLLifecycle):
                                                                                 data_loader=data_loader)
 
         # Define a directory path to save an intermediate state
-        save_dir = (pathlib.Path(__file__).parent.parent.parent.joinpath('results')
+        save_dir = (pathlib.Path(__file__).parent.parent.parent
+                        .joinpath('results')
+                        .joinpath('intermediate_state')
                         .joinpath(null_imputer_name)
                         .joinpath(self.dataset_name)
                         .joinpath(evaluation_scenario)

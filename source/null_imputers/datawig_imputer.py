@@ -29,6 +29,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
     precision_threshold = kwargs['precision_threshold']
     num_epochs = kwargs['num_epochs']
     iterations = kwargs['iterations']
+    num_evals = 10
 
     train_missing_mask = X_train_with_nulls.copy(deep=True).isnull()
     X_train_imputed = X_train_with_nulls.copy(deep=True)
@@ -77,6 +78,7 @@ def complete(X_train_with_nulls: pd.DataFrame,
             if hyperparams is None:
                 imputer.fit_hpo(X_train_imputed.loc[~train_idx_missing, :],
                                 hps=hps,
+                                num_evals=num_evals,
                                 patience=5 if output_col in categorical_columns_with_nulls else 20,
                                 num_epochs=num_epochs,
                                 batch_size=64,
@@ -122,8 +124,11 @@ def complete(X_train_with_nulls: pd.DataFrame,
                 null_imputer_params['best_imputer_idx'] = best_imputer_idx
                 null_imputer_params_dct[output_col] = null_imputer_params
 
-            # remove the directory with logfiles for this column
+            # Remove the directory with logfiles for this column
             shutil.rmtree(column_output_path)
+            # Remove all directories created during datawig tuning
+            for i in range(num_evals):
+                shutil.rmtree(column_output_path + str(i))
 
             datawig.utils.logger.info(f'Successfully completed null imputation for the {output_col} column')
 

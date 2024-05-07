@@ -1,4 +1,7 @@
 import pandas as pd
+import pandas.testing as pdt
+
+from virny.custom_classes.base_dataset import BaseFlowDataset
 
 
 def compare_dfs(df1, df2):
@@ -44,3 +47,22 @@ def assert_nested_dicts_equal(dict1: dict, dict2: dict, assert_msg: str):
         else:
             # Compare the values for non-dictionary values
             assert dict1[key] == dict2[key], assert_msg
+
+
+def compare_base_flow_datasets(dataset1: BaseFlowDataset, dataset2: BaseFlowDataset):
+    # Assert equality for DataFrames
+    pdt.assert_frame_equal(dataset1.init_sensitive_attrs_df, dataset2.init_sensitive_attrs_df)
+    pdt.assert_frame_equal(dataset1.X_train_val, dataset2.X_train_val)
+    pdt.assert_frame_equal(dataset1.X_test, dataset2.X_test)
+    if isinstance(dataset1.y_train_val, pd.Series):
+        pdt.assert_series_equal(dataset1.y_train_val, dataset2.y_train_val)
+    else:
+        pdt.assert_frame_equal(dataset1.y_train_val, dataset2.y_train_val)
+    pdt.assert_series_equal(dataset1.y_test, dataset2.y_test)
+
+    # Assert equality for lists
+    assert dataset1.numerical_columns == dataset2.numerical_columns, "Numerical columns do not match"
+    assert dataset1.categorical_columns == dataset2.categorical_columns, "Categorical columns do not match"
+
+    # Assert equality for strings
+    assert dataset1.target == dataset2.target, "Targets do not match"
