@@ -43,6 +43,7 @@ def prepare_boostclean(X_train_val: pd.DataFrame, y_train_val: pd.DataFrame, X_t
                        numerical_columns: list, categorical_columns: list, experiment_seed: int, **kwargs):
     save_dir = kwargs['save_dir']
     tuning = kwargs['tune']
+    computed_repaired_datasets_paths = kwargs['computed_repaired_datasets_paths']
     
     val_set_ratio = 0.2
     X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val,
@@ -60,7 +61,8 @@ def prepare_boostclean(X_train_val: pd.DataFrame, y_train_val: pd.DataFrame, X_t
                                            y_val=y_val,
                                            random_state=experiment_seed,
                                            tune=tuning,
-                                           save_dir=save_dir)
+                                           save_dir=save_dir,
+                                           computed_repaired_datasets_paths=computed_repaired_datasets_paths)
     
     models_config = {
         ErrorRepairMethod.boost_clean.value: boostclean_wrapper

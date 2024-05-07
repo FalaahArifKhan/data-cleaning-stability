@@ -315,6 +315,22 @@ class Benchmark(MLLifecycle):
         imputation_kwargs = NULL_IMPUTERS_CONFIG[null_imputer_name]["kwargs"]
         imputation_kwargs.update({'save_dir': save_dir})       
         imputation_kwargs['tune'] = tune_imputers
+        
+        # Make paths for the imputed datasets
+        imputed_datasets_paths = []
+        results_dir = pathlib.Path(__file__).parent.parent.parent.joinpath('results')
+        for imputer_dir in results_dir.iterdir():
+            for dataset_dir in imputer_dir.iterdir():
+                for scenario_dir in dataset_dir.iterdir():
+                    if scenario_dir.name == evaluation_scenario:
+                        for seed_dir in scenario_dir.iterdir():
+                            if seed_dir.name == str(experiment_seed):
+                                for file in seed_dir.iterdir():
+                                    if file.is_file() and "train" in file.name:
+                                        imputed_datasets_paths.append(file)
+                                        
+        print('imputed_datasets_paths -- ', imputed_datasets_paths)
+        imputation_kwargs['computed_repaired_datasets_paths'] = imputed_datasets_paths if len(imputed_datasets_paths) > 0 else None                                
 
         # Create a wrapper for the input joint cleaning-and-training method
         # to conduct in-depth performance profiling with Virny

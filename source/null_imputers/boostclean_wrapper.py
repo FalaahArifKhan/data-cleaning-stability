@@ -9,17 +9,18 @@ from sklearn.ensemble import RandomForestClassifier
 from external_dependencies.CPClean.training.knn import KNN
 from external_dependencies.CPClean.cleaner.boost_clean import transform_y, train_classifiers
 from external_dependencies.CPClean.repair.repair import repair
-from external_dependencies.CPClean.training.preprocess import preprocess_boostclean
+from external_dependencies.CPClean.training.preprocess import preprocess_boostclean, read_repaired_datasets
 
 
 class BoostCleanWrapper(BaseInprocessingWrapper):
-    def __init__(self, X_val, y_val, random_state, save_dir, T=5, tune=False):
+    def __init__(self, X_val, y_val, random_state, save_dir, T=5, tune=False, computed_repaired_datasets_paths=None):
         self.X_val = X_val
         self.y_val = y_val
         self.random_state = random_state
         self.save_dir = save_dir
         self.T = T
         self.tune = tune
+        self.computed_repaired_datasets_paths = computed_repaired_datasets_paths
         
         self.model_metadata = {
             "fn": RandomForestClassifier,
@@ -163,10 +164,22 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
 
         return data_dct
         
+    def _read_repaired_datasets(self, paths):
+        # Read imputed train sets from paths
+        X_train_repairs = {}
+        for path in paths:
+            repair_method = os.path.basename(path).split('.')[-3]
+            X_train_repairs[repair_method] = pd.read_csv(path, index_col=0)
+            
+        return X_train_repairs
+        
     def fit(self, X_train, y_train):
         data_dct = self._build_dataset_objects(X_train, y_train)
         
-        data_dct["X_train_repairs"] = repair(data_dct["X_train_dirty"], save_dir=self.save_dir)
+        if self.computed_repaired_datasets_paths is None:
+            data_dct["X_train_repairs"] = repair(data_dct["X_train_dirty"], save_dir=self.save_dir)
+        else:
+            data_dct["X_train_repairs"] = self._read_repaired_datasets(self.computed_repaired_datasets_paths)
         
         data_dct, self.preprocessor = preprocess_boostclean(data_dct)
         
