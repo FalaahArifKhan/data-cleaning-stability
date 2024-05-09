@@ -161,7 +161,8 @@ class Benchmark(MLLifecycle):
                                             imputation_runtime=imputation_runtime,
                                             null_imputer_name=null_imputer_name,
                                             evaluation_scenario=evaluation_scenario,
-                                            experiment_seed=experiment_seed)
+                                            experiment_seed=experiment_seed,
+                                            null_imputer_params_dct=null_imputer_params_dct)
 
         if save_imputed_datasets:
             self._save_imputed_datasets_to_fs(X_train_val=X_train_val_imputed_wo_sensitive_attrs,
