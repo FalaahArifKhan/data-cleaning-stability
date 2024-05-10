@@ -24,21 +24,23 @@ def get_missforest_params_for_tuning(models_tuning_seed):
         'RandomForestClassifier': {
             'model': RandomForestClassifier(random_state=models_tuning_seed),
             'params': {
-                'n_estimators': [50, 100, 200],
-                'max_depth': [10, 25, 50, 75, 100, None],
-                'min_samples_split': [2, 5, 10],
-                'min_samples_leaf': [1, 2, 4],
-                'bootstrap': [True, False]
+                'n_estimators': [50],
+                # 'n_estimators': [50, 100, 200],
+                # 'max_depth': [10, 25, 50, 75, 100, None],
+                # 'min_samples_split': [2, 5, 10],
+                # 'min_samples_leaf': [1, 2, 4],
+                # 'bootstrap': [True, False]
             }
         },
         'RandomForestRegressor': {
             'model': RandomForestRegressor(random_state=models_tuning_seed),
             'params': {
-                'n_estimators': [50, 100, 200],
-                'max_depth': [10, 25, 50, 75, 100, None],
-                'min_samples_split': [2, 5, 10],
-                'min_samples_leaf': [1, 2, 4],
-                'bootstrap': [True, False]
+                'n_estimators': [50],
+                # 'n_estimators': [50, 100, 200],
+                # 'max_depth': [10, 25, 50, 75, 100, None],
+                # 'min_samples_split': [2, 5, 10],
+                # 'min_samples_leaf': [1, 2, 4],
+                # 'bootstrap': [True, False]
             }
         }
     }
