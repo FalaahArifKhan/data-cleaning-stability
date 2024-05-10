@@ -194,7 +194,7 @@ def create_scatter_plots_for_diff_models_and_single_eval_scenario(dataset_name: 
                                                                   ylim=Undefined):
     sns.set_style("whitegrid")
     imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-                      'k_means_clustering', 'datawig', 'automl']
+                      'k_means_clustering', 'datawig', 'automl', 'boost_clean']
 
     metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')])
     models_metric_df = get_models_metric_df(db_client=db_client,
@@ -264,12 +264,10 @@ def create_scatter_plots_for_diff_models(dataset_name: str, metric_name: str, db
                                                                                 ylim=ylim)
 
     # Concatenate two base charts
-    main_base_chart = alt.vconcat()
-    row = alt.hconcat()
-    row |= base_chart1
-    row |= base_chart2
-    row |= base_chart3
-    main_base_chart &= row
+    main_base_chart = alt.hconcat()
+    main_base_chart |= base_chart1
+    main_base_chart |= base_chart2
+    main_base_chart |= base_chart3
 
     final_grid_chart = (
         main_base_chart.configure_title(
@@ -301,6 +299,9 @@ def create_scatter_plots_for_diff_models(dataset_name: str, metric_name: str, db
             titleFontWeight='normal',
         )
     )
+
+    # Set a shared scale for the y-axis
+    final_grid_chart = final_grid_chart.resolve_scale(y='shared')
 
     return final_grid_chart
 
@@ -466,12 +467,10 @@ def create_box_plots_for_diff_models(dataset_name: str, null_imputer_name: str, 
     print('Prepared a plot for an MNAR train set')
 
     # Concatenate two base charts
-    main_base_chart = alt.vconcat()
-    row = alt.hconcat()
-    row |= base_chart1
-    row |= base_chart2
-    row |= base_chart3
-    main_base_chart &= row
+    main_base_chart = alt.hconcat()
+    main_base_chart |= base_chart1
+    main_base_chart |= base_chart2
+    main_base_chart |= base_chart3
 
     final_grid_chart = (
         main_base_chart.configure_title(
@@ -504,6 +503,9 @@ def create_box_plots_for_diff_models(dataset_name: str, null_imputer_name: str, 
         )
     )
 
+    # Set a shared scale for the y-axis
+    final_grid_chart = final_grid_chart.resolve_scale(y='shared')
+
     return final_grid_chart
 
 
@@ -513,7 +515,7 @@ def create_box_plots_for_diff_imputers_and_single_eval_scenario_v2(dataset_name:
                                                                    base_font_size: int = 18, ylim=Undefined):
     sns.set_style("whitegrid")
     imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-                      'k_means_clustering', 'datawig', 'automl']
+                      'k_means_clustering', 'datawig', 'automl', 'boost_clean']
 
     metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) if 'equalized_odds' not in metric_name.lower() else metric_name
     if group == 'overall':
@@ -638,7 +640,7 @@ def create_box_plots_for_diff_imputers_v2(dataset_name: str, model_name: str, me
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
-            symbolOffset=110,
+            symbolOffset=156,
         ).configure_facet(
             spacing=5,
         ).configure_view(
@@ -657,5 +659,8 @@ def create_box_plots_for_diff_imputers_v2(dataset_name: str, model_name: str, me
             fontSize=base_font_size + 6,
         )
     )
+
+    # Set a shared scale for the y-axis
+    final_grid_chart = final_grid_chart.resolve_scale(y='shared')
 
     return final_grid_chart
