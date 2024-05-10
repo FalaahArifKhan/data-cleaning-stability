@@ -150,6 +150,7 @@ class KMeansImputer(AbstractNullImputer):
         self._calculate_cluster_stats(X, pred_clusters)
         # save percentage of clusters
         self.cluster_percentages_ = {str(cluster): len(np.where(pred_clusters == cluster)[0]) / len(pred_clusters) for cluster in set(pred_clusters)}
+        print(f"Cluster percentages: {self.cluster_percentages_}")
         
         return self
     
@@ -197,5 +198,5 @@ class KMeansImputer(AbstractNullImputer):
         else:
             output = self.hyperparameters
             
-        output['cluster_percentages_'] = self.cluster_percentages_
+        #output['cluster_percentages_'] = self.cluster_percentages_
         return output
