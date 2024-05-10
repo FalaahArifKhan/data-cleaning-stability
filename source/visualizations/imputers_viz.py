@@ -160,12 +160,10 @@ def create_box_plots_for_diff_imputers(dataset_name: str, column_name: str,
                                                                               ylim=ylim)
 
     # Concatenate two base charts
-    main_base_chart = alt.vconcat()
-    row = alt.hconcat()
-    row |= base_chart1
-    row |= base_chart2
-    row |= base_chart3
-    main_base_chart &= row
+    main_base_chart = alt.hconcat()
+    main_base_chart |= base_chart1
+    main_base_chart |= base_chart2
+    main_base_chart |= base_chart3
 
     final_grid_chart = (
         main_base_chart.configure_axis(
@@ -202,5 +200,8 @@ def create_box_plots_for_diff_imputers(dataset_name: str, column_name: str,
             titleFontWeight='normal',
         )
     )
+
+    # Set a shared scale for the y-axis
+    final_grid_chart = final_grid_chart.resolve_scale(y='shared')
 
     return final_grid_chart
