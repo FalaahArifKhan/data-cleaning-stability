@@ -148,6 +148,8 @@ class KMeansImputer(AbstractNullImputer):
         
         pred_clusters = self.model.predict(X_observed, categorical=self.cat_vars_)
         self._calculate_cluster_stats(X, pred_clusters)
+        # save percentage of clusters
+        self.cluster_percentages_ = {str(cluster): len(np.where(pred_clusters == cluster)[0]) / len(pred_clusters) for cluster in set(pred_clusters)}
         
         return self
     
@@ -173,8 +175,6 @@ class KMeansImputer(AbstractNullImputer):
         X_observed = X[:, self.observed_columns_]
         
         clusters = self.model.predict(X_observed, categorical=self.cat_vars_)
-        # save percentage of clusters
-        self.cluster_percentages_ = {cluster: len(np.where(clusters == cluster)[0]) / len(clusters) for cluster in set(clusters)}
         
         for cluster in set(clusters):
             cluster_indices = np.where(clusters == cluster)[0]
