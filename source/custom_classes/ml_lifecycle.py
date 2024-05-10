@@ -147,6 +147,8 @@ class MLLifecycle:
             train_injection_strategy, _ = get_injection_scenarios(evaluation_scenario)
             hyperparams = NULL_IMPUTERS_HYPERPARAMS.get(null_imputer_name, {}).get(self.dataset_name, {}).get(train_injection_strategy, {})
 
+        self._logger.info('Impute nulls hyper-params: {}'.format(hyperparams))
+
         # Use a method, kwargs, and hyperparams from NULL_IMPUTERS_CONFIG
         imputation_method = NULL_IMPUTERS_CONFIG[null_imputer_name]["method"]
         imputation_kwargs = NULL_IMPUTERS_CONFIG[null_imputer_name]["kwargs"]
