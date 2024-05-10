@@ -116,11 +116,11 @@ ERROR_INJECTION_SCENARIOS_CONFIG = {
             },
             {
                 'missing_features': ['AGEP'],
-                'setting': {'condition': ('AGEP', [i for i in range(17, 51)]), 'error_rates': [0.01, 0.02, 0.05, 0.10, 0.15]},
+                'setting': {'condition': ('AGEP', {'le': 50}), 'error_rates': [0.01, 0.02, 0.05, 0.10, 0.15]},
             },
             {
                 'missing_features': ['AGEP'],
-                'setting': {'condition': ('AGEP', [i for i in range(51, 100)]), 'error_rates': [0.09, 0.18, 0.25, 0.30, 0.35]},
+                'setting': {'condition': ('AGEP', {'gt': 50}), 'error_rates': [0.09, 0.18, 0.25, 0.30, 0.35]},
             },
             {
                 'missing_features': ['SCHL'],
