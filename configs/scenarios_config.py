@@ -320,5 +320,66 @@ ERROR_INJECTION_SCENARIOS_CONFIG = {
                 'setting': {'condition': ('SoundSleep', {'ge': 5}), 'error_rates': [0.02, 0.05, 0.10, 0.15, 0.20]},
             },
         ],
+    },
+    BANK_MARKETING_DATASET: {
+        "MCAR": [
+            {
+                'missing_features': ['balance', 'campaign', 'education', 'job'],
+                'setting': {'error_rates': [0.1, 0.2, 0.3, 0.4, 0.5]},
+            }
+        ],
+        "MAR": [
+            {
+                'missing_features': ['education', 'job'],
+                'setting': {'condition': ('age', {'lt': 30}), 'error_rates': [0.08, 0.12, 0.12, 0.12, 0.12]},
+            },
+            {
+                'missing_features': ['education', 'job'],
+                'setting': {'condition': ('age', {'ge': 30}), 'error_rates': [0.02, 0.08, 0.18, 0.28, 0.38]},
+            },
+            {
+                'missing_features': ['balance', 'campaign'],
+                'setting': {'condition': ('marital', 'single'), 'error_rates': [0.08, 0.15, 0.20, 0.25, 0.30]},
+            },
+            {
+                'missing_features': ['balance', 'campaign'],
+                'setting': {'condition': ('marital', 'married'), 'error_rates': [0.02, 0.05, 0.10, 0.15, 0.20]},
+            },
+        ],
+        "MNAR": [
+            {
+                'missing_features': ['education'],
+                'setting': {'condition': ('education', 'tertiary'), 'error_rates': [0.08, 0.15, 0.20, 0.25, 0.30]},
+            },
+            {
+                'missing_features': ['education'],
+                'setting': {'condition': ('education', 'secondary'), 'error_rates': [0.02, 0.05, 0.10, 0.15, 0.20]},
+            },
+            {
+                'missing_features': ['job'],
+                'setting': {'condition': ('job', ['management', 'blue-collar']), 'error_rates': [0.02, 0.05, 0.10, 0.15, 0.20]},
+            },
+            {
+                'missing_features': ['job'],
+                'setting': {'condition': ('job', ['technician', 'entrepreneur', 'retired', 'admin.',
+                                                  'services', 'self-employed', 'unemployed', 'student', 'housemaid']), 'error_rates': [0.08, 0.15, 0.20, 0.25, 0.30]},
+            },
+            {
+                'missing_features': ['balance'],
+                'setting': {'condition': ('balance', {'gt': 1000}), 'error_rates': [0.02, 0.05, 0.10, 0.15, 0.20]},
+            },
+            {
+                'missing_features': ['balance'],
+                'setting': {'condition': ('balance', {'le': 1000}), 'error_rates': [0.08, 0.15, 0.20, 0.25, 0.30]},
+            },
+            {
+                'missing_features': ['campaign'],
+                'setting': {'condition': ('campaign', {'gt': 1}), 'error_rates': [0.02, 0.05, 0.10, 0.15, 0.20]},
+            },
+            {
+                'missing_features': ['campaign'],
+                'setting': {'condition': ('campaign', {'le': 1}), 'error_rates': [0.08, 0.15, 0.20, 0.25, 0.30]},
+            },
+        ]
     }
 }
