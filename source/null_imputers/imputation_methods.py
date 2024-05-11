@@ -6,7 +6,7 @@ from source.null_imputers.automl_imputer import AutoMLImputer
 from source.null_imputers.missforest_imputer import MissForestImputer
 from source.null_imputers.kmeans_imputer import KMeansImputer
 from source.utils.pipeline_utils import encode_dataset_for_missforest, decode_dataset_for_missforest
-from source.utils.dataframe_utils import get_object_columns_indexes, get_numerical_columns_indexes
+from source.utils.dataframe_utils import get_numerical_columns_indexes
 
 
 def impute_with_deletion(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: list,
@@ -127,18 +127,19 @@ def impute_with_kmeans(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst:
                        hyperparams: dict, **kwargs):
     seed = kwargs['experiment_seed']
     dataset_name = kwargs['dataset_name']
-    
+
+    # Set an appropriate kmeans_imputer_mode type
+    numerical_columns_idxs = get_numerical_columns_indexes(X_train_with_nulls)
+    if len(numerical_columns_idxs) == len(numeric_columns_with_nulls):
+        kmeans_imputer_mode = "kmodes"
+    else:
+        kmeans_imputer_mode = "kprototypes"
+
     X_train_encoded, cat_encoders, categorical_columns_idxs = \
         encode_dataset_for_missforest(X_train_with_nulls,
                                       dataset_name=dataset_name,
                                       categorical_columns_with_nulls=categorical_columns_with_nulls)
 
-    numerical_columns_idxs = get_numerical_columns_indexes(X_train_encoded)
-    if len(numerical_columns_idxs) == len(numeric_columns_with_nulls):
-        kmeans_imputer_mode = "kmodes"
-    else:
-        kmeans_imputer_mode = "kprototypes"
-    
     # Impute numerical columns
     kmeans_imputer = KMeansImputer(seed=seed, imputer_mode=kmeans_imputer_mode, hyperparameters=hyperparams)
     

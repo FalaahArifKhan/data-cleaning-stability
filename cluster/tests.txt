@@ -26,7 +26,7 @@ python ./scripts/evaluate_models.py \
 
 python ./scripts/impute_nulls_with_predictor.py \
     --dataset folk \
-    --null_imputers \[\"miss_forest\"\] \
+    --null_imputers \[\"k_means_clustering\"\] \
     --run_nums \[1\] \
     --tune_imputers true \
     --save_imputed_datasets true \
