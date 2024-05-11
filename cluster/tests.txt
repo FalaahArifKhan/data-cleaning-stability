@@ -16,7 +16,7 @@ python ./scripts/evaluate_models.py \
     --evaluation_scenarios \[\"exp1_mcar3\"\]
 
 python ./scripts/evaluate_models.py \
-    --dataset german \
+    --dataset bank \
     --null_imputers \[\"median-mode\"\] \
     --models \[\"lr_clf\"\] \
     --run_nums \[1\] \
