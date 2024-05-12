@@ -235,23 +235,35 @@ class MLLifecycle:
 
                 true = real.loc[indexes, column_name]
                 pred = imputed.loc[indexes, column_name]
+                if subgroup_name == overall_grp:
+                    grp_total_real = real[column_name]
+                    grp_total_imputed = imputed[column_name]
+                else:
+                    grp_total_real = real.loc[group_indexes_dct[subgroup_name].index, column_name]
+                    grp_total_imputed = imputed.loc[group_indexes_dct[subgroup_name].index, column_name]
+
+                # If an initial dataset contains realistic nulls, do not include them
+                # in the imputation performance measurement
+                if real[column_name].isnull().sum() > 0:
+                    if verbose:
+                        print('WARNING: an initial dataset includes existing realistic nulls')
+
+                    true = true[~true.isnull()]
+                    pred = pred.loc[true.index]
+                    grp_total_real = grp_total_real[~grp_total_real.isnull()]
+                    grp_total_imputed = grp_total_imputed.loc[grp_total_real.index]
 
                 # Column type agnostic metrics
-                kl_divergence_pred = calculate_kl_divergence(true, pred, column_type=column_type, verbose=verbose)
+                kl_divergence_pred = calculate_kl_divergence(true=true,
+                                                             pred=pred,
+                                                             column_type=column_type,
+                                                             verbose=verbose)
+                kl_divergence_total = calculate_kl_divergence(true=grp_total_real,
+                                                              pred=grp_total_imputed,
+                                                              column_type=column_type,
+                                                              verbose=verbose)
                 if verbose:
                     print('Predictive KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_pred))
-
-                if subgroup_name == overall_grp:
-                    kl_divergence_total = calculate_kl_divergence(real[column_name],
-                                                                  imputed[column_name],
-                                                                  column_type=column_type,
-                                                                  verbose=verbose)
-                else:
-                    kl_divergence_total = calculate_kl_divergence(real.loc[group_indexes_dct[subgroup_name].index, column_name],
-                                                                  imputed.loc[group_indexes_dct[subgroup_name].index, column_name],
-                                                                  column_type=column_type,
-                                                                  verbose=verbose)
-                if verbose:
                     print('Total KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_total))
 
                 rmse = None
