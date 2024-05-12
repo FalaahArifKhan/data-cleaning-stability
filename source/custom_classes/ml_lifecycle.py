@@ -245,27 +245,13 @@ class MLLifecycle:
                 # If an initial dataset contains realistic nulls, do not include them
                 # in the imputation performance measurement
                 if real[column_name].isnull().sum() > 0:
-                    # if verbose:
-                    print('WARNING: an initial dataset includes existing realistic nulls')
-
-                    print('Shapes before removing nulls:')
-                    print('true.shape --', true.shape)
-                    print('pred.shape --', pred.shape)
-                    print('grp_total_real.shape --', grp_total_real.shape)
-                    print('grp_total_imputed.shape --', grp_total_imputed.shape)
-                    print()
+                    if verbose:
+                        print('WARNING: an initial dataset includes existing realistic nulls')
 
                     true = true[~true.isnull()]
-                    pred = pred[~pred.isnull()]
+                    pred = pred.loc[true.index]
                     grp_total_real = grp_total_real[~grp_total_real.isnull()]
-                    grp_total_imputed = grp_total_imputed[~grp_total_imputed.isnull()]
-
-                    print('Shapes after removing nulls:')
-                    print('true.shape --', true.shape)
-                    print('pred.shape --', pred.shape)
-                    print('grp_total_real.shape --', grp_total_real.shape)
-                    print('grp_total_imputed.shape --', grp_total_imputed.shape)
-                    print()
+                    grp_total_imputed = grp_total_imputed.loc[grp_total_real.index]
 
                 # Column type agnostic metrics
                 kl_divergence_pred = calculate_kl_divergence(true=true,
