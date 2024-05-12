@@ -148,7 +148,7 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame, ver
     pred_scaled = scaler.transform(pred.to_frame())
     pred_scaled = pred_scaled[pred_scaled.columns[0]]
 
-    if true.nunique() == 1:
+    if true.shape[0] <= 1:
         # In case when subgroup true df has only one sample, return None
         return None
     elif pred.nunique() == 1:
@@ -169,7 +169,7 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame, ver
 
         true_dist = true_kde.evaluate(x)
         pred_dist = pred_kde.pmf(x)
-        pred_dist[pred_dist == 0.] = 0.000000001  # replace zeros to avoid NaNs in scipy.entropy
+        pred_dist[pred_dist == 0.] = 0.000000001  # replace zeros to avoid infinity in scipy.entropy
 
     else:
         if verbose:
@@ -183,6 +183,7 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame, ver
         x = np.linspace(min(min(true_scaled), min(pred_scaled)), max(max(true_scaled), max(pred_scaled)), 1000)
         true_dist = true_kde.evaluate(x)
         pred_dist = pred_kde.evaluate(x)
+        pred_dist[pred_dist == 0.] = 0.000000001  # replace zeros to avoid infinity in scipy.entropy
 
     # Calculate KL divergence from true_dist to pred_dist
     # KL(P || Q) where P is the true distribution and Q is the approximation
