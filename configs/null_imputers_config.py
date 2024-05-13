@@ -20,4 +20,27 @@ NULL_IMPUTERS_CONFIG = {
     ErrorRepairMethod.boost_clean.value: {"method": prepare_boostclean, "kwargs": {}}
 }
 
-NULL_IMPUTERS_HYPERPARAMS = {}
+NULL_IMPUTERS_HYPERPARAMS = {
+    ErrorRepairMethod.k_means_clustering.value: {
+        ACS_INCOME_DATASET: {
+            "MCAR3": {"n_clusters": 2},
+            "MAR3": {"n_clusters": 2},
+            "MNAR3": {"n_clusters": 2}
+        },
+        GERMAN_CREDIT_DATASET: {
+            "MCAR3": {"n_clusters": 2},
+            "MAR3": {"n_clusters": 2},
+            "MNAR3": {"n_clusters": 2}
+        },
+        DIABETES_DATASET: {
+            "MCAR3": {"n_clusters": 2},
+            "MAR3": {"n_clusters": 2},
+            "MNAR3": {"n_clusters": 2}
+        },
+        LAW_SCHOOL_DATASET: {
+            "MCAR3": {"n_clusters": 2},
+            "MAR3": {"n_clusters": 2},
+            "MNAR3": {"n_clusters": 2}
+        },
+    }
+}

@@ -147,6 +147,9 @@ class MLLifecycle:
             train_injection_strategy, _ = get_injection_scenarios(evaluation_scenario)
             hyperparams = NULL_IMPUTERS_HYPERPARAMS.get(null_imputer_name, {}).get(self.dataset_name, {}).get(train_injection_strategy, {})
 
+        self._logger.info('Impute nulls hyper-params: {}'.format(hyperparams))
+        self._logger.info('tune_imputers: {}'.format(tune_imputers))
+
         # Use a method, kwargs, and hyperparams from NULL_IMPUTERS_CONFIG
         imputation_method = NULL_IMPUTERS_CONFIG[null_imputer_name]["method"]
         imputation_kwargs = NULL_IMPUTERS_CONFIG[null_imputer_name]["kwargs"]
@@ -302,7 +305,8 @@ class MLLifecycle:
         return metrics_df
 
     def _save_imputation_metrics_to_db(self, train_imputation_metrics_df: pd.DataFrame, test_imputation_metrics_dfs_lst: list,
-                                       imputation_runtime: float, null_imputer_name: str, evaluation_scenario: str, experiment_seed: int):
+                                       imputation_runtime: float, null_imputer_name: str, evaluation_scenario: str, 
+                                       experiment_seed: int, null_imputer_params_dct: dict):
         train_imputation_metrics_df['Imputation_Guid'] = train_imputation_metrics_df.apply(
             lambda row: generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name,
                                                              evaluation_scenario, experiment_seed,
@@ -320,6 +324,7 @@ class MLLifecycle:
                                              'dataset_part': 'X_train_val',
                                              'runtime_in_mins': imputation_runtime,
                                              'record_create_date_time': datetime.now(timezone.utc),
+                                             'null_imputer_params_dct': null_imputer_params_dct
                                          })
 
         # Save imputation results into a database for each test set from the evaluation scenario
