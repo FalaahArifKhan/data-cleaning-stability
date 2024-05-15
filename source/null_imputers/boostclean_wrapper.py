@@ -153,6 +153,7 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         test_scores = self.a_T.dot(preds_test_T).T
 
         y_pred_test = np.sign(test_scores)
+        y_pred_test = ((y_pred_test + 1) / 2).astype(int)
         
         return y_pred_test
         
