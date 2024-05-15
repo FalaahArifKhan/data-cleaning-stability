@@ -16,13 +16,13 @@ python ./scripts/evaluate_models.py \
     --evaluation_scenarios \[\"exp1_mcar3\"\]
 
 python ./scripts/evaluate_models.py \
-    --dataset bank \
+    --dataset diabetes \
     --null_imputers \[\"median-mode\"\] \
     --models \[\"lr_clf\"\] \
     --run_nums \[1\] \
     --tune_imputers true \
     --ml_impute true \
-    --evaluation_scenarios \[\"exp1_mcar3\"\]
+    --evaluation_scenarios \[\"exp2\&3_mcar1\"\]
 
 python ./scripts/impute_nulls_with_predictor.py \
     --dataset folk \

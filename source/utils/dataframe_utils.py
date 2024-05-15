@@ -152,7 +152,17 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame, ver
         # In case when subgroup true df contains a very small number of samples, return None
         return None
 
-    elif pred.nunique() == 1:
+    elif pred.nunique() == 1 and true.nunique() == 1:
+        if verbose:
+            print('Compute KL divergence using discrete uniform PMFs...')
+
+        # If the unique value in both pandas series is the same, the KL divergence is 0.0
+        if pred.values[0] == true.values[0]:
+            return 0.0
+
+        return 100.0
+
+    elif pred.nunique() == 1 and true.nunique() != 1:
         if verbose:
             print('Compute KL divergence using KDE and discrete uniform PMF...')
 
