@@ -263,8 +263,10 @@ class MLLifecycle:
                                                               column_type=column_type,
                                                               verbose=verbose)
                 if verbose:
-                    print('Predictive KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_pred))
-                    print('Total KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_total))
+                    if kl_divergence_pred is not None:
+                        print('Predictive KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_pred))
+                    if kl_divergence_total is not None:
+                        print('Total KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_total))
 
                 rmse = None
                 precision = None
