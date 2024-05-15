@@ -61,6 +61,7 @@ def validate_args(exp_config_obj, with_model_names=True):
 
     for evaluation_scenario in exp_config_obj.evaluation_scenarios:
         if evaluation_scenario not in EVALUATION_SCENARIOS_CONFIG.keys():
+            print('evaluation_scenario --', evaluation_scenario)
             raise ValueError('evaluation_scenarios argument should include values '
                              'from the EVALUATION_SCENARIOS_CONFIG keys in configs/scenarios_config.py')
 
