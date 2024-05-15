@@ -193,7 +193,7 @@ def test_inject_nulls_should_preserve_mcar_scenario_test_sets_sequence(folk_benc
 
 
 def test_inject_nulls_should_preserve_mar_scenario_test_sets_sequence(folk_benchmark):
-    evaluation_scenario = 'exp2&3_mar5'
+    evaluation_scenario = 'exp2_3_mar5'
     experiment_seed = 200
     data_loader = folk_benchmark.init_data_loader
 
@@ -232,7 +232,7 @@ def test_inject_nulls_should_preserve_mar_scenario_test_sets_sequence(folk_bench
 
 
 def test_inject_nulls_should_preserve_mnar_scenario_test_sets_sequence(folk_benchmark):
-    evaluation_scenario = 'exp2&3_mnar3'
+    evaluation_scenario = 'exp2_3_mnar3'
     experiment_seed = 300
     data_loader = folk_benchmark.init_data_loader
 
