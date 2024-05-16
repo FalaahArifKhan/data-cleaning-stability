@@ -201,7 +201,7 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         # Read imputed train sets from paths
         X_train_repairs = {}
         for path in paths:
-            repair_method = os.path.basename(path).split('.')[-3]
+            repair_method = os.path.basename(path)#.split('.')[-3]
             X_train_repaired = pd.read_csv(path, index_col=0)
             X_train_repairs[repair_method] = X_train_repaired.loc[X_train.index]
             
