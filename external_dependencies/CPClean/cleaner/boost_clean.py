@@ -10,8 +10,9 @@ from training.train import train, train_evaluate
 
 def train_classifiers(X_train_list, y_train, model):
     C_list = []
-    for X_train in X_train_list:
-        C = train(X_train, y_train, model)
+    X_train_list_copy = list(X_train_list)
+    for i in range(len(X_train_list)):
+        C = train(X_train_list_copy[i], y_train, model[i])
         C_list.append(C)
     return C_list
 

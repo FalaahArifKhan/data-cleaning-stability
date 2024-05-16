@@ -12,23 +12,17 @@ from external_dependencies.CPClean.cleaner.boost_clean import transform_y, train
 from external_dependencies.CPClean.repair.repair import repair
 from external_dependencies.CPClean.training.preprocess import preprocess_boostclean
 
+BOOST_CLEAN_DEFAULT_MODEL_PARAMS = {
+    'fn': RandomForestClassifier,
+    'params': {}
+}
 
-def get_boostclean_params_for_tuning(models_tuning_seed):
-    return {
-        'RandomForestClassifier': {
-            'model': RandomForestClassifier(random_state=models_tuning_seed),
-            'params': {
-                'n_estimators': [50, 100, 200],
-                'max_depth': [10, 25, 50, 75, 100, None],
-                'min_samples_split': [2, 5, 10],
-                'min_samples_leaf': [1, 2, 4],
-                'bootstrap': [True, False]
-            }
-        }
-    }
 
 class BoostCleanWrapper(BaseInprocessingWrapper):
-    def __init__(self, X_val, y_val, random_state, save_dir, T=5, tune=False, computed_repaired_datasets_paths=None):
+    def __init__(self, X_val, y_val, 
+                 random_state, save_dir, T=5, tune=False, 
+                 model_params_list=None,
+                 computed_repaired_datasets_paths=None):
         self.X_val = X_val
         self.y_val = y_val
         self.random_state = random_state
@@ -36,47 +30,37 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         self.T = T
         self.tune = tune
         self.computed_repaired_datasets_paths = computed_repaired_datasets_paths
-        
-        if not self.tune:
-            print("BoostClean will be not tuned.")
-            self.model_metadata = {
-                "fn": RandomForestClassifier,
-                "params": {}
-            }
-        else:
-            print("BoostClean will be tuned.")
-            params_grid = get_boostclean_params_for_tuning(self.random_state)
-            self.classifier_params_grid = params_grid['RandomForestClassifier']['params']
-            
-            self.classifier_grid_search = GridSearchCV(
-                        estimator=params_grid['RandomForestClassifier']['model'],
-                        param_grid=self.classifier_params_grid,
-                        scoring="f1_macro",
-                        n_jobs=-1,
-                        cv=3
-            )  
+        if model_params_list is None:
+            self.model_params_list = [BOOST_CLEAN_DEFAULT_MODEL_PARAMS] * len(computed_repaired_datasets_paths)
+        self.model_params_list = model_params_list
         
     def __copy__(self):
         return BoostCleanWrapper(X_val=self.X_val.copy(deep=False),
                                  y_val=self.y_val.copy(deep=False),
                                  random_state=self.random_state,
                                  save_dir=self.save_dir,
+                                 tune=self.tune,
                                  T=self.T,
+                                 model_params_list=self.model_params_list,
                                  computed_repaired_datasets_paths=self.computed_repaired_datasets_paths)
         
     def __deepcopy__(self, memo):
+        print('deepcopy model_params_list', self.model_params_list)
         return BoostCleanWrapper(X_val=self.X_val.copy(deep=True),
                                  y_val=self.y_val.copy(deep=True),
                                  random_state=self.random_state,
                                  save_dir=self.save_dir,
+                                 tune=self.tune,
                                  T=self.T,
+                                 model_params_list=self.model_params_list,
                                  computed_repaired_datasets_paths=self.computed_repaired_datasets_paths)
         
     def get_params(self):
         return {
             'random_state': self.random_state,
             'T': self.T,
-            'tune': False,
+            'tune': self.tune,
+            'model_params_list': self.model_params_list,
             'computed_repaired_datasets_paths': self.computed_repaired_datasets_paths
         }
         
@@ -85,7 +69,9 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
                                  y_val=self.y_val,
                                  random_state=random_state,
                                  save_dir=self.save_dir,
+                                 tune=self.tune,
                                  T=self.T,
+                                 model_params_list=self.model_params_list,
                                  computed_repaired_datasets_paths=self.computed_repaired_datasets_paths)
         
     def _fit_boost_clean(self, model, X_train_list, y_train, X_val, y_val, T=1):
@@ -131,7 +117,7 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         y_train = transform_y(y_train, 1)
         y_val = transform_y(y_val, 1)
 
-        self.C_list = tune_classifiers(X_train_list, y_train, model)
+        self.C_list = train_classifiers(X_train_list, y_train, model)
         N = len(y_val)
 
         W_results = {}
@@ -218,7 +204,7 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         
         if self.tune:
             boost_clean_result = self._tune_boost_clean(
-                          model=self.classifier_grid_search,
+                          model=self.model_params_list,
                           X_train_list=data_dct["X_train_repairs"].values(),
                           y_train=data_dct["y_train"],
                           X_val=data_dct["X_val"],
@@ -226,7 +212,7 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
                         )
         else:
             boost_clean_result = self._fit_boost_clean(
-                                model=self.model_metadata,
+                                model=self.model_params_list,
                                 X_train_list=data_dct["X_train_repairs"].values(),
                                 y_train=data_dct["y_train"],
                                 X_val=data_dct["X_val"],
