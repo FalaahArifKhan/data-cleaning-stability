@@ -19,10 +19,10 @@ python ./scripts/evaluate_models.py \
     --dataset diabetes \
     --null_imputers \[\"median-mode\"\] \
     --models \[\"lr_clf\"\] \
-    --run_nums \[1\] \
+    --run_nums \[5\] \
     --tune_imputers true \
     --ml_impute true \
-    --evaluation_scenarios \[\"exp2\&3_mcar1\"\]
+    --evaluation_scenarios \[\"exp2_3_mnar3\"\]
 
 python ./scripts/impute_nulls_with_predictor.py \
     --dataset folk \
