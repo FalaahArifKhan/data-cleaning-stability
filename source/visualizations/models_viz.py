@@ -683,14 +683,14 @@ def get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_
 
     line_chart = alt.Chart(models_metric_df_for_test_set).mark_line().encode(
         x=alt.X(field='Test_Error_Rate', type='quantitative', title='Test Error Rate',
-                scale=alt.Scale(nice=False)),
+                scale=alt.Scale(nice=False), axis=alt.Axis(labelExpr=f"(datum.value == 0.1) || (datum.value == 0.3) || (datum.value == 0.5) ? datum.label : ''")),
         y=alt.Y('mean(Metric_Value)', type='quantitative', title=metric_name.replace('_', ' '), scale=alt.Scale(zero=False, domain=ylim)),
         color=alt.Color('Null_Imputer_Name:N', title=None),
     )
     if with_band:
         band_chart = alt.Chart(models_metric_df_for_test_set).mark_errorband(extent="stderr").encode(
             x=alt.X(field='Test_Error_Rate', type='quantitative', title='Test Error Rate',
-                    scale=alt.Scale(nice=False)),
+                    scale=alt.Scale(nice=False), axis=alt.Axis(labelExpr=f"(datum.value == 0.1) || (datum.value == 0.3) || (datum.value == 0.5) ? datum.label : ''")),
             y=alt.Y(field='Metric_Value', type='quantitative', title=metric_name.replace('_', ' '), scale=alt.Scale(zero=False, domain=ylim)),
             color='Null_Imputer_Name:N',
         )
@@ -850,14 +850,14 @@ def create_line_bands_for_diff_imputers(dataset_name: str, model_name: str, metr
 
     final_grid_chart = (
         main_base_chart.configure_axis(
-            labelFontSize=base_font_size + 4,
-            titleFontSize=base_font_size + 6,
+            labelFontSize=base_font_size + 2,
+            titleFontSize=base_font_size + 2,
             labelFontWeight='normal',
             titleFontWeight='normal',
         ).configure_title(
             fontSize=base_font_size + 2
         ).configure_legend(
-            titleFontSize=base_font_size + 4,
+            titleFontSize=base_font_size + 2,
             labelFontSize=base_font_size + 2,
             symbolStrokeWidth=10,
             labelLimit=400,
