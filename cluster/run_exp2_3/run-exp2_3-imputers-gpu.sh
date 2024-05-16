@@ -16,8 +16,6 @@ declare -a job_configs=(
     "diabetes datawig exp2_3_mcar3 4,5,6"
     "diabetes datawig exp2_3_mar3 1,2,3"
     "diabetes datawig exp2_3_mar3 4,5,6"
-    "diabetes datawig exp2_3_mnar3 1,2,3"
-    "diabetes datawig exp2_3_mnar3 4,5,6"
 )
 
 TEMPLATE_FILE="../cluster/run_exp1/run-exp1-imputers-gpu-template.sbatch"
