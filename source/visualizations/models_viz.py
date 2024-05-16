@@ -55,8 +55,8 @@ def get_baseline_models_metric_df(db_client, dataset_name: str, metric_name: str
     return metric_df
 
 
-def get_baseline_model_median(dataset_name: str, model_name: str, metric_name: str,
-                              db_client, group: str = 'overall'):
+def get_baseline_model_metrics(dataset_name: str, model_name: str, metric_name: str,
+                               db_client, group: str = 'overall'):
     if group == 'overall':
         models_metric_df = get_baseline_models_metric_df(db_client=db_client,
                                                          dataset_name=dataset_name,
@@ -72,6 +72,16 @@ def get_baseline_model_median(dataset_name: str, model_name: str, metric_name: s
         models_metric_df = models_metric_df.rename(columns={group: 'Metric_Value'})
 
     models_metric_df = models_metric_df[models_metric_df['Model_Name'] == model_name]
+    return models_metric_df
+
+
+def get_baseline_model_median(dataset_name: str, model_name: str, metric_name: str,
+                              db_client, group: str = 'overall'):
+    models_metric_df = get_baseline_model_metrics(dataset_name=dataset_name,
+                                                  model_name=model_name,
+                                                  metric_name=metric_name,
+                                                  db_client=db_client,
+                                                  group=group)
     return models_metric_df['Metric_Value'].median()
 
 
@@ -657,6 +667,206 @@ def create_box_plots_for_diff_imputers_v2(dataset_name: str, model_name: str, me
             titleFontWeight='normal',
         ).configure_title(
             fontSize=base_font_size + 6,
+        )
+    )
+
+    # Set a shared scale for the y-axis
+    final_grid_chart = final_grid_chart.resolve_scale(y='shared')
+
+    return final_grid_chart
+
+
+def get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_set: str, metric_name: str, title: str,
+                                                         base_font_size: int = 18, ylim=Undefined, with_band=True):
+    title = f'{title} & {test_set} test'
+    models_metric_df_for_test_set = models_metric_df[models_metric_df['Test_Injection_Strategy'] == test_set]
+
+    line_chart = alt.Chart(models_metric_df_for_test_set).mark_line().encode(
+        x=alt.X(field='Test_Error_Rate', type='quantitative', title='Test Error Rate',
+                scale=alt.Scale(nice=False)),
+        y=alt.Y('mean(Metric_Value)', type='quantitative', title=metric_name.replace('_', ' '), scale=alt.Scale(zero=False, domain=ylim)),
+        color=alt.Color('Null_Imputer_Name:N', title=None),
+    )
+    if with_band:
+        band_chart = alt.Chart(models_metric_df_for_test_set).mark_errorband(extent="stderr").encode(
+            x=alt.X(field='Test_Error_Rate', type='quantitative', title='Test Error Rate',
+                    scale=alt.Scale(nice=False)),
+            y=alt.Y(field='Metric_Value', type='quantitative', title=metric_name.replace('_', ' '), scale=alt.Scale(zero=False, domain=ylim)),
+            color='Null_Imputer_Name:N',
+        )
+        base_chart = (band_chart + line_chart)
+    else:
+        base_chart = line_chart
+
+    base_chart = base_chart.properties(
+        width=200, height=200,
+        title=alt.TitleParams(text=title, fontSize=base_font_size + 2),
+    )
+
+    return base_chart
+
+
+def get_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name: str, evaluation_scenario: str,
+                                                              model_name: str, metric_name: str, db_client,
+                                                              title: str, group: str = 'overall',
+                                                              base_font_size: int = 18, ylim=Undefined, with_band=True):
+    sns.set_style("whitegrid")
+    metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) \
+        if 'equalized_odds' not in metric_name.lower() else metric_name
+
+    if group == 'overall':
+        models_metric_df = get_models_metric_df(db_client=db_client,
+                                                dataset_name=dataset_name,
+                                                evaluation_scenario=evaluation_scenario,
+                                                metric_name=metric_name,
+                                                group=group)
+    else:
+        overall_metric = get_overall_metric_from_disparity_metric(disparity_metric=metric_name)
+        models_metric_df = get_models_disparity_metric_df(db_client=db_client,
+                                                          dataset_name=dataset_name,
+                                                          evaluation_scenario=evaluation_scenario,
+                                                          metric_name=overall_metric,
+                                                          group=group)
+        models_metric_df = models_metric_df[models_metric_df['Metric'] == metric_name]
+        models_metric_df = models_metric_df.rename(columns={group: 'Metric_Value'})
+
+    models_metric_df = models_metric_df[models_metric_df['Model_Name'] == model_name]
+    models_metric_df['Test_Injection_Strategy'] = models_metric_df.apply(
+        lambda row: EVALUATION_SCENARIOS_CONFIG[row['Evaluation_Scenario']]['test_injection_scenarios'][row['Test_Set_Index']][:-1],
+        axis=1
+    )
+    models_metric_df['Test_Error_Rate'] = models_metric_df.apply(
+        lambda row: 0.1 * int(EVALUATION_SCENARIOS_CONFIG[row['Evaluation_Scenario']]['test_injection_scenarios'][row['Test_Set_Index']][-1]),
+        axis=1
+    )
+
+    # Add a baseline median to models_metric_df to display it as a horizontal line
+    baseline_metrics_df = get_baseline_model_metrics(dataset_name=dataset_name,
+                                                     model_name=model_name,
+                                                     metric_name=metric_name,
+                                                     db_client=db_client,
+                                                     group=group)
+    baseline_metrics_df['Evaluation_Scenario'] = evaluation_scenario
+    baseline_metrics_df['Test_Set_Index'] = None
+    baseline_metrics_df['Test_Error_Rate'] = 0.0
+
+    # Add metrics for 0.0 error rate for all null imputers
+    for null_imputer_name in models_metric_df['Null_Imputer_Name'].unique():
+        for test_set_name in ['MCAR', 'MAR', 'MNAR']:
+            new_baseline_metrics_df = baseline_metrics_df.copy()
+            new_baseline_metrics_df['Null_Imputer_Name'] = null_imputer_name
+            new_baseline_metrics_df['Test_Injection_Strategy'] = test_set_name
+
+            models_metric_df = pd.concat([models_metric_df, new_baseline_metrics_df])
+
+    mcar_base_chart = get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df=models_metric_df,
+                                                                           test_set='MCAR',
+                                                                           metric_name=metric_name,
+                                                                           title=title,
+                                                                           base_font_size=base_font_size,
+                                                                           ylim=ylim,
+                                                                           with_band=with_band)
+
+    mar_base_chart = get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df=models_metric_df,
+                                                                          test_set='MAR',
+                                                                          metric_name=metric_name,
+                                                                          title=title,
+                                                                          base_font_size=base_font_size,
+                                                                          ylim=ylim,
+                                                                          with_band=with_band)
+
+    mnar_base_chart = get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df=models_metric_df,
+                                                                           test_set='MNAR',
+                                                                           metric_name=metric_name,
+                                                                           title=title,
+                                                                           base_font_size=base_font_size,
+                                                                           ylim=ylim,
+                                                                           with_band=with_band)
+
+    return mcar_base_chart, mar_base_chart, mnar_base_chart
+
+
+def create_line_bands_for_diff_imputers(dataset_name: str, model_name: str, metric_name: str, db_client,
+                                        group: str = 'overall', ylim=Undefined, with_band=True):
+    base_font_size = 20
+    mcar_base_chart1, mar_base_chart1, mnar_base_chart1 = (
+        get_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
+                                                                  evaluation_scenario='exp2_3_mcar3',
+                                                                  title='MCAR train',
+                                                                  model_name=model_name,
+                                                                  metric_name=metric_name,
+                                                                  db_client=db_client,
+                                                                  group=group,
+                                                                  base_font_size=base_font_size,
+                                                                  ylim=ylim,
+                                                                  with_band=with_band))
+    print('Prepared a plot for an MCAR train set')
+    mcar_base_chart2, mar_base_chart2, mnar_base_chart2 = (
+        get_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
+                                                                  evaluation_scenario='exp2_3_mar3',
+                                                                  title='MAR train',
+                                                                  model_name=model_name,
+                                                                  metric_name=metric_name,
+                                                                  db_client=db_client,
+                                                                  group=group,
+                                                                  base_font_size=base_font_size,
+                                                                  ylim=ylim,
+                                                                  with_band=with_band))
+    print('Prepared a plot for an MAR train set')
+    mcar_base_chart3, mar_base_chart3, mnar_base_chart3 = (
+        get_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
+                                                                  evaluation_scenario='exp2_3_mnar3',
+                                                                  title='MNAR train',
+                                                                  model_name=model_name,
+                                                                  metric_name=metric_name,
+                                                                  db_client=db_client,
+                                                                  group=group,
+                                                                  base_font_size=base_font_size,
+                                                                  ylim=ylim,
+                                                                  with_band=with_band))
+    print('Prepared a plot for an MNAR train set')
+
+    # Concatenate two base charts
+    main_base_chart = alt.vconcat()
+
+    row1 = alt.hconcat()
+    row1 |= mcar_base_chart1
+    row1 |= mar_base_chart1
+    row1 |= mnar_base_chart1
+
+    row2 = alt.hconcat()
+    row2 |= mcar_base_chart2
+    row2 |= mar_base_chart2
+    row2 |= mnar_base_chart2
+
+    row3 = alt.hconcat()
+    row3 |= mcar_base_chart3
+    row3 |= mar_base_chart3
+    row3 |= mnar_base_chart3
+
+    main_base_chart &= row1.resolve_scale(y='shared')
+    main_base_chart &= row2.resolve_scale(y='shared')
+    main_base_chart &= row3.resolve_scale(y='shared')
+
+    final_grid_chart = (
+        main_base_chart.configure_axis(
+            labelFontSize=base_font_size + 4,
+            titleFontSize=base_font_size + 6,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        ).configure_title(
+            fontSize=base_font_size + 2
+        ).configure_legend(
+            titleFontSize=base_font_size + 4,
+            labelFontSize=base_font_size + 2,
+            symbolStrokeWidth=10,
+            labelLimit=400,
+            titleLimit=300,
+            columns=3,
+            orient='top',
+            direction='horizontal',
+            titleAnchor='middle',
+            symbolOffset=100,
         )
     )
 
