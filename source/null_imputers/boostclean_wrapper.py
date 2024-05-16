@@ -61,20 +61,25 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
                                  y_val=self.y_val.copy(deep=False),
                                  random_state=self.random_state,
                                  save_dir=self.save_dir,
-                                 T=self.T)
+                                 T=self.T,
+                                 tune=self.tune,
+                                 computed_repaired_datasets_paths=self.computed_repaired_datasets_paths)
         
     def __deepcopy__(self, memo):
         return BoostCleanWrapper(X_val=self.X_val.copy(deep=True),
                                  y_val=self.y_val.copy(deep=True),
                                  random_state=self.random_state,
                                  save_dir=self.save_dir,
-                                 T=self.T)
+                                 T=self.T,
+                                 tune=self.tune,
+                                 computed_repaired_datasets_paths=self.computed_repaired_datasets_paths)
         
     def get_params(self):
         return {
             'random_state': self.random_state,
-            'model_metadata_params': self.model_metadata['params'],
-            'T': self.T
+            'T': self.T,
+            'tune': self.tune,
+            'computed_repaired_datasets_paths': self.computed_repaired_datasets_paths
         }
         
     def set_params(self, random_state):
@@ -164,8 +169,6 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
             y_pred_val = np.sign(val_scores)
             val_acc = (y_pred_val == y_val).mean()
             W_results[T] = [val_acc, a_T, C_T]
-            print("###### Tuning BoostClean ######")
-            print(f"BoostClean performance on a validation set with T={T}: {val_acc}")
             
         # Find the best T
         best_T = max(W_results, key=lambda x: W_results[x][0])
@@ -241,7 +244,6 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         
         preds = self._predict_boost_clean(X_preprocessed)
         preds = np.squeeze(preds)
-        print(f"BoostClean predictions shape: {preds.shape}")
         
         return preds
     

@@ -327,6 +327,7 @@ class Benchmark(MLLifecycle):
         imputation_kwargs = NULL_IMPUTERS_CONFIG[null_imputer_name]["kwargs"]
         imputation_kwargs.update({'save_dir': save_dir})       
         imputation_kwargs['tune'] = tune_imputers
+        print("imputation_kwargs['tune']", imputation_kwargs['tune'])
         
         # Make paths for the imputed datasets
         imputed_datasets_paths = []
@@ -341,7 +342,6 @@ class Benchmark(MLLifecycle):
                                     if file.is_file() and "train" in file.name:
                                         imputed_datasets_paths.append(file)
                                         
-        print('imputed_datasets_paths -- ', imputed_datasets_paths)
         imputation_kwargs['computed_repaired_datasets_paths'] = imputed_datasets_paths if len(imputed_datasets_paths) > 0 else None                                
 
         # Create a wrapper for the input joint cleaning-and-training method
