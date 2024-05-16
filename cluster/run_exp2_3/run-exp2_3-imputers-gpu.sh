@@ -1,21 +1,7 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "diabetes datawig exp2_3_mcar1 1,2,3"
-    "diabetes datawig exp2_3_mcar1 4,5,6"
-    "diabetes datawig exp2_3_mcar5 1,2,3"
-    "diabetes datawig exp2_3_mcar5 4,5,6"
-    "diabetes datawig exp2_3_mar1 1,2,3"
-    "diabetes datawig exp2_3_mar1 4,5,6"
-    "diabetes datawig exp2_3_mar5 1,2,3"
-    "diabetes datawig exp2_3_mar5 4,5,6"
-    "diabetes datawig exp2_3_mnar1 1,2,3"
-    "diabetes datawig exp2_3_mnar1 4,5,6"
-    "diabetes datawig exp2_3_mnar5 1,2,3"
-    "diabetes datawig exp2_3_mnar5 4,5,6"
-    "diabetes datawig exp2_3_mcar3 1,2,3"
-    "diabetes datawig exp2_3_mcar3 4,5,6"
-    "diabetes datawig exp2_3_mar3 1,2,3"
-    "diabetes datawig exp2_3_mar3 4,5,6"
+    "diabetes datawig exp2_3_mcar1 3"
+    "diabetes datawig exp2_3_mar1 3"
 )
 
 TEMPLATE_FILE="../cluster/run_exp1/run-exp1-imputers-gpu-template.sbatch"
