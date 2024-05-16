@@ -5,12 +5,27 @@ from datetime import datetime
 from virny.custom_classes.base_inprocessing_wrapper import BaseInprocessingWrapper
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import GridSearchCV
 
 from external_dependencies.CPClean.training.knn import KNN
-from external_dependencies.CPClean.cleaner.boost_clean import transform_y, train_classifiers
+from external_dependencies.CPClean.cleaner.boost_clean import transform_y, train_classifiers, tune_classifiers
 from external_dependencies.CPClean.repair.repair import repair
 from external_dependencies.CPClean.training.preprocess import preprocess_boostclean
 
+
+def get_boostclean_params_for_tuning(models_tuning_seed):
+    return {
+        'RandomForestClassifier': {
+            'model': RandomForestClassifier(random_state=models_tuning_seed),
+            'params': {
+                'n_estimators': [50, 100, 200],
+                'max_depth': [10, 25, 50, 75, 100, None],
+                'min_samples_split': [2, 5, 10],
+                'min_samples_leaf': [1, 2, 4],
+                'bootstrap': [True, False]
+            }
+        }
+    }
 
 class BoostCleanWrapper(BaseInprocessingWrapper):
     def __init__(self, X_val, y_val, random_state, save_dir, T=5, tune=False, computed_repaired_datasets_paths=None):
@@ -22,10 +37,24 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         self.tune = tune
         self.computed_repaired_datasets_paths = computed_repaired_datasets_paths
         
-        self.model_metadata = {
-            "fn": RandomForestClassifier,
-            "params": {}
-        }
+        if not self.tune:
+            print("BoostClean will be not tuned.")
+            self.model_metadata = {
+                "fn": RandomForestClassifier,
+                "params": {}
+            }
+        else:
+            print("BoostClean will be tuned.")
+            params_grid = get_boostclean_params_for_tuning(self.random_state)
+            self.classifier_params_grid = params_grid['RandomForestClassifier']['params']
+            
+            self.classifier_grid_search = GridSearchCV(
+                        estimator=params_grid['RandomForestClassifier']['model'],
+                        param_grid=self.classifier_params_grid,
+                        scoring="f1_macro",
+                        n_jobs=-1,
+                        cv=3
+            )  
         
     def __copy__(self):
         return BoostCleanWrapper(X_val=self.X_val.copy(deep=False),
@@ -98,7 +127,7 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         y_train = transform_y(y_train, 1)
         y_val = transform_y(y_val, 1)
 
-        self.C_list = train_classifiers(X_train_list, y_train, model)
+        self.C_list = tune_classifiers(X_train_list, y_train, model)
         N = len(y_val)
 
         W_results = {}
@@ -187,7 +216,7 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         
         if self.tune:
             boost_clean_result = self._tune_boost_clean(
-                          model=self.model_metadata,
+                          model=self.classifier_grid_search,
                           X_train_list=data_dct["X_train_repairs"].values(),
                           y_train=data_dct["y_train"],
                           X_val=data_dct["X_val"],
