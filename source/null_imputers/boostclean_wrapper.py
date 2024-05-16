@@ -62,7 +62,6 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
                                  random_state=self.random_state,
                                  save_dir=self.save_dir,
                                  T=self.T,
-                                 tune=self.tune,
                                  computed_repaired_datasets_paths=self.computed_repaired_datasets_paths)
         
     def __deepcopy__(self, memo):
@@ -71,14 +70,13 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
                                  random_state=self.random_state,
                                  save_dir=self.save_dir,
                                  T=self.T,
-                                 tune=self.tune,
                                  computed_repaired_datasets_paths=self.computed_repaired_datasets_paths)
         
     def get_params(self):
         return {
             'random_state': self.random_state,
             'T': self.T,
-            'tune': self.tune,
+            'tune': False,
             'computed_repaired_datasets_paths': self.computed_repaired_datasets_paths
         }
         
@@ -87,7 +85,8 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
                                  y_val=self.y_val,
                                  random_state=random_state,
                                  save_dir=self.save_dir,
-                                 T=self.T)
+                                 T=self.T,
+                                 computed_repaired_datasets_paths=self.computed_repaired_datasets_paths)
         
     def _fit_boost_clean(self, model, X_train_list, y_train, X_val, y_val, T=1):
         y_train = transform_y(y_train, 1)
