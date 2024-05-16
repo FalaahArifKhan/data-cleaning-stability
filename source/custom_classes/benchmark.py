@@ -332,16 +332,21 @@ class Benchmark(MLLifecycle):
         # Make paths for the imputed datasets
         imputed_datasets_paths = []
         results_dir = pathlib.Path(__file__).parent.parent.parent.joinpath('results')
-        for imputer_dir in results_dir.iterdir():
-            for dataset_dir in imputer_dir.iterdir():
-                for scenario_dir in dataset_dir.iterdir():
-                    if scenario_dir.name == evaluation_scenario:
-                        for seed_dir in scenario_dir.iterdir():
-                            if seed_dir.name == str(experiment_seed):
-                                for file in seed_dir.iterdir():
-                                    if file.is_file() and "train" in file.name:
-                                        imputed_datasets_paths.append(file)
-                                        
+        
+        for dateset_dir in results_dir.iterdir():
+            if dateset_dir.is_dir() and dateset_dir.name == self.dataset_name:
+                for method_dir in dateset_dir.iterdir():
+                    if method_dir.name == 'deletion':
+                        continue
+                    for scenario_dir in method_dir.iterdir():
+                        if scenario_dir.name == evaluation_scenario:
+                            for seed_dir in scenario_dir.iterdir():
+                                if seed_dir.name == str(experiment_seed):
+                                    for file in seed_dir.iterdir():
+                                        if file.is_file() and file.name.startswith('imputed') and 'X_train' in file.name:
+                                            print('Used imputed dataset', file)
+                                            imputed_datasets_paths.append(file)
+        
         imputation_kwargs['computed_repaired_datasets_paths'] = imputed_datasets_paths if len(imputed_datasets_paths) > 0 else None                                
 
         # Create a wrapper for the input joint cleaning-and-training method
