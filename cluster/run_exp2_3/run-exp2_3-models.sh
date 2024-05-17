@@ -1,7 +1,7 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "diabetes datawig exp2_3_mcar1 mlp_clf 3"
-    "diabetes datawig exp2_3_mar1 mlp_clf 3"
+    "diabetes datawig exp2_3_mcar1 rf_clf 3"
+    "diabetes datawig exp2_3_mar1 rf_clf 3"
 )
 
 TEMPLATE_FILE="../cluster/run_exp1/run-exp1-models-template.sbatch"
