@@ -544,7 +544,7 @@ def create_box_plots_for_diff_imputers_and_single_eval_scenario_v2(dataset_name:
         models_metric_df = models_metric_df[models_metric_df['Metric'] == metric_name]
         models_metric_df = models_metric_df.rename(columns={group: 'Metric_Value'})
 
-    models_metric_df = models_metric_df[models_metric_df['Model_Name'] == model_name]
+    models_metric_df = models_metric_df[models_metric_df['Model_Name'].isin([model_name, 'boost_clean'])]
     models_metric_df['Test_Injection_Strategy'] = models_metric_df.apply(
         lambda row: EVALUATION_SCENARIOS_CONFIG[row['Evaluation_Scenario']]['test_injection_scenarios'][row['Test_Set_Index']][:-1],
         axis=1
@@ -730,7 +730,7 @@ def get_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name: str,
         models_metric_df = models_metric_df[models_metric_df['Metric'] == metric_name]
         models_metric_df = models_metric_df.rename(columns={group: 'Metric_Value'})
 
-    models_metric_df = models_metric_df[models_metric_df['Model_Name'] == model_name]
+    models_metric_df = models_metric_df[models_metric_df['Model_Name'].isin([model_name, 'boost_clean'])]
     models_metric_df['Test_Injection_Strategy'] = models_metric_df.apply(
         lambda row: EVALUATION_SCENARIOS_CONFIG[row['Evaluation_Scenario']]['test_injection_scenarios'][row['Test_Set_Index']][:-1],
         axis=1
