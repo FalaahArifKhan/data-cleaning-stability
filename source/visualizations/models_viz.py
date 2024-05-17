@@ -678,6 +678,9 @@ def create_box_plots_for_diff_imputers_v2(dataset_name: str, model_name: str, me
 
 def get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_set: str, metric_name: str, title: str,
                                                          base_font_size: int = 18, ylim=Undefined, with_band=True):
+    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
+                      'k_means_clustering', 'datawig', 'automl', 'boost_clean']
+
     title = f'{title} & {test_set} test'
     models_metric_df_for_test_set = models_metric_df[models_metric_df['Test_Injection_Strategy'] == test_set]
 
@@ -685,14 +688,14 @@ def get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_
         x=alt.X(field='Test_Error_Rate', type='quantitative', title='Test Error Rate',
                 scale=alt.Scale(nice=False), axis=alt.Axis(labelExpr=f"(datum.value == 0.1) || (datum.value == 0.3) || (datum.value == 0.5) ? datum.label : ''")),
         y=alt.Y('mean(Metric_Value)', type='quantitative', title=metric_name.replace('_', ' '), scale=alt.Scale(zero=False, domain=ylim)),
-        color=alt.Color('Null_Imputer_Name:N', title=None),
+        color=alt.Color('Null_Imputer_Name:N', title=None, sort=imputers_order),
     )
     if with_band:
         band_chart = alt.Chart(models_metric_df_for_test_set).mark_errorband(extent="stderr").encode(
             x=alt.X(field='Test_Error_Rate', type='quantitative', title='Test Error Rate',
                     scale=alt.Scale(nice=False), axis=alt.Axis(labelExpr=f"(datum.value == 0.1) || (datum.value == 0.3) || (datum.value == 0.5) ? datum.label : ''")),
             y=alt.Y(field='Metric_Value', type='quantitative', title=metric_name.replace('_', ' '), scale=alt.Scale(zero=False, domain=ylim)),
-            color='Null_Imputer_Name:N',
+            color=alt.Color('Null_Imputer_Name:N', title=None, sort=imputers_order),
         )
         base_chart = (band_chart + line_chart)
     else:
