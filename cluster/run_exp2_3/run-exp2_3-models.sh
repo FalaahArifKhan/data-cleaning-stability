@@ -1,10 +1,17 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "diabetes datawig exp2_3_mcar1 rf_clf 3"
-    "diabetes datawig exp2_3_mar1 rf_clf 3"
+    "law_school miss_forest exp2_3_mcar1 mlp_clf 1,2,3,4,5,6"
+    "law_school miss_forest exp2_3_mcar5 mlp_clf 1,2,3,4,5,6"
+    "law_school miss_forest exp2_3_mar1 mlp_clf 1,2,3,4,5,6"
+    "law_school miss_forest exp2_3_mar5 mlp_clf 1,2,3,4,5,6"
+    "law_school miss_forest exp2_3_mnar1 mlp_clf 1,2,3,4,5,6"
+    "law_school miss_forest exp2_3_mnar5 mlp_clf 1,2,3,4,5,6"
+    "law_school miss_forest exp2_3_mcar3 mlp_clf 1,2,3,4,5,6"
+    "law_school miss_forest exp2_3_mar3 mlp_clf 1,2,3,4,5,6"
+    "law_school miss_forest exp2_3_mnar3 mlp_clf 1,2,3,4,5,6"
 )
 
-TEMPLATE_FILE="../cluster/run_exp1/run-exp1-models-template.sbatch"
+TEMPLATE_FILE="../cluster/run_exp2_3/run-exp2_3-models-template.sbatch"
 
 # Initialize a counter
 index=0
@@ -16,7 +23,7 @@ do
     read -r dataset null_imputer evaluation_scenario model run_nums <<< "$job_config"
 
     # Define the output file name
-    output_file="../cluster/run_exp1/sbatch_files/models/run-exp1-${dataset}_${null_imputer}_${evaluation_scenario}_${model}_${index}.sbatch"
+    output_file="../cluster/run_exp2_3/sbatch_files/models/run-exp2_3-${dataset}_${null_imputer}_${evaluation_scenario}_${model}_${index}.sbatch"
 
     # Create an empty file
     touch $output_file

@@ -29,7 +29,7 @@ declare -a job_configs=(
     "law_school miss_forest exp2_3_mnar3 5,6"
 )
 
-TEMPLATE_FILE="../cluster/run_exp1/run-exp1-imputers-gpu-template.sbatch"
+TEMPLATE_FILE="../cluster/run_exp2_3/run-exp2_3-imputers-gpu-template.sbatch"
 
 # Initialize a counter
 index=0
@@ -41,7 +41,7 @@ do
     read -r dataset null_imputer evaluation_scenario run_nums <<< "$job_config"
 
     # Define the output file name
-    output_file="../cluster/run_exp1/sbatch_files/imputers/run-exp1-imputers-${dataset}_${null_imputer}_${evaluation_scenario}_${index}.sbatch"
+    output_file="../cluster/run_exp2_3/sbatch_files/imputers/run-exp2_3-imputers-${dataset}_${null_imputer}_${evaluation_scenario}_${index}.sbatch"
 
     # Create an empty file
     touch $output_file
