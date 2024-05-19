@@ -78,7 +78,7 @@ python ../scripts/evaluate_baseline.py \
     --run_nums [1]
 
 python ../scripts/impute_nulls_with_predictor.py \
-    --dataset law_school \
+    --dataset folk \
     --null_imputers [\"deletion\",\"median-mode\",\"median-dummy\"] \
     --run_nums [1,2,3,4,5,6] \
     --tune_imputers true \
