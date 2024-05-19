@@ -42,5 +42,15 @@ NULL_IMPUTERS_HYPERPARAMS = {
             "MAR3": {"n_clusters": 2},
             "MNAR3": {"n_clusters": 2}
         },
+        BANK_MARKETING_DATASET: {
+            "MCAR3": {"n_clusters": 2},
+            "MAR3": {"n_clusters": 2},
+            "MNAR3": {"n_clusters": 2}
+        },
+        CARDIOVASCULAR_DISEASE_DATASET: {
+            "MCAR3": {"n_clusters": 6},
+            "MAR3": {"n_clusters": 6},
+            "MNAR3": {"n_clusters": 6}
+        }
     }
 }
