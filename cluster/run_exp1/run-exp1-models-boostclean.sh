@@ -1,20 +1,11 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "diabetes boost_clean exp1_mcar3 lr_clf 1,2,3,4,5,6"
-    "diabetes boost_clean exp1_mar3 lr_clf 1,2,3,4,5,6"
-    "diabetes boost_clean exp1_mnar3 lr_clf 1,2,3,4,5,6"
-    "law_school boost_clean exp1_mcar3 lr_clf 1,2,3,4,5,6"
-    "law_school boost_clean exp1_mar3 lr_clf 1,2,3,4,5,6"
-    "law_school boost_clean exp1_mnar3 lr_clf 1,2,3,4,5,6"
-    "german boost_clean exp1_mcar3 lr_clf 1,2,3,4,5,6"
-    "german boost_clean exp1_mar3 lr_clf 1,2,3,4,5,6"
-    "german boost_clean exp1_mnar3 lr_clf 1,2,3,4,5,6"
-    "heart boost_clean exp1_mcar3 lr_clf 1,2,3,4,5,6"
-    "heart boost_clean exp1_mar3 lr_clf 1,2,3,4,5,6"
-    "heart boost_clean exp1_mnar3 lr_clf 1,2,3,4,5,6"
-    "bank boost_clean exp1_mcar3 lr_clf 1,2,3,4,5,6"
-    "bank boost_clean exp1_mar3 lr_clf 1,2,3,4,5,6"
-    "bank boost_clean exp1_mnar3 lr_clf 1,2,3,4,5,6"
+    "folk boost_clean exp1_mcar3 lr_clf 1,2,3"
+    "folk boost_clean exp1_mcar3 lr_clf 4,5,6"
+    "folk boost_clean exp1_mar3 lr_clf 1,2,3"
+    "folk boost_clean exp1_mcar3 lr_clf 4,5,6"
+    "folk boost_clean exp1_mnar3 lr_clf 1,2,3"
+    "folk boost_clean exp1_mcar3 lr_clf 4,5,6"
 )
 
 TEMPLATE_FILE="../cluster/run_exp1/run-exp1-models-template.sbatch"
