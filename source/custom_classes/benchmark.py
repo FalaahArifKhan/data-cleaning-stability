@@ -331,7 +331,7 @@ class Benchmark(MLLifecycle):
         
         # Make paths for the imputed datasets
         imputed_datasets_paths = []
-        results_dir = pathlib.Path(__file__).parent.parent.parent.joinpath('results')
+        results_dir = pathlib.Path(__file__).parent.parent.parent.joinpath('results').joinpath('imputed_datasets')
         
         for dateset_dir in results_dir.iterdir():
             if dateset_dir.is_dir() and dateset_dir.name == self.dataset_name:
