@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --nodes=1
-#SBATCH --mem=96GB
+#SBATCH --mem=192GB
 #SBATCH --gres=gpu:rtx8000:1
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=END
