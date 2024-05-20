@@ -21,7 +21,7 @@ from source.utils.custom_logger import get_logger
 from source.utils.dataframe_utils import calculate_kl_divergence
 from source.utils.model_tuning_utils import tune_ML_models
 from source.utils.common_helpers import (generate_guid, create_base_flow_dataset, get_injection_scenarios)
-from source.custom_classes.database_client import DatabaseClient
+from source.custom_classes.database_client import DatabaseClient, get_secrets_path
 from source.error_injectors.nulls_injector import NullsInjector
 from source.validation import is_in_enum
 
@@ -45,7 +45,7 @@ class MLLifecycle:
         self.init_data_loader = DATASET_CONFIG[dataset_name]['data_loader'](**DATASET_CONFIG[dataset_name]['data_loader_kwargs'])
 
         self._logger = get_logger()
-        self._db = DatabaseClient()
+        self._db = DatabaseClient(secrets_path=get_secrets_path('secrets_2.env'))
         # Create a unique uuid per session to manipulate in the database
         # by all experimental results generated in this session
         self._session_uuid = str(uuid.uuid1())

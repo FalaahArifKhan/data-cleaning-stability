@@ -54,6 +54,17 @@ declare -a job_configs=(
     "folk median-dummy exp2_3_mcar3 mlp_clf 4,5,6"
     "folk median-dummy exp2_3_mar3 mlp_clf 4,5,6"
     "folk median-dummy exp2_3_mnar3 mlp_clf 4,5,6"
+    "folk miss_forest exp2_3_mcar1 mlp_clf 5,6"
+    "folk miss_forest exp2_3_mcar5 mlp_clf 3"
+    "folk miss_forest exp2_3_mar1 mlp_clf 6"
+    "folk miss_forest exp2_3_mar5 mlp_clf 3,6"
+    "folk miss_forest exp2_3_mnar1 mlp_clf 2,3"
+    "folk miss_forest exp2_3_mnar1 mlp_clf 5,6"
+    "folk miss_forest exp2_3_mnar5 mlp_clf 2,3"
+    "folk miss_forest exp2_3_mnar5 mlp_clf 5,6"
+    "folk miss_forest exp2_3_mcar3 mlp_clf 6"
+    "folk miss_forest exp2_3_mar3 mlp_clf 5,6"
+    "folk miss_forest exp2_3_mnar3 mlp_clf 5,6"
 )
 
 TEMPLATE_FILE="../cluster/run_exp2_3/run-exp2_3-models-template.sbatch"
