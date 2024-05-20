@@ -650,7 +650,7 @@ def create_box_plots_for_diff_imputers_v2(dataset_name: str, model_name: str, me
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
-            symbolOffset=156,
+            symbolOffset=120,
         ).configure_facet(
             spacing=5,
         ).configure_view(
@@ -827,6 +827,205 @@ def create_line_bands_for_diff_imputers(dataset_name: str, model_name: str, metr
                                                                   base_font_size=base_font_size,
                                                                   ylim=ylim,
                                                                   with_band=with_band))
+    print('Prepared a plot for an MNAR train set')
+
+    # Concatenate two base charts
+    main_base_chart = alt.vconcat()
+
+    row1 = alt.hconcat()
+    row1 |= mcar_base_chart1
+    row1 |= mar_base_chart1
+    row1 |= mnar_base_chart1
+
+    row2 = alt.hconcat()
+    row2 |= mcar_base_chart2
+    row2 |= mar_base_chart2
+    row2 |= mnar_base_chart2
+
+    row3 = alt.hconcat()
+    row3 |= mcar_base_chart3
+    row3 |= mar_base_chart3
+    row3 |= mnar_base_chart3
+
+    main_base_chart &= row1.resolve_scale(y='shared')
+    main_base_chart &= row2.resolve_scale(y='shared')
+    main_base_chart &= row3.resolve_scale(y='shared')
+
+    final_grid_chart = (
+        main_base_chart.configure_axis(
+            labelFontSize=base_font_size + 2,
+            titleFontSize=base_font_size + 2,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        ).configure_title(
+            fontSize=base_font_size + 2
+        ).configure_legend(
+            titleFontSize=base_font_size + 2,
+            labelFontSize=base_font_size + 2,
+            symbolStrokeWidth=10,
+            labelLimit=400,
+            titleLimit=300,
+            columns=3,
+            orient='top',
+            direction='horizontal',
+            titleAnchor='middle',
+            symbolOffset=100,
+        )
+    )
+
+    # Set a shared scale for the y-axis
+    final_grid_chart = final_grid_chart.resolve_scale(y='shared')
+
+    return final_grid_chart
+
+
+def get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_set: str, metric_name: str, train_set: str,
+                                                              base_font_size: int = 18, ylim=Undefined, with_band=True):
+    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
+                      'k_means_clustering', 'datawig', 'automl', 'boost_clean']
+
+    title = f'{train_set} train & {test_set} test'
+    models_metric_df_for_test_set = models_metric_df[models_metric_df['Test_Injection_Strategy'] == test_set]
+
+    line_chart = alt.Chart(models_metric_df_for_test_set).mark_line().encode(
+        x=alt.X(field='Train_Error_Rate', type='quantitative', title='Train Error Rate',
+                scale=alt.Scale(nice=False), axis=alt.Axis(labelExpr=f"(datum.value == 0.1) || (datum.value == 0.3) || (datum.value == 0.5) ? datum.label : ''")),
+        y=alt.Y('mean(Metric_Value)', type='quantitative', title=metric_name.replace('_', ' '), scale=alt.Scale(zero=False, domain=ylim)),
+        color=alt.Color('Null_Imputer_Name:N', title=None, sort=imputers_order),
+    )
+    if with_band:
+        band_chart = alt.Chart(models_metric_df_for_test_set).mark_errorband(extent="stderr").encode(
+            x=alt.X(field='Train_Error_Rate', type='quantitative', title='Train Error Rate',
+                    scale=alt.Scale(nice=False), axis=alt.Axis(labelExpr=f"(datum.value == 0.1) || (datum.value == 0.3) || (datum.value == 0.5) ? datum.label : ''")),
+            y=alt.Y(field='Metric_Value', type='quantitative', title=metric_name.replace('_', ' '), scale=alt.Scale(zero=False, domain=ylim)),
+            color=alt.Color('Null_Imputer_Name:N', title=None, sort=imputers_order),
+        )
+        base_chart = (band_chart + line_chart)
+    else:
+        base_chart = line_chart
+
+    base_chart = base_chart.properties(
+        width=200, height=200,
+        title=alt.TitleParams(text=title, fontSize=base_font_size + 2),
+    )
+
+    return base_chart
+
+
+def get_exp2_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name: str, evaluation_scenarios: list,
+                                                                   model_name: str, metric_name: str, db_client,
+                                                                   train_set: str, group: str = 'overall',
+                                                                   base_font_size: int = 18, ylim=Undefined, with_band=True):
+    sns.set_style("whitegrid")
+    metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) \
+        if 'equalized_odds' not in metric_name.lower() else metric_name
+
+    models_metric_df = pd.DataFrame()
+    for evaluation_scenario in evaluation_scenarios:
+        if group == 'overall':
+            scenario_models_metric_df = get_models_metric_df(db_client=db_client,
+                                                             dataset_name=dataset_name,
+                                                             evaluation_scenario=evaluation_scenario,
+                                                             metric_name=metric_name,
+                                                             group=group)
+        else:
+            overall_metric = get_overall_metric_from_disparity_metric(disparity_metric=metric_name)
+            scenario_models_metric_df = get_models_disparity_metric_df(db_client=db_client,
+                                                                       dataset_name=dataset_name,
+                                                                       evaluation_scenario=evaluation_scenario,
+                                                                       metric_name=overall_metric,
+                                                                       group=group)
+            scenario_models_metric_df = scenario_models_metric_df[scenario_models_metric_df['Metric'] == metric_name]
+            scenario_models_metric_df = scenario_models_metric_df.rename(columns={group: 'Metric_Value'})
+
+        models_metric_df = pd.concat([models_metric_df, scenario_models_metric_df])
+
+    models_metric_df = models_metric_df[models_metric_df['Model_Name'].isin([model_name, 'boost_clean'])]
+    models_metric_df['Train_Injection_Strategy'] = models_metric_df.apply(
+        lambda row: EVALUATION_SCENARIOS_CONFIG[row['Evaluation_Scenario']]['train_injection_scenario'][:-1],
+        axis=1
+    )
+    models_metric_df = models_metric_df[models_metric_df['Train_Injection_Strategy'] == train_set]
+
+    models_metric_df['Train_Error_Rate'] = models_metric_df.apply(
+        lambda row: 0.1 * int(EVALUATION_SCENARIOS_CONFIG[row['Evaluation_Scenario']]['train_injection_scenario'][-1]),
+        axis=1
+    )
+    models_metric_df['Test_Injection_Strategy'] = models_metric_df.apply(
+        lambda row: EVALUATION_SCENARIOS_CONFIG[row['Evaluation_Scenario']]['test_injection_scenarios'][row['Test_Set_Index']][:-1],
+        axis=1
+    )
+    models_metric_df['Test_Injection_Scenario'] = models_metric_df.apply(
+        lambda row: EVALUATION_SCENARIOS_CONFIG[row['Evaluation_Scenario']]['test_injection_scenarios'][row['Test_Set_Index']],
+        axis=1
+    )
+    models_metric_df = models_metric_df[models_metric_df['Test_Injection_Scenario'].isin(['MCAR3', 'MAR3', 'MNAR3'])]
+
+    mcar_base_chart = get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df=models_metric_df,
+                                                                                test_set='MCAR',
+                                                                                metric_name=metric_name,
+                                                                                train_set=train_set,
+                                                                                base_font_size=base_font_size,
+                                                                                ylim=ylim,
+                                                                                with_band=with_band)
+
+    mar_base_chart = get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df=models_metric_df,
+                                                                               test_set='MAR',
+                                                                               metric_name=metric_name,
+                                                                               train_set=train_set,
+                                                                               base_font_size=base_font_size,
+                                                                               ylim=ylim,
+                                                                               with_band=with_band)
+
+    mnar_base_chart = get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df=models_metric_df,
+                                                                                test_set='MNAR',
+                                                                                metric_name=metric_name,
+                                                                                train_set=train_set,
+                                                                                base_font_size=base_font_size,
+                                                                                ylim=ylim,
+                                                                                with_band=with_band)
+
+    return mcar_base_chart, mar_base_chart, mnar_base_chart
+
+
+def create_exp2_line_bands_for_diff_imputers(dataset_name: str, model_name: str, metric_name: str, db_client,
+                                             group: str = 'overall', ylim=Undefined, with_band=True):
+    base_font_size = 20
+    mcar_base_chart1, mar_base_chart1, mnar_base_chart1 = (
+        get_exp2_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
+                                                                       evaluation_scenarios=['exp2_3_mcar1', 'exp2_3_mcar3', 'exp2_3_mcar5'],
+                                                                       train_set='MCAR',
+                                                                       model_name=model_name,
+                                                                       metric_name=metric_name,
+                                                                       db_client=db_client,
+                                                                       group=group,
+                                                                       base_font_size=base_font_size,
+                                                                       ylim=ylim,
+                                                                       with_band=with_band))
+    print('Prepared a plot for an MCAR train set')
+    mcar_base_chart2, mar_base_chart2, mnar_base_chart2 = (
+        get_exp2_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
+                                                                       evaluation_scenarios=['exp2_3_mar1', 'exp2_3_mar3', 'exp2_3_mar5'],
+                                                                       train_set='MAR',
+                                                                       model_name=model_name,
+                                                                       metric_name=metric_name,
+                                                                       db_client=db_client,
+                                                                       group=group,
+                                                                       base_font_size=base_font_size,
+                                                                       ylim=ylim,
+                                                                       with_band=with_band))
+    print('Prepared a plot for an MAR train set')
+    mcar_base_chart3, mar_base_chart3, mnar_base_chart3 = (
+        get_exp2_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
+                                                                       evaluation_scenarios=['exp2_3_mnar1', 'exp2_3_mnar3', 'exp2_3_mnar5'],
+                                                                       train_set='MNAR',
+                                                                       model_name=model_name,
+                                                                       metric_name=metric_name,
+                                                                       db_client=db_client,
+                                                                       group=group,
+                                                                       base_font_size=base_font_size,
+                                                                       ylim=ylim,
+                                                                       with_band=with_band))
     print('Prepared a plot for an MNAR train set')
 
     # Concatenate two base charts
