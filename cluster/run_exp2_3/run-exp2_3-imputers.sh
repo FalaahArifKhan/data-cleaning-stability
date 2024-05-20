@@ -1,14 +1,14 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "folk automl exp2_3_mcar1 1,2,3,4,5,6"
-    "folk automl exp2_3_mcar5 1,2,3,4,5,6"
-    "folk automl exp2_3_mar1 1,2,3,4,5,6"
-    "folk automl exp2_3_mar5 1,2,3,4,5,6"
-    "folk automl exp2_3_mnar1 1,2,3,4,5,6"
-    "folk automl exp2_3_mnar5 1,2,3,4,5,6"
+    "folk automl exp2_3_mcar1 2,3,4,5,6"
+    "folk automl exp2_3_mcar5 2,3,4,5,6"
+    "folk automl exp2_3_mar1 5,6"
+    "folk automl exp2_3_mar5 2,3,4,5,6"
+    "folk automl exp2_3_mnar1 2,3,4,5,6"
+    "folk automl exp2_3_mnar5 2,3,4,5,6"
     "folk automl exp2_3_mcar3 1,2,3,4,5,6"
-    "folk automl exp2_3_mar3 1,2,3,4,5,6"
-    "folk automl exp2_3_mnar3 1,2,3,4,5,6"
+    "folk automl exp2_3_mar3 2,3,4,5,6"
+    "folk automl exp2_3_mnar3 2,3,4,5,6"
 )
 
 TEMPLATE_FILE="../cluster/run_exp2_3/run-exp2_3-imputers-template.sbatch"
