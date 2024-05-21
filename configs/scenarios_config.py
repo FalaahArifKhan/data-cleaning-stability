@@ -15,31 +15,31 @@ EVALUATION_SCENARIOS_CONFIG = {
         'train_injection_scenario': 'MNAR3',
         'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
-    'exp2&3_mcar1': {
+    'exp2_3_mcar1': {
         'train_injection_scenario': 'MCAR1',
         'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
-    'exp2&3_mcar5': {
+    'exp2_3_mcar5': {
         'train_injection_scenario': 'MCAR5',
         'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
-    'exp2&3_mar1': {
+    'exp2_3_mar1': {
         'train_injection_scenario': 'MAR1',
         'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
-    'exp2&3_mar5': {
+    'exp2_3_mar5': {
         'train_injection_scenario': 'MAR5',
         'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
-    'exp2&3_mnar1': {
+    'exp2_3_mnar1': {
         'train_injection_scenario': 'MNAR1',
         'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
-    'exp2&3_mnar5': {
+    'exp2_3_mnar5': {
         'train_injection_scenario': 'MNAR5',
         'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
     },
-    'exp2&3_mcar3': {
+    'exp2_3_mcar3': {
         'train_injection_scenario': 'MCAR3',
         'test_injection_scenarios': [
             'MCAR1', 'MAR1', 'MNAR1',
@@ -49,7 +49,7 @@ EVALUATION_SCENARIOS_CONFIG = {
             'MCAR5', 'MAR5', 'MNAR5',
         ],
     },
-    'exp2&3_mar3': {
+    'exp2_3_mar3': {
         'train_injection_scenario': 'MAR3',
         'test_injection_scenarios': [
             'MCAR1', 'MAR1', 'MNAR1',
@@ -59,7 +59,7 @@ EVALUATION_SCENARIOS_CONFIG = {
             'MCAR5', 'MAR5', 'MNAR5',
         ],
     },
-    'exp2&3_mnar3': {
+    'exp2_3_mnar3': {
         'train_injection_scenario': 'MNAR3',
         'test_injection_scenarios': [
             'MCAR1', 'MAR1', 'MNAR1',
