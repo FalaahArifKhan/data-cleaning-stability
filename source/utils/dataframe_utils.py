@@ -152,7 +152,17 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame, ver
         # In case when subgroup true df contains a very small number of samples, return None
         return None
 
-    elif pred.nunique() == 1:
+    elif pred.nunique() == 1 and true.nunique() == 1:
+        if verbose:
+            print('Compute KL divergence using discrete uniform PMFs...')
+
+        # If the unique value in both pandas series is the same, the KL divergence is 0.0
+        if pred.values[0] == true.values[0]:
+            return 0.0
+
+        return 100.0
+
+    elif pred.nunique() == 1 and true.nunique() != 1:
         if verbose:
             print('Compute KL divergence using KDE and discrete uniform PMF...')
 
@@ -171,6 +181,26 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame, ver
         true_dist = true_kde.evaluate(x)
         pred_dist = pred_kde.pmf(x)
         pred_dist[pred_dist == 0.] = 0.000000001  # replace zeros to avoid infinity in scipy.entropy
+
+    elif pred.nunique() != 1 and true.nunique() == 1:
+        if verbose:
+            print('Compute KL divergence using KDE and discrete uniform PMF...')
+
+        # Estimate probability density functions using kernel density estimation
+        pred_kde = gaussian_kde(pred_scaled)
+
+        # Create the discrete uniform distribution with one value
+        discrete_uniform_values = [true_scaled.values[0]]
+        discrete_uniform_pmf = [1.0]  # Probability mass function for the single value
+        true_kde = scipy.stats.rv_discrete(values=(discrete_uniform_values, discrete_uniform_pmf))
+
+        # Compute the PMF/PDF for both distributions
+        x = np.linspace(min(min(true_scaled), min(pred_scaled)), max(max(true_scaled), max(pred_scaled)), 999)
+        x = np.append(x, discrete_uniform_values)
+
+        pred_dist = pred_kde.evaluate(x)
+        true_dist = true_kde.pmf(x)
+        true_dist[true_dist == 0.] = 0.000000001  # replace zeros to avoid infinity in scipy.entropy
 
     else:
         if verbose:
