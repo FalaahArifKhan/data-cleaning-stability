@@ -398,7 +398,7 @@ def create_line_bands_for_diff_imputers(dataset_name: str, column_name: str, met
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
-            symbolOffset=100,
+            symbolOffset=80,
         )
     )
 

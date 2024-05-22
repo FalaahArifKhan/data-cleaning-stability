@@ -869,7 +869,7 @@ def create_line_bands_for_diff_imputers(dataset_name: str, model_name: str, metr
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
-            symbolOffset=100,
+            symbolOffset=80,
         )
     )
 
@@ -1068,7 +1068,7 @@ def create_exp2_line_bands_for_diff_imputers(dataset_name: str, model_name: str,
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
-            symbolOffset=100,
+            symbolOffset=80,
         )
     )
 
