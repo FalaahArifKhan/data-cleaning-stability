@@ -12,16 +12,7 @@ def encode_dataset_for_missforest(df, cat_encoders: dict = None, dataset_name: s
     if dataset_name == ACS_INCOME_DATASET:
         cat_columns_wo_nulls = [c for c in cat_columns if c not in categorical_columns_with_nulls]
         df_enc[cat_columns_wo_nulls] = df_enc[cat_columns_wo_nulls].astype(int)
-        
-        if cat_encoders is None:
-            cat_encoders = dict()
-            for c in categorical_columns_with_nulls:
-                c_enc, encoder = encode_cat(df_enc[c])
-                df_enc[c] = c_enc
-                cat_encoders[c] = encoder
-        else:
-            for c in categorical_columns_with_nulls:
-                df_enc[c] = encode_cat_with_existing_encoder(df_enc[c], cat_encoders[c])
+        cat_encoders = {c: None for c in cat_columns}
     else:
         if cat_encoders is None:
             cat_encoders = dict()
