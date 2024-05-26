@@ -53,7 +53,8 @@ def prepare_boostclean(X_train_val: pd.DataFrame, y_train_val: pd.DataFrame, X_t
     tuning = kwargs['tune']
     computed_repaired_datasets_paths = kwargs['computed_repaired_datasets_paths']
     
-    val_set_ratio = 0.2
+    #val_set_ratio = 0.2
+    val_set_ratio = 1000
     X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val,
                                                       test_size=val_set_ratio,
                                                       random_state=experiment_seed)
