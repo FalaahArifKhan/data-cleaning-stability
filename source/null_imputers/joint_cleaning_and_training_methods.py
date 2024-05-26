@@ -4,6 +4,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
 
 from source.utils.pipeline_utils import encode_dataset_for_missforest
 
@@ -93,6 +95,7 @@ def prepare_boostclean(X_train_val: pd.DataFrame, y_train_val: pd.DataFrame, X_t
     return models_config, X_train_with_nulls, y_train
 
 def read_repaired_datasets(X_train, paths, categorical_columns_with_nulls):
+        categorical_columns = X_train.select_dtypes(include=['object']).columns
         # Read imputed train sets from paths
         X_train_repairs = {}
         for path in paths:
@@ -100,14 +103,26 @@ def read_repaired_datasets(X_train, paths, categorical_columns_with_nulls):
             dataset_name = repair_method.split('_')[1]
             X_train_repaired = pd.read_csv(path, index_col=0)
             X_train_repaired_subset = X_train_repaired.loc[X_train.index]
-            
-            X_train_encoded, cat_encoders, categorical_columns_idxs = encode_dataset_for_missforest(X_train_repaired_subset,
-                                                                                            dataset_name=dataset_name,
-                                                                                            categorical_columns_with_nulls=categorical_columns_with_nulls)
-            
+
+            X_train_encoded = encode_dataset_for_boostclean(X_train_repaired_subset, categorical_columns)            
             X_train_repairs[repair_method] = X_train_encoded
             
         return X_train_repairs
+
+def encode_dataset_for_boostclean(df, categorical_columns):
+    """Encode categorical columns with OneHotEncoder."""
+    df_enc = df.copy(deep=True)
+    
+    encoder = OneHotEncoder(drop='first')  # drop='first' to avoid multicollinearity
+    column_transformer = ColumnTransformer(
+    transformers=[
+            ('onehot', encoder, categorical_columns)
+        ],
+        remainder='passthrough'  # This keeps the remaining columns as they are
+    )
+    
+    X_encoded = column_transformer.fit_transform(df_enc) 
+    return X_encoded 
 
 def tune_random_forest_for_boostclean(X_train_list, y_train, random_state):
     print("Tuning Random Forest for BoostClean")
