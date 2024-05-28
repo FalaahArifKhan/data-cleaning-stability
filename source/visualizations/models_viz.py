@@ -685,7 +685,8 @@ def create_box_plots_for_diff_imputers_v2(dataset_name: str, model_name: str, me
     return final_grid_chart
 
 
-def get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_set: str, metric_name: str, title: str,
+def get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_set: str, metric_name: str,
+                                                         baseline_metrics_mean_df: pd.DataFrame, title: str,
                                                          base_font_size: int = 18, ylim=Undefined, with_band=True):
     imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
                       'k_means_clustering', 'datawig', 'automl', 'boost_clean']
@@ -709,6 +710,16 @@ def get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_
         base_chart = (band_chart + line_chart)
     else:
         base_chart = line_chart
+
+    # Add baseline to a base chart
+    horizontal_line = (
+        alt.Chart(baseline_metrics_mean_df).mark_rule(strokeDash=[10, 10]).encode(
+            y="Baseline_Mean:Q",
+            color=alt.value("grey"),
+            size=alt.value(3)
+        )
+    )
+    base_chart = base_chart + horizontal_line
 
     base_chart = base_chart.properties(
         width=200, height=200,
@@ -758,20 +769,12 @@ def get_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name: str,
                                                      metric_name=metric_name,
                                                      db_client=db_client,
                                                      group=group)
-    baseline_metrics_df['Evaluation_Scenario'] = evaluation_scenario
-    baseline_metrics_df['Test_Set_Index'] = None
-    baseline_metrics_df['Test_Error_Rate'] = 0.0
-
-    # Add metrics for 0.0 error rate for all null imputers
-    for null_imputer_name in models_metric_df['Null_Imputer_Name'].unique():
-        for test_set_name in ['MCAR', 'MAR', 'MNAR']:
-            new_baseline_metrics_df = baseline_metrics_df.copy()
-            new_baseline_metrics_df['Null_Imputer_Name'] = null_imputer_name
-            new_baseline_metrics_df['Test_Injection_Strategy'] = test_set_name
-
-            models_metric_df = pd.concat([models_metric_df, new_baseline_metrics_df])
+    baseline_metrics_mean_df = pd.DataFrame({
+        'Baseline_Mean': [baseline_metrics_df['Metric_Value'].mean()]
+    })
 
     mcar_base_chart = get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df=models_metric_df,
+                                                                           baseline_metrics_mean_df=baseline_metrics_mean_df,
                                                                            test_set='MCAR',
                                                                            metric_name=metric_name,
                                                                            title=title,
@@ -780,6 +783,7 @@ def get_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name: str,
                                                                            with_band=with_band)
 
     mar_base_chart = get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df=models_metric_df,
+                                                                          baseline_metrics_mean_df=baseline_metrics_mean_df,
                                                                           test_set='MAR',
                                                                           metric_name=metric_name,
                                                                           title=title,
@@ -788,6 +792,7 @@ def get_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name: str,
                                                                           with_band=with_band)
 
     mnar_base_chart = get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df=models_metric_df,
+                                                                           baseline_metrics_mean_df=baseline_metrics_mean_df,
                                                                            test_set='MNAR',
                                                                            metric_name=metric_name,
                                                                            title=title,
