@@ -5,6 +5,11 @@ from altair.utils.schemapi import Undefined
 
 from configs.constants import IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME, ErrorRepairMethod
 from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
+from source.custom_classes.database_client import DatabaseClient
+
+
+DB_CLIENT_2 = DatabaseClient()
+DB_CLIENT_2.connect()
 
 
 def get_imputers_metric_df(db_client, dataset_name: str, evaluation_scenario: str,
@@ -18,6 +23,10 @@ def get_imputers_metric_df(db_client, dataset_name: str, evaluation_scenario: st
     }
     metric_df = db_client.read_metric_df_from_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                                  query=query)
+    if db_client.db_name == 'data_cleaning_stability_2':
+        metric_df2 = DB_CLIENT_2.read_metric_df_from_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
+                                                        query=query)
+        metric_df = pd.concat([metric_df, metric_df2])
 
     # Check uniqueness
     duplicates_mask = metric_df.duplicated(subset=['Imputation_Guid'], keep=False)
