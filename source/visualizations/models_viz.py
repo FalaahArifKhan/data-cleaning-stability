@@ -700,7 +700,7 @@ def get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_
         color=alt.Color('Null_Imputer_Name:N', title=None, sort=imputers_order),
     )
     if with_band:
-        band_chart = alt.Chart(models_metric_df_for_test_set).mark_errorband(extent="stderr").encode(
+        band_chart = alt.Chart(models_metric_df_for_test_set).mark_errorband(extent="stdev").encode(
             x=alt.X(field='Test_Error_Rate', type='quantitative', title='Test Error Rate',
                     scale=alt.Scale(nice=False), axis=alt.Axis(labelExpr=f"(datum.value == 0.1) || (datum.value == 0.3) || (datum.value == 0.5) ? datum.label : ''")),
             y=alt.Y(field='Metric_Value', type='quantitative', title=metric_name.replace('_', ' '), scale=alt.Scale(zero=False, domain=ylim)),
@@ -903,7 +903,7 @@ def get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, 
         color=alt.Color('Null_Imputer_Name:N', title=None, sort=imputers_order),
     )
     if with_band:
-        band_chart = alt.Chart(models_metric_df_for_test_set).mark_errorband(extent="stderr").encode(
+        band_chart = alt.Chart(models_metric_df_for_test_set).mark_errorband(extent="stdev").encode(
             x=alt.X(field='Train_Error_Rate', type='quantitative', title='Train Error Rate',
                     scale=alt.Scale(nice=False), axis=alt.Axis(labelExpr=f"(datum.value == 0.1) || (datum.value == 0.3) || (datum.value == 0.5) ? datum.label : ''")),
             y=alt.Y(field='Metric_Value', type='quantitative', title=metric_name.replace('_', ' '), scale=alt.Scale(zero=False, domain=ylim)),
