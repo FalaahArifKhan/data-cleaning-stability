@@ -7,6 +7,11 @@ from virny.configs.constants import *
 
 from configs.constants import EXP_COLLECTION_NAME
 from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
+from source.custom_classes.database_client import DatabaseClient
+
+
+DB_CLIENT_2 = DatabaseClient()
+DB_CLIENT_2.connect()
 
 
 def get_overall_metric_from_disparity_metric(disparity_metric):
@@ -96,6 +101,10 @@ def get_models_metric_df(db_client, dataset_name: str, evaluation_scenario: str,
     }
     metric_df = db_client.read_metric_df_from_db(collection_name=EXP_COLLECTION_NAME,
                                                  query=query)
+    if db_client.db_name == 'data_cleaning_stability_2':
+        metric_df2 = DB_CLIENT_2.read_metric_df_from_db(collection_name=EXP_COLLECTION_NAME,
+                                                        query=query)
+        metric_df = pd.concat([metric_df, metric_df2])
 
     # Check uniqueness
     duplicates_mask = metric_df.duplicated(subset=['Exp_Pipeline_Guid', 'Model_Name', 'Subgroup', 'Metric', 'Test_Set_Index'], keep=False)
