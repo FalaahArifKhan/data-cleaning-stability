@@ -7,6 +7,7 @@ from virny.configs.constants import *
 
 from configs.constants import EXP_COLLECTION_NAME
 from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
+from configs.datasets_config import DATASET_CONFIG
 from source.custom_classes.database_client import DatabaseClient
 
 
@@ -88,6 +89,17 @@ def get_baseline_model_median(dataset_name: str, model_name: str, metric_name: s
                                                   db_client=db_client,
                                                   group=group)
     return models_metric_df['Metric_Value'].median()
+
+
+def get_base_rate(dataset_name: str):
+    data_loader = DATASET_CONFIG[dataset_name]["data_loader"](
+        **DATASET_CONFIG[dataset_name]["data_loader_kwargs"]
+    )
+    y_data = data_loader.y_data
+    overall_base_rate = max(y_data[y_data == 0].shape[0] / y_data.shape[0],
+                            y_data[y_data == 1].shape[0] / y_data.shape[0])
+
+    return overall_base_rate
 
 
 def get_models_metric_df(db_client, dataset_name: str, evaluation_scenario: str,
@@ -584,26 +596,51 @@ def create_box_plots_for_diff_imputers_and_single_eval_scenario_v2(dataset_name:
         )
     )
 
-    horizontal_line = (
+    baseline_horizontal_line = (
         alt.Chart().mark_rule().encode(
             y="Baseline_Median:Q",
-            color=alt.value("red"),
+            color=alt.value("blue"),
             size=alt.value(2)
         )
     )
 
-    final_chart = (
-        alt.layer(
-            chart, horizontal_line,
-            data=models_metric_df,
-        ).properties(
-            width=120,
-        ).facet(
-            column=alt.Column('Test_Injection_Strategy:N',
-                              title=title,
-                              sort=['MCAR', 'MAR', 'MNAR']),
+    if metric_name == 'Accuracy':
+        models_metric_df['Base_Rate'] = get_base_rate(dataset_name)
+
+        base_rate_horizontal_line = (
+            alt.Chart().mark_rule().encode(
+                y="Base_Rate:Q",
+                color=alt.value("red"),
+                size=alt.value(2)
+            )
         )
-    )
+
+        final_chart = (
+            alt.layer(
+                chart, baseline_horizontal_line, base_rate_horizontal_line,
+                data=models_metric_df,
+            ).properties(
+                width=120,
+            ).facet(
+                column=alt.Column('Test_Injection_Strategy:N',
+                                  title=title,
+                                  sort=['MCAR', 'MAR', 'MNAR']),
+            )
+        )
+
+    else:
+        final_chart = (
+            alt.layer(
+                chart, baseline_horizontal_line,
+                data=models_metric_df,
+            ).properties(
+                width=120,
+            ).facet(
+                column=alt.Column('Test_Injection_Strategy:N',
+                                  title=title,
+                                  sort=['MCAR', 'MAR', 'MNAR']),
+            )
+        )
 
     return final_chart
 
