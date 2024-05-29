@@ -930,7 +930,8 @@ def create_line_bands_for_diff_imputers(dataset_name: str, model_name: str, metr
     return final_grid_chart
 
 
-def get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_set: str, metric_name: str, train_set: str,
+def get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_set: str, metric_name: str,
+                                                              baseline_metrics_mean_df: pd.DataFrame, train_set: str,
                                                               base_font_size: int = 18, ylim=Undefined, with_band=True):
     imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
                       'k_means_clustering', 'datawig', 'automl', 'boost_clean']
@@ -954,6 +955,16 @@ def get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, 
         base_chart = (band_chart + line_chart)
     else:
         base_chart = line_chart
+
+    # Add baseline to a base chart
+    horizontal_line = (
+        alt.Chart(baseline_metrics_mean_df).mark_rule(strokeDash=[10, 10]).encode(
+            y="Baseline_Mean:Q",
+            color=alt.value("grey"),
+            size=alt.value(3)
+        )
+    )
+    base_chart = base_chart + horizontal_line
 
     base_chart = base_chart.properties(
         width=200, height=200,
@@ -1012,7 +1023,18 @@ def get_exp2_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name:
     )
     models_metric_df = models_metric_df[models_metric_df['Test_Injection_Scenario'].isin(['MCAR3', 'MAR3', 'MNAR3'])]
 
+    # Add a baseline median to models_metric_df to display it as a horizontal line
+    baseline_metrics_df = get_baseline_model_metrics(dataset_name=dataset_name,
+                                                     model_name=model_name,
+                                                     metric_name=metric_name,
+                                                     db_client=db_client,
+                                                     group=group)
+    baseline_metrics_mean_df = pd.DataFrame({
+        'Baseline_Mean': [baseline_metrics_df['Metric_Value'].mean()]
+    })
+
     mcar_base_chart = get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df=models_metric_df,
+                                                                                baseline_metrics_mean_df=baseline_metrics_mean_df,
                                                                                 test_set='MCAR',
                                                                                 metric_name=metric_name,
                                                                                 train_set=train_set,
@@ -1021,6 +1043,7 @@ def get_exp2_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name:
                                                                                 with_band=with_band)
 
     mar_base_chart = get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df=models_metric_df,
+                                                                               baseline_metrics_mean_df=baseline_metrics_mean_df,
                                                                                test_set='MAR',
                                                                                metric_name=metric_name,
                                                                                train_set=train_set,
@@ -1029,6 +1052,7 @@ def get_exp2_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name:
                                                                                with_band=with_band)
 
     mnar_base_chart = get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df=models_metric_df,
+                                                                                baseline_metrics_mean_df=baseline_metrics_mean_df,
                                                                                 test_set='MNAR',
                                                                                 metric_name=metric_name,
                                                                                 train_set=train_set,
