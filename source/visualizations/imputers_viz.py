@@ -640,7 +640,7 @@ def create_exp2_line_bands_for_diff_imputers(dataset_name: str, column_name: str
 
 def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: str, test_injection_scenario: str,
                                                           metric_name: str, db_client, dataset_to_column_name: dict = None,
-                                                          dataset_to_group: dict = None, without_dummy: bool = True):
+                                                          dataset_to_group: dict = None, without_dummy: bool = False):
     evaluation_scenario = get_evaluation_scenario(train_injection_scenario)
 
     imputers_metric_df_for_diff_datasets = pd.DataFrame()
@@ -655,6 +655,8 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenar
                                                         evaluation_scenario=evaluation_scenario,
                                                         column_name=column_name,
                                                         group=group)
+            new_metric_name = metric_name
+
         else:
             imputers_metric_df = get_imputers_disparity_metric_df(db_client=db_client,
                                                                   dataset_name=dataset_name,
@@ -663,6 +665,7 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenar
                                                                   metric_name=metric_name,
                                                                   group=group)
             imputers_metric_df['Dataset_Name'] = dataset_name
+            new_metric_name = metric_name + '_Difference'
 
         if without_dummy:
             imputers_metric_df = imputers_metric_df[
@@ -678,14 +681,13 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenar
         imputers_metric_df_for_diff_datasets = pd.concat([imputers_metric_df_for_diff_datasets, imputers_metric_df])
         print(f'Extracted data for {dataset_name}')
 
-    new_metric_name = metric_name + '_Difference'
     return imputers_metric_df_for_diff_datasets, new_metric_name
 
 
 def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: str, test_injection_scenario: str,
                                                     dataset_to_column_name: dict, metric_name: str,
                                                     db_client, dataset_to_group: dict = None, base_font_size: int = 18,
-                                                    without_dummy: bool = True, ylim=Undefined):
+                                                    without_dummy: bool = False, ylim=Undefined):
     train_injection_scenario = train_injection_scenario.upper()
     test_injection_scenario = test_injection_scenario.upper()
 
