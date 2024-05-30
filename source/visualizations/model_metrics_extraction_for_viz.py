@@ -38,7 +38,7 @@ def get_evaluation_scenario(train_injection_scenario):
 
 
 def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: str, test_injection_scenario: str,
-                                                          metric_name: str, db_client, group: str = 'overall'):
+                                                          metric_name: str, db_client, dataset_to_group: dict = None):
     dataset_to_model_name_dct = {
         DIABETES_DATASET: 'rf_clf',
         GERMAN_CREDIT_DATASET: 'rf_clf',
@@ -51,6 +51,7 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenar
 
     models_metric_df_for_diff_datasets = pd.DataFrame()
     for dataset_name in DATASET_CONFIG.keys():
+        group = 'overall' if dataset_to_group is None else dataset_to_group[dataset_name]
         model_name = dataset_to_model_name_dct[dataset_name]
 
         if group == 'overall':
@@ -66,6 +67,8 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenar
                                                               evaluation_scenario=evaluation_scenario,
                                                               metric_name=overall_metric,
                                                               group=group)
+            models_metric_df['Dataset_Name'] = dataset_name
+
         models_metric_df = models_metric_df[models_metric_df['Metric'] == metric_name]
         models_metric_df = models_metric_df.rename(columns={group: 'Metric_Value'})
 
@@ -84,8 +87,10 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenar
                                                     group=group)
         models_metric_df['Baseline_Median'] = baseline_median
 
-        models_metric_df_for_diff_datasets = pd.concat([models_metric_df_for_diff_datasets, models_metric_df])
+        if metric_name == 'Accuracy':
+            models_metric_df['Base_Rate'] = get_base_rate(dataset_name)
 
+        models_metric_df_for_diff_datasets = pd.concat([models_metric_df_for_diff_datasets, models_metric_df])
         print(f'Extracted data for {dataset_name}')
 
     return models_metric_df_for_diff_datasets

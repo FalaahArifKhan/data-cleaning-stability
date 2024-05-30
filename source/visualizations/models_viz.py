@@ -950,7 +950,7 @@ def create_exp2_line_bands_for_diff_imputers(dataset_name: str, model_name: str,
 
 
 def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: str, test_injection_scenario: str,
-                                                    metric_name: str, db_client, group: str = 'overall',
+                                                    metric_name: str, db_client, dataset_to_group: dict = None,
                                                     base_font_size: int = 18, ylim=Undefined):
     train_injection_scenario = train_injection_scenario.upper()
     test_injection_scenario = test_injection_scenario.upper()
@@ -970,7 +970,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                                                                     test_injection_scenario=test_injection_scenario,
                                                                     metric_name=metric_name,
                                                                     db_client=db_client,
-                                                                    group=group)
+                                                                    dataset_to_group=dataset_to_group)
 
     chart = (
         alt.Chart().mark_boxplot(
@@ -996,19 +996,42 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
         )
     )
 
-    final_chart = (
-        alt.layer(
-            chart, baseline_horizontal_line,
-            data=to_plot,
-        ).properties(
-            width=150,
-        ).facet(
-            column=alt.Column('Dataset_Name:N',
-                              title=title,
-                              sort=[DIABETES_DATASET, GERMAN_CREDIT_DATASET, ACS_INCOME_DATASET, LAW_SCHOOL_DATASET,
-                                    BANK_MARKETING_DATASET, CARDIOVASCULAR_DISEASE_DATASET]),
+    if metric_name == 'Accuracy':
+        base_rate_horizontal_line = (
+            alt.Chart().mark_rule().encode(
+                y="Base_Rate:Q",
+                color=alt.value("red"),
+                size=alt.value(2)
+            )
         )
-    )
+        final_chart = (
+            alt.layer(
+                chart, baseline_horizontal_line, base_rate_horizontal_line,
+                data=to_plot,
+            ).properties(
+                width=150,
+            ).facet(
+                column=alt.Column('Dataset_Name:N',
+                                  title=title,
+                                  sort=[DIABETES_DATASET, GERMAN_CREDIT_DATASET, ACS_INCOME_DATASET, LAW_SCHOOL_DATASET,
+                                        BANK_MARKETING_DATASET, CARDIOVASCULAR_DISEASE_DATASET]),
+            )
+        )
+
+    else:
+        final_chart = (
+            alt.layer(
+                chart, baseline_horizontal_line,
+                data=to_plot,
+            ).properties(
+                width=150,
+            ).facet(
+                column=alt.Column('Dataset_Name:N',
+                                  title=title,
+                                  sort=[DIABETES_DATASET, GERMAN_CREDIT_DATASET, ACS_INCOME_DATASET, LAW_SCHOOL_DATASET,
+                                        BANK_MARKETING_DATASET, CARDIOVASCULAR_DISEASE_DATASET]),
+            )
+        )
 
     final_chart = (
         final_chart.configure_legend(
