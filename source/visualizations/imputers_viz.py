@@ -3,8 +3,12 @@ import altair as alt
 import seaborn as sns
 from altair.utils.schemapi import Undefined
 
-from configs.constants import IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME, ErrorRepairMethod
+from configs.constants import (IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME, ErrorRepairMethod,
+                               DIABETES_DATASET, GERMAN_CREDIT_DATASET, BANK_MARKETING_DATASET,
+                               CARDIOVASCULAR_DISEASE_DATASET, ACS_INCOME_DATASET, LAW_SCHOOL_DATASET)
+from configs.datasets_config import DATASET_CONFIG
 from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
+from source.visualizations.model_metrics_extraction_for_viz import get_evaluation_scenario
 from source.custom_classes.database_client import DatabaseClient
 
 
@@ -632,3 +636,139 @@ def create_exp2_line_bands_for_diff_imputers(dataset_name: str, column_name: str
     final_grid_chart = final_grid_chart.resolve_scale(y='shared')
 
     return final_grid_chart
+
+
+def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: str, test_injection_scenario: str,
+                                                          metric_name: str, db_client, dataset_to_column_name: dict = None,
+                                                          dataset_to_group: dict = None, without_dummy: bool = True):
+    evaluation_scenario = get_evaluation_scenario(train_injection_scenario)
+
+    imputers_metric_df_for_diff_datasets = pd.DataFrame()
+    for dataset_name in DATASET_CONFIG.keys():
+        group = 'overall' if dataset_to_group is None else dataset_to_group[dataset_name]
+        column_name = dataset_to_column_name[dataset_name]
+
+        metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')])
+        if group == 'overall':
+            imputers_metric_df = get_imputers_metric_df(db_client=db_client,
+                                                        dataset_name=dataset_name,
+                                                        evaluation_scenario=evaluation_scenario,
+                                                        column_name=column_name,
+                                                        group=group)
+        else:
+            imputers_metric_df = get_imputers_disparity_metric_df(db_client=db_client,
+                                                                  dataset_name=dataset_name,
+                                                                  evaluation_scenario=evaluation_scenario,
+                                                                  column_name=column_name,
+                                                                  metric_name=metric_name,
+                                                                  group=group)
+            imputers_metric_df['Dataset_Name'] = dataset_name
+
+        if without_dummy:
+            imputers_metric_df = imputers_metric_df[
+                (imputers_metric_df['Dataset_Part'].str.contains('X_test')) &
+                (imputers_metric_df['Null_Imputer_Name'] != ErrorRepairMethod.median_dummy.value)
+                ]
+        else:
+            imputers_metric_df = imputers_metric_df[imputers_metric_df['Dataset_Part'].str.contains('X_test')]
+
+        imputers_metric_df['Test_Injection_Scenario'] = imputers_metric_df['Dataset_Part'].apply(lambda x: x.split('_')[-1])
+        imputers_metric_df = imputers_metric_df[imputers_metric_df['Test_Injection_Scenario'] == test_injection_scenario]
+
+        imputers_metric_df_for_diff_datasets = pd.concat([imputers_metric_df_for_diff_datasets, imputers_metric_df])
+        print(f'Extracted data for {dataset_name}')
+
+    new_metric_name = metric_name + '_Difference'
+    return imputers_metric_df_for_diff_datasets, new_metric_name
+
+
+def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: str, test_injection_scenario: str,
+                                                    dataset_to_column_name: dict, metric_name: str,
+                                                    db_client, dataset_to_group: dict = None, base_font_size: int = 18,
+                                                    without_dummy: bool = True, ylim=Undefined):
+    train_injection_scenario = train_injection_scenario.upper()
+    test_injection_scenario = test_injection_scenario.upper()
+
+    sns.set_style("whitegrid")
+    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
+                      'k_means_clustering', 'datawig', 'automl']
+    if without_dummy:
+        imputers_order = [t for t in imputers_order if t != ErrorRepairMethod.median_dummy.value]
+
+    # Create a title
+    train_injection_strategy, train_error_rate = train_injection_scenario[:-1], int(train_injection_scenario[-1]) * 10
+    test_injection_strategy, test_error_rate = test_injection_scenario[:-1], int(test_injection_scenario[-1]) * 10
+    title = (f'{train_injection_strategy} train set with {train_error_rate}% error rate and '
+             f'{test_injection_strategy} test set with {test_error_rate}% error rate')
+
+    metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) if 'equalized_odds' not in metric_name.lower() else metric_name
+    to_plot, new_metric_name = get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenario=train_injection_scenario,
+                                                                                     test_injection_scenario=test_injection_scenario,
+                                                                                     metric_name=metric_name,
+                                                                                     dataset_to_column_name=dataset_to_column_name,
+                                                                                     db_client=db_client,
+                                                                                     dataset_to_group=dataset_to_group)
+
+    metric_title = new_metric_name.replace('_', ' ')
+    metric_title = (
+        metric_title.replace('Rmse', 'RMSE')
+        .replace('Kl Divergence Pred', 'KL Divergence Pred')
+        .replace('Kl Divergence Total', 'KL Divergence Total')
+    )
+    chart = (
+        alt.Chart(to_plot).mark_boxplot(
+            ticks=True,
+            median={'stroke': 'black', 'strokeWidth': 0.7},
+        ).encode(
+            x=alt.X("Null_Imputer_Name:N",
+                    title=None,
+                    sort=imputers_order,
+                    axis=alt.Axis(labels=False)),
+            y=alt.Y(f"{new_metric_name}:Q",
+                    title=metric_title,
+                    scale=alt.Scale(zero=False, domain=ylim)),
+            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order),
+            column=alt.Column('Dataset_Name:N',
+                              title=title,
+                              sort=[DIABETES_DATASET, GERMAN_CREDIT_DATASET, ACS_INCOME_DATASET, LAW_SCHOOL_DATASET,
+                                    BANK_MARKETING_DATASET, CARDIOVASCULAR_DISEASE_DATASET])
+        ).properties(
+            width=150,
+        )
+    )
+
+    final_chart = (
+        chart.configure_legend(
+            titleFontSize=base_font_size + 4,
+            labelFontSize=base_font_size + 2,
+            symbolStrokeWidth=10,
+            labelLimit=400,
+            titleLimit=300,
+            columns=4,
+            orient='top',
+            direction='horizontal',
+            titleAnchor='middle',
+            symbolOffset=120,
+        ).configure_facet(
+            spacing=5,
+        ).configure_view(
+            stroke=None
+        ).configure_header(
+            labelOrient='bottom',
+            labelPadding=5,
+            labelFontSize=base_font_size + 2,
+            titleFontSize=base_font_size + 6,
+        ).configure_axis(
+            labelFontSize=base_font_size + 4,
+            titleFontSize=base_font_size + 6,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        ).configure_title(
+            fontSize=base_font_size + 6,
+        )
+    )
+
+    # Set a shared scale for the y-axis
+    final_chart = final_chart.resolve_scale(y='independent')
+
+    return final_chart
