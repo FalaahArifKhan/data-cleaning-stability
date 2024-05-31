@@ -709,7 +709,8 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                                                                                      metric_name=metric_name,
                                                                                      dataset_to_column_name=dataset_to_column_name,
                                                                                      db_client=db_client,
-                                                                                     dataset_to_group=dataset_to_group)
+                                                                                     dataset_to_group=dataset_to_group,
+                                                                                     without_dummy=without_dummy)
 
     metric_title = new_metric_name.replace('_', ' ')
     metric_title = (
