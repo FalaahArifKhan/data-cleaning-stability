@@ -1,10 +1,10 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "diabetes miss_forest mixed_exp dt_clf 1,2,3,4,5,6"
-    "diabetes miss_forest mixed_exp lr_clf 1,2,3,4,5,6"
-    "diabetes miss_forest mixed_exp lgbm_clf 1,2,3,4,5,6"
-    "diabetes miss_forest mixed_exp rf_clf 1,2,3,4,5,6"
-    "diabetes miss_forest mixed_exp mlp_clf 1,2,3,4,5,6"
+    "diabetes automl mixed_exp dt_clf 1,2,3,4,5,6"
+    "diabetes automl mixed_exp lr_clf 1,2,3,4,5,6"
+    "diabetes automl mixed_exp lgbm_clf 1,2,3,4,5,6"
+    "diabetes automl mixed_exp rf_clf 1,2,3,4,5,6"
+    "diabetes automl mixed_exp mlp_clf 1,2,3,4,5,6"
 )
 
 TEMPLATE_FILE="../cluster/run_mixed_exp/run-mixed-exp-models-template.sbatch"

@@ -96,6 +96,42 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenar
     return models_metric_df_for_diff_datasets
 
 
+def get_data_for_box_plots_for_diff_imputers_and_models(dataset_name: str, evaluation_scenario: str,
+                                                        metric_name: str, group: str, db_client):
+    if group == 'overall':
+        models_metric_df = get_models_metric_df(db_client=db_client,
+                                                dataset_name=dataset_name,
+                                                evaluation_scenario=evaluation_scenario,
+                                                metric_name=metric_name,
+                                                group=group)
+    else:
+        overall_metric = get_overall_metric_from_disparity_metric(disparity_metric=metric_name)
+        models_metric_df = get_models_disparity_metric_df(db_client=db_client,
+                                                          dataset_name=dataset_name,
+                                                          evaluation_scenario=evaluation_scenario,
+                                                          metric_name=overall_metric,
+                                                          group=group)
+        models_metric_df['Dataset_Name'] = dataset_name
+
+    models_metric_df = models_metric_df[models_metric_df['Metric'] == metric_name]
+    models_metric_df = models_metric_df.rename(columns={group: 'Metric_Value'})
+
+    # Add a baseline median to models_metric_df to display it as a horizontal line
+    models_metric_df['Baseline_Median'] = None
+    for model_name in models_metric_df['Model_Name'].unique():
+        baseline_median = get_baseline_model_median(dataset_name=dataset_name,
+                                                    model_name=model_name,
+                                                    metric_name=metric_name,
+                                                    db_client=db_client,
+                                                    group=group)
+        models_metric_df.loc[models_metric_df['Model_Name'] == model_name, 'Baseline_Median'] = baseline_median
+
+    if metric_name == 'Accuracy':
+        models_metric_df['Base_Rate'] = get_base_rate(dataset_name)
+
+    return models_metric_df
+
+
 def get_overall_metric_from_disparity_metric(disparity_metric):
     overall_to_disparity_metric_dct = {
         # Error disparity metrics
@@ -128,8 +164,12 @@ def get_baseline_models_metric_df(db_client, dataset_name: str, metric_name: str
         'metric': metric_name,
         'tag': 'OK',
     }
-    metric_df = db_client.read_metric_df_from_db(collection_name=EXP_COLLECTION_NAME,
-                                                 query=query)
+    if db_client.db_name == 'data_cleaning_stability_3':
+        metric_df = DB_CLIENT_2.read_metric_df_from_db(collection_name=EXP_COLLECTION_NAME,
+                                                       query=query)
+    else:
+        metric_df = db_client.read_metric_df_from_db(collection_name=EXP_COLLECTION_NAME,
+                                                     query=query)
 
     # Check uniqueness
     duplicates_mask = metric_df.duplicated(subset=['Exp_Pipeline_Guid', 'Model_Name', 'Subgroup', 'Metric'], keep=False)
