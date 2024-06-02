@@ -3,6 +3,10 @@ from configs.constants import (GERMAN_CREDIT_DATASET, BANK_MARKETING_DATASET, CA
 
 
 EVALUATION_SCENARIOS_CONFIG = {
+    'mixed_exp': {
+        'train_injection_scenario': 'MCAR1 & MAR1 & MNAR1',
+        'test_injection_scenarios': ['MCAR1 & MAR1 & MNAR1'],
+    },
     'exp1_mcar3': {
         'train_injection_scenario': 'MCAR3',
         'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
