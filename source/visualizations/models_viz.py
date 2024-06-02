@@ -954,8 +954,16 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                                                     base_font_size: int = 18, ylim=Undefined):
     train_injection_scenario = train_injection_scenario.upper()
     test_injection_scenario = test_injection_scenario.upper()
+    metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) if 'equalized_odds' not in metric_name.lower() else metric_name
 
     sns.set_style("whitegrid")
+    if metric_name in ('Label_Stability', 'Std'):
+        symbol_offset = 50
+        resolve_scale_mode = 'shared'
+    else:
+        symbol_offset = 130
+        resolve_scale_mode = 'independent'
+
     imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
                       'k_means_clustering', 'datawig', 'automl', 'boost_clean']
 
@@ -965,7 +973,6 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
     title = (f'{train_injection_strategy} train set with {train_error_rate}% error rate and '
              f'{test_injection_strategy} test set with {test_error_rate}% error rate')
 
-    metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) if 'equalized_odds' not in metric_name.lower() else metric_name
     to_plot = get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenario=train_injection_scenario,
                                                                     test_injection_scenario=test_injection_scenario,
                                                                     metric_name=metric_name,
@@ -1044,7 +1051,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
-            symbolOffset=120,
+            symbolOffset=symbol_offset,
         ).configure_facet(
             spacing=5,
         ).configure_view(
@@ -1065,6 +1072,6 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
     )
 
     # Set a shared scale for the y-axis
-    final_chart = final_chart.resolve_scale(y='independent')
+    final_chart = final_chart.resolve_scale(y=resolve_scale_mode)
 
     return final_chart
