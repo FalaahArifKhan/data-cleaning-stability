@@ -1,23 +1,7 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "bank datawig exp1_mcar3 1"
-    "bank datawig exp1_mcar3 2"
-    "bank datawig exp1_mcar3 3"
-    "bank datawig exp1_mcar3 4"
-    "bank datawig exp1_mcar3 5"
-    "bank datawig exp1_mcar3 6"
-    "bank datawig exp1_mar3 1"
-    "bank datawig exp1_mar3 2"
-    "bank datawig exp1_mar3 3"
-    "bank datawig exp1_mar3 4"
-    "bank datawig exp1_mar3 5"
-    "bank datawig exp1_mar3 6"
-    "bank datawig exp1_mnar3 1"
-    "bank datawig exp1_mnar3 2"
-    "bank datawig exp1_mnar3 3"
-    "bank datawig exp1_mnar3 4"
-    "bank datawig exp1_mnar3 5"
-    "bank datawig exp1_mnar3 6"
+    "diabetes datawig mixed_exp 1,2,3"
+    "diabetes datawig mixed_exp 4,5,6"
 )
 
 TEMPLATE_FILE="../cluster/run_mixed_exp/run-mixed-exp-imputers-gpu-template.sbatch"

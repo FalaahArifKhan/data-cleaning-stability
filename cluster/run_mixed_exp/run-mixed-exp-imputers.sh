@@ -1,9 +1,11 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "bank automl exp1_mcar3 1"
-    "bank automl exp1_mcar3 2"
-    "bank automl exp1_mcar3 3"
-    "bank automl exp1_mcar3 4"
+    "diabetes miss_forest mixed_exp 1,2"
+    "diabetes miss_forest mixed_exp 3,4"
+    "diabetes miss_forest mixed_exp 5,6"
+    "diabetes automl mixed_exp 1,2"
+    "diabetes automl mixed_exp 3,4"
+    "diabetes automl mixed_exp 5,6"
 )
 
 TEMPLATE_FILE="../cluster/run_mixed_exp/run-mixed-exp-imputers-template.sbatch"
