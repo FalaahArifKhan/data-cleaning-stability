@@ -65,6 +65,7 @@ class NullsInjector(AbstractErrorInjector):
     def _filter_df_by_condition(self, df: pd.DataFrame, condition_col: str, condition_val, include_val: bool):
         if isinstance(condition_val, list):
             df_condition = df[condition_col].isin(condition_val) if include_val else ~df[condition_col].isin(condition_val)
+
         elif isinstance(condition_val, dict):
             # Validate condition
             symbol_counts = {'g': 0, 'l': 0}
