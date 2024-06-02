@@ -78,12 +78,12 @@ python ../scripts/evaluate_baseline.py \
     --run_nums [1]
 
 python ../scripts/impute_nulls_with_predictor.py \
-    --dataset folk \
+    --dataset diabetes \
     --null_imputers [\"deletion\",\"median-mode\",\"median-dummy\"] \
     --run_nums [1,2,3,4,5,6] \
     --tune_imputers true \
     --save_imputed_datasets true \
-    --evaluation_scenarios [\"exp2_3_mcar1\",\"exp2_3_mcar5\",\"exp2_3_mar1\",\"exp2_3_mar5\",\"exp2_3_mnar1\",\"exp2_3_mnar5\",\"exp2_3_mcar3\",\"exp2_3_mar3\",\"exp2_3_mnar3\"]
+    --evaluation_scenarios [\"mixed_exp\"]
 
 python ../scripts/evaluate_models.py \
     --dataset folk \
