@@ -1,10 +1,23 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "diabetes datawig mixed_exp dt_clf 1,2,3,4,5,6"
-    "diabetes datawig mixed_exp lr_clf 1,2,3,4,5,6"
-    "diabetes datawig mixed_exp lgbm_clf 1,2,3,4,5,6"
-    "diabetes datawig mixed_exp rf_clf 1,2,3,4,5,6"
-    "diabetes datawig mixed_exp mlp_clf 1,2,3,4,5,6"
+    "diabetes boost_clean mixed_exp lr_clf 1,2"
+    "diabetes boost_clean mixed_exp lr_clf 3,4"
+    "diabetes boost_clean mixed_exp lr_clf 5,6"
+    "diabetes k_means_clustering mixed_exp dt_clf 1,2"
+    "diabetes k_means_clustering mixed_exp dt_clf 3,4"
+    "diabetes k_means_clustering mixed_exp dt_clf 5,6"
+    "diabetes k_means_clustering mixed_exp lr_clf 1,2"
+    "diabetes k_means_clustering mixed_exp lr_clf 3,4"
+    "diabetes k_means_clustering mixed_exp lr_clf 5,6"
+    "diabetes k_means_clustering mixed_exp lgbm_clf 1,2"
+    "diabetes k_means_clustering mixed_exp lgbm_clf 3,4"
+    "diabetes k_means_clustering mixed_exp lgbm_clf 5,6"
+    "diabetes k_means_clustering mixed_exp rf_clf 1,2"
+    "diabetes k_means_clustering mixed_exp rf_clf 3,4"
+    "diabetes k_means_clustering mixed_exp rf_clf 5,6"
+    "diabetes k_means_clustering mixed_exp mlp_clf 1,2"
+    "diabetes k_means_clustering mixed_exp mlp_clf 3,4"
+    "diabetes k_means_clustering mixed_exp mlp_clf 5,6"
 )
 
 TEMPLATE_FILE="../cluster/run_mixed_exp/run-mixed-exp-models-template.sbatch"
