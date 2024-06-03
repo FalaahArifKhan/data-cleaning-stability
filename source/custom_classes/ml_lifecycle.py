@@ -369,6 +369,7 @@ class MLLifecycle:
                                                  'dataset_part': f'X_test_{test_injection_scenario}',
                                                  'runtime_in_mins': imputation_runtime,
                                                  'record_create_date_time': test_record_create_date_time,
+                                                 'null_imputer_params_dct': null_imputer_params_dct
                                             })
 
         self._logger.info("Performance metrics and tuned parameters of the null imputer are saved into a database")

@@ -198,5 +198,4 @@ class KMeansImputer(AbstractNullImputer):
         else:
             output = self.hyperparameters
             
-        #output['cluster_percentages_'] = self.cluster_percentages_
         return output
