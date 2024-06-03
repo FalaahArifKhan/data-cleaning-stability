@@ -1183,4 +1183,7 @@ def create_box_plots_for_diff_imputers_and_models(dataset_name: str, metric_name
         )
     )
 
+    # Separate BoostClean from others
+    final_chart = final_chart.resolve_scale(x='independent')
+
     return final_chart
