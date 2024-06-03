@@ -10,9 +10,19 @@ from training.train import train, train_evaluate
 
 def train_classifiers(X_train_list, y_train, model):
     C_list = []
-    for X_train in X_train_list:
-        C = train(X_train, y_train, model)
+    X_train_list_copy = list(X_train_list)
+    for i in range(len(X_train_list)):
+        C = train(X_train_list_copy[i], y_train, model[i])
         C_list.append(C)
+    return C_list
+
+def tune_classifiers(X_train_list, y_train, grid_search):
+    C_list = []
+    for X_train in X_train_list:
+        grid_search.fit(X=X_train, y=y_train)
+        best_classifier = grid_search.best_estimator_
+        best_classifier.fit(X=X_train, y=y_train)
+        C_list.append(best_classifier)
     return C_list
 
 def transform_y(y, c):

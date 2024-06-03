@@ -20,4 +20,73 @@ NULL_IMPUTERS_CONFIG = {
     ErrorRepairMethod.boost_clean.value: {"method": prepare_boostclean, "kwargs": {}}
 }
 
-NULL_IMPUTERS_HYPERPARAMS = {}
+NULL_IMPUTERS_HYPERPARAMS = {
+    ErrorRepairMethod.k_means_clustering.value: {
+        ACS_INCOME_DATASET: {
+            "MCAR1": {"n_clusters": 2},
+            "MCAR3": {"n_clusters": 2},
+            "MCAR5": {"n_clusters": 2},
+            "MAR1": {"n_clusters": 2},
+            "MAR3": {"n_clusters": 2},
+            "MAR5": {"n_clusters": 2},
+            "MNAR1": {"n_clusters": 2},
+            "MNAR3": {"n_clusters": 2},
+            "MNAR5": {"n_clusters": 2}
+        },
+        GERMAN_CREDIT_DATASET: {
+            "MCAR1": {"n_clusters": 2},
+            "MCAR3": {"n_clusters": 2},
+            "MCAR5": {"n_clusters": 2},
+            "MAR1": {"n_clusters": 2},
+            "MAR3": {"n_clusters": 2},
+            "MAR5": {"n_clusters": 2},
+            "MNAR1": {"n_clusters": 2},
+            "MNAR3": {"n_clusters": 2},
+            "MNAR5": {"n_clusters": 2}
+        },
+        DIABETES_DATASET: {
+            "MCAR1": {"n_clusters": 2},
+            "MCAR3": {"n_clusters": 2},
+            "MCAR5": {"n_clusters": 2},
+            "MAR1": {"n_clusters": 2},
+            "MAR3": {"n_clusters": 2},
+            "MAR5": {"n_clusters": 2},
+            "MNAR1": {"n_clusters": 2},
+            "MNAR3": {"n_clusters": 2},
+            "MNAR5": {"n_clusters": 2}
+        },
+        LAW_SCHOOL_DATASET: {
+            "MCAR1": {"n_clusters": 2},
+            "MCAR3": {"n_clusters": 2},
+            "MCAR5": {"n_clusters": 2},
+            "MAR1": {"n_clusters": 2},
+            "MAR3": {"n_clusters": 2},
+            "MAR5": {"n_clusters": 2},
+            "MNAR1": {"n_clusters": 2},
+            "MNAR3": {"n_clusters": 2},
+            "MNAR5": {"n_clusters": 2}
+        },
+        BANK_MARKETING_DATASET: {
+            "MCAR1": {"n_clusters": 2},
+            "MCAR3": {"n_clusters": 2},
+            "MCAR5": {"n_clusters": 2},
+            "MAR1": {"n_clusters": 2},
+            "MAR3": {"n_clusters": 2},
+            "MAR5": {"n_clusters": 2},
+            "MNAR1": {"n_clusters": 2},
+            "MNAR3": {"n_clusters": 2},
+            "MNAR5": {"n_clusters": 2}
+        },
+        CARDIOVASCULAR_DISEASE_DATASET: {
+           "MCAR1": {"n_clusters": 6},
+            "MCAR3": {"n_clusters": 6},
+            "MCAR5": {"n_clusters": 6},
+            "MAR1": {"n_clusters": 6},
+            "MAR3": {"n_clusters": 6},
+            "MAR5": {"n_clusters": 6},
+            "MNAR1": {"n_clusters": 6},
+            "MNAR3": {"n_clusters": 6},
+            "MNAR5": {"n_clusters": 6}
+        }
+    }
+}

@@ -148,6 +148,9 @@ class KMeansImputer(AbstractNullImputer):
         
         pred_clusters = self.model.predict(X_observed, categorical=self.cat_vars_)
         self._calculate_cluster_stats(X, pred_clusters)
+        # save percentage of clusters
+        self.cluster_percentages_ = {str(cluster): len(np.where(pred_clusters == cluster)[0]) / len(pred_clusters) for cluster in set(pred_clusters)}
+        print(f"Cluster percentages: {self.cluster_percentages_}")
         
         return self
     
@@ -191,6 +194,8 @@ class KMeansImputer(AbstractNullImputer):
     
     def get_predictors_params(self):
         if self.hyperparameters is None:
-            return self.best_params_
-        
-        return self.hyperparameters
+            output = self.best_params_
+        else:
+            output = self.hyperparameters
+            
+        return output

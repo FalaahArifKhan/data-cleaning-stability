@@ -161,7 +161,8 @@ class Benchmark(MLLifecycle):
                                             imputation_runtime=imputation_runtime,
                                             null_imputer_name=null_imputer_name,
                                             evaluation_scenario=evaluation_scenario,
-                                            experiment_seed=experiment_seed)
+                                            experiment_seed=experiment_seed,
+                                            null_imputer_params_dct=null_imputer_params_dct)
 
         if save_imputed_datasets:
             self._save_imputed_datasets_to_fs(X_train_val=X_train_val_imputed_wo_sensitive_attrs,
@@ -326,21 +327,26 @@ class Benchmark(MLLifecycle):
         imputation_kwargs = NULL_IMPUTERS_CONFIG[null_imputer_name]["kwargs"]
         imputation_kwargs.update({'save_dir': save_dir})       
         imputation_kwargs['tune'] = tune_imputers
+        print("imputation_kwargs['tune']", imputation_kwargs['tune'])
         
         # Make paths for the imputed datasets
         imputed_datasets_paths = []
-        results_dir = pathlib.Path(__file__).parent.parent.parent.joinpath('results')
-        for imputer_dir in results_dir.iterdir():
-            for dataset_dir in imputer_dir.iterdir():
-                for scenario_dir in dataset_dir.iterdir():
-                    if scenario_dir.name == evaluation_scenario:
-                        for seed_dir in scenario_dir.iterdir():
-                            if seed_dir.name == str(experiment_seed):
-                                for file in seed_dir.iterdir():
-                                    if file.is_file() and "train" in file.name:
-                                        imputed_datasets_paths.append(file)
-                                        
-        print('imputed_datasets_paths -- ', imputed_datasets_paths)
+        results_dir = pathlib.Path(__file__).parent.parent.parent.joinpath('results').joinpath('imputed_datasets')
+        
+        for dateset_dir in results_dir.iterdir():
+            if dateset_dir.is_dir() and dateset_dir.name == self.dataset_name:
+                for method_dir in dateset_dir.iterdir():
+                    if method_dir.name == 'deletion':
+                        continue
+                    for scenario_dir in method_dir.iterdir():
+                        if scenario_dir.name == evaluation_scenario:
+                            for seed_dir in scenario_dir.iterdir():
+                                if seed_dir.name == str(experiment_seed):
+                                    for file in seed_dir.iterdir():
+                                        if file.is_file() and file.name.startswith('imputed') and 'X_train' in file.name:
+                                            print('Used imputed dataset', file)
+                                            imputed_datasets_paths.append(file)
+        
         imputation_kwargs['computed_repaired_datasets_paths'] = imputed_datasets_paths if len(imputed_datasets_paths) > 0 else None                                
 
         # Create a wrapper for the input joint cleaning-and-training method

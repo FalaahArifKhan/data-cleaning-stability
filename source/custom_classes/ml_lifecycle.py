@@ -277,10 +277,14 @@ class MLLifecycle:
                                                               column_type=column_type,
                                                               verbose=verbose)
                 if verbose:
-                    if kl_divergence_pred is not None:
+                    if kl_divergence_pred: 
                         print('Predictive KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_pred))
-                    if kl_divergence_total is not None:
+                    else:
+                        print('Predictive KL divergence for {}: None'.format(column_name))
+                    if kl_divergence_total:
                         print('Total KL divergence for {}: {:.2f}'.format(column_name, kl_divergence_total))
+                    else:
+                        print('Total KL divergence for {}: None'.format(column_name))
 
                 rmse = None
                 precision = None
@@ -318,7 +322,8 @@ class MLLifecycle:
         return metrics_df
 
     def _save_imputation_metrics_to_db(self, train_imputation_metrics_df: pd.DataFrame, test_imputation_metrics_dfs_lst: list,
-                                       imputation_runtime: float, null_imputer_name: str, evaluation_scenario: str, experiment_seed: int):
+                                       imputation_runtime: float, null_imputer_name: str, evaluation_scenario: str, 
+                                       experiment_seed: int, null_imputer_params_dct: dict):
         train_imputation_metrics_df['Imputation_Guid'] = train_imputation_metrics_df.apply(
             lambda row: generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name,
                                                              evaluation_scenario, experiment_seed,
@@ -336,6 +341,7 @@ class MLLifecycle:
                                              'dataset_part': 'X_train_val',
                                              'runtime_in_mins': imputation_runtime,
                                              'record_create_date_time': datetime.now(timezone.utc),
+                                             'null_imputer_params_dct': null_imputer_params_dct
                                          })
 
         # Save imputation results into a database for each test set from the evaluation scenario
@@ -360,6 +366,7 @@ class MLLifecycle:
                                                  'dataset_part': f'X_test_{test_injection_scenario}',
                                                  'runtime_in_mins': imputation_runtime,
                                                  'record_create_date_time': test_record_create_date_time,
+                                                 'null_imputer_params_dct': null_imputer_params_dct
                                             })
 
         self._logger.info("Performance metrics and tuned parameters of the null imputer are saved into a database")

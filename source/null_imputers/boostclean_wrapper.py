@@ -5,15 +5,24 @@ from datetime import datetime
 from virny.custom_classes.base_inprocessing_wrapper import BaseInprocessingWrapper
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import GridSearchCV
 
 from external_dependencies.CPClean.training.knn import KNN
-from external_dependencies.CPClean.cleaner.boost_clean import transform_y, train_classifiers
+from external_dependencies.CPClean.cleaner.boost_clean import transform_y, train_classifiers, tune_classifiers
 from external_dependencies.CPClean.repair.repair import repair
 from external_dependencies.CPClean.training.preprocess import preprocess_boostclean
 
+BOOST_CLEAN_DEFAULT_MODEL_PARAMS = {
+    'fn': RandomForestClassifier,
+    'params': {}
+}
+
 
 class BoostCleanWrapper(BaseInprocessingWrapper):
-    def __init__(self, X_val, y_val, random_state, save_dir, T=5, tune=False, computed_repaired_datasets_paths=None):
+    def __init__(self, X_val, y_val, 
+                 random_state, save_dir, T=5, tune=False, 
+                 model_params_list=None,
+                 computed_repaired_datasets_paths=None):
         self.X_val = X_val
         self.y_val = y_val
         self.random_state = random_state
@@ -21,31 +30,38 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         self.T = T
         self.tune = tune
         self.computed_repaired_datasets_paths = computed_repaired_datasets_paths
-        
-        self.model_metadata = {
-            "fn": RandomForestClassifier,
-            "params": {}
-        }
+        if model_params_list is None:
+            self.model_params_list = [BOOST_CLEAN_DEFAULT_MODEL_PARAMS] * len(computed_repaired_datasets_paths)
+        self.model_params_list = model_params_list
         
     def __copy__(self):
         return BoostCleanWrapper(X_val=self.X_val.copy(deep=False),
                                  y_val=self.y_val.copy(deep=False),
                                  random_state=self.random_state,
                                  save_dir=self.save_dir,
-                                 T=self.T)
+                                 tune=self.tune,
+                                 T=self.T,
+                                 model_params_list=self.model_params_list,
+                                 computed_repaired_datasets_paths=self.computed_repaired_datasets_paths)
         
     def __deepcopy__(self, memo):
+        print('deepcopy model_params_list', self.model_params_list)
         return BoostCleanWrapper(X_val=self.X_val.copy(deep=True),
                                  y_val=self.y_val.copy(deep=True),
                                  random_state=self.random_state,
                                  save_dir=self.save_dir,
-                                 T=self.T)
+                                 tune=self.tune,
+                                 T=self.T,
+                                 model_params_list=self.model_params_list,
+                                 computed_repaired_datasets_paths=self.computed_repaired_datasets_paths)
         
     def get_params(self):
         return {
             'random_state': self.random_state,
-            'model_metadata_params': self.model_metadata['params'],
-            'T': self.T
+            'T': self.T,
+            'tune': self.tune,
+            'model_params_list': self.model_params_list,
+            'computed_repaired_datasets_paths': self.computed_repaired_datasets_paths
         }
         
     def set_params(self, random_state):
@@ -53,7 +69,10 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
                                  y_val=self.y_val,
                                  random_state=random_state,
                                  save_dir=self.save_dir,
-                                 T=self.T)
+                                 tune=self.tune,
+                                 T=self.T,
+                                 model_params_list=self.model_params_list,
+                                 computed_repaired_datasets_paths=self.computed_repaired_datasets_paths)
         
     def _fit_boost_clean(self, model, X_train_list, y_train, X_val, y_val, T=1):
         y_train = transform_y(y_train, 1)
@@ -135,8 +154,6 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
             y_pred_val = np.sign(val_scores)
             val_acc = (y_pred_val == y_val).mean()
             W_results[T] = [val_acc, a_T, C_T]
-            print("###### Tuning BoostClean ######")
-            print(f"BoostClean performance on a validation set with T={T}: {val_acc}")
             
         # Find the best T
         best_T = max(W_results, key=lambda x: W_results[x][0])
@@ -153,6 +170,7 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         test_scores = self.a_T.dot(preds_test_T).T
 
         y_pred_test = np.sign(test_scores)
+        y_pred_test = ((y_pred_test + 1) / 2).astype(int)
         
         return y_pred_test
         
@@ -168,7 +186,7 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         # Read imputed train sets from paths
         X_train_repairs = {}
         for path in paths:
-            repair_method = os.path.basename(path).split('.')[-3]
+            repair_method = os.path.basename(path)#.split('.')[-3]
             X_train_repaired = pd.read_csv(path, index_col=0)
             X_train_repairs[repair_method] = X_train_repaired.loc[X_train.index]
             
@@ -186,7 +204,7 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         
         if self.tune:
             boost_clean_result = self._tune_boost_clean(
-                          model=self.model_metadata,
+                          model=self.model_params_list,
                           X_train_list=data_dct["X_train_repairs"].values(),
                           y_train=data_dct["y_train"],
                           X_val=data_dct["X_val"],
@@ -194,7 +212,7 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
                         )
         else:
             boost_clean_result = self._fit_boost_clean(
-                                model=self.model_metadata,
+                                model=self.model_params_list,
                                 X_train_list=data_dct["X_train_repairs"].values(),
                                 y_train=data_dct["y_train"],
                                 X_val=data_dct["X_val"],
@@ -211,7 +229,6 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         
         preds = self._predict_boost_clean(X_preprocessed)
         preds = np.squeeze(preds)
-        print(f"BoostClean predictions shape: {preds.shape}")
         
         return preds
     
