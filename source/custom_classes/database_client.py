@@ -7,9 +7,13 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 
 
+def get_secrets_path(secrets_file_name: str):
+    return pathlib.Path(__file__).parent.joinpath('..', '..', 'configs', secrets_file_name)
+
+
 class DatabaseClient:
     def __init__(self, secrets_path: str = pathlib.Path(__file__).parent.joinpath('..', '..', 'configs', 'secrets.env')):
-        load_dotenv(secrets_path)  # Take environment variables from .env
+        load_dotenv(secrets_path, override=True)  # Take environment variables from .env
 
         # Provide the mongodb atlas url to connect python to mongodb using pymongo
         self.connection_string = os.getenv("CONNECTION_STRING")

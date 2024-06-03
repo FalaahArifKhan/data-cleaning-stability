@@ -21,6 +21,7 @@ from dotenv import load_dotenv
 
 from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
 from source.custom_classes.benchmark import Benchmark
+from source.custom_classes.database_client import get_secrets_path
 from source.validation import validate_args, str2bool
 
 
@@ -57,7 +58,7 @@ def parse_input_args():
 
 if __name__ == '__main__':
     start_time = datetime.now()
-    preconfigure_experiment()
+    preconfigure_experiment(env_file_path=get_secrets_path('secrets_3.env'))
     args = parse_input_args()
 
     benchmark = Benchmark(dataset_name=args.dataset,

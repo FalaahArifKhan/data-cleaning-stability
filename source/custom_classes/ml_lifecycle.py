@@ -21,7 +21,7 @@ from source.utils.custom_logger import get_logger
 from source.utils.dataframe_utils import calculate_kl_divergence
 from source.utils.model_tuning_utils import tune_ML_models
 from source.utils.common_helpers import (generate_guid, create_base_flow_dataset, get_injection_scenarios)
-from source.custom_classes.database_client import DatabaseClient
+from source.custom_classes.database_client import DatabaseClient, get_secrets_path
 from source.error_injectors.nulls_injector import NullsInjector
 from source.validation import is_in_enum
 
@@ -45,7 +45,7 @@ class MLLifecycle:
         self.init_data_loader = DATASET_CONFIG[dataset_name]['data_loader'](**DATASET_CONFIG[dataset_name]['data_loader_kwargs'])
 
         self._logger = get_logger()
-        self._db = DatabaseClient()
+        self._db = DatabaseClient(secrets_path=get_secrets_path('secrets_3.env'))
         # Create a unique uuid per session to manipulate in the database
         # by all experimental results generated in this session
         self._session_uuid = str(uuid.uuid1())
@@ -105,7 +105,7 @@ class MLLifecycle:
 
         return models_config
 
-    def _inject_nulls_into_one_set(self, df: pd.DataFrame, injection_scenario: str, experiment_seed: int):
+    def _inject_nulls_into_one_set_with_single_scenario(self, df: pd.DataFrame, injection_scenario: str, experiment_seed: int):
         injection_strategy, error_rate_str = injection_scenario[:-1], injection_scenario[-1]
         error_rate_idx = int(error_rate_str) - 1
         for scenario_for_dataset in ERROR_INJECTION_SCENARIOS_CONFIG[self.dataset_name][injection_strategy]:
@@ -117,6 +117,20 @@ class MLLifecycle:
                                            null_percentage=error_rate,
                                            condition=condition)
             df = nulls_injector.fit_transform(df)
+
+        return df
+
+    def _inject_nulls_into_one_set(self, df: pd.DataFrame, injection_scenario: str, experiment_seed: int):
+        if '&' in injection_scenario:
+            single_injection_scenarios = [s.strip() for s in injection_scenario.split('&')]
+            for single_injection_scenario in single_injection_scenarios:
+                df = self._inject_nulls_into_one_set_with_single_scenario(df=df,
+                                                                          injection_scenario=single_injection_scenario,
+                                                                          experiment_seed=experiment_seed)
+        else:
+            df = self._inject_nulls_into_one_set_with_single_scenario(df=df,
+                                                                      injection_scenario=injection_scenario,
+                                                                      experiment_seed=experiment_seed)
 
         return df
 

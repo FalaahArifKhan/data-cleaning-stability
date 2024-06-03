@@ -1,23 +1,9 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "bank k_means_clustering exp1_mcar3 1,2"
-    "bank k_means_clustering exp1_mcar3 3,4"
-    "bank k_means_clustering exp1_mcar3 5,6"
-    "bank k_means_clustering exp1_mar3 1,2"
-    "bank k_means_clustering exp1_mar3 3,4"
-    "bank k_means_clustering exp1_mar3 5,6"
-    "bank k_means_clustering exp1_mnar3 1,2"
-    "bank k_means_clustering exp1_mnar3 3,4"
-    "bank k_means_clustering exp1_mnar3 5,6"
-    "heart k_means_clustering exp1_mcar3 1,2"
-    "heart k_means_clustering exp1_mcar3 3,4"
-    "heart k_means_clustering exp1_mcar3 5,6"
-    "heart k_means_clustering exp1_mar3 1,2"
-    "heart k_means_clustering exp1_mar3 3,4"
-    "heart k_means_clustering exp1_mar3 5,6"
-    "heart k_means_clustering exp1_mnar3 1,2"
-    "heart k_means_clustering exp1_mnar3 3,4"
-    "heart k_means_clustering exp1_mnar3 5,6"
+    "bank automl exp1_mcar3 1"
+    "bank automl exp1_mcar3 2"
+    "bank automl exp1_mcar3 3"
+    "bank automl exp1_mcar3 4"
 )
 
 TEMPLATE_FILE="../cluster/run_exp1/run-exp1-imputers-template.sbatch"
