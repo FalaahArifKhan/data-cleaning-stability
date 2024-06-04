@@ -1,3 +1,5 @@
+from typing import List, Optional
+
 import pandas as pd
 import altair as alt
 import seaborn as sns
@@ -1184,3 +1186,126 @@ def create_box_plots_for_diff_imputers_and_models(dataset_name: str, metric_name
     )
 
     return final_chart
+
+
+def create_box_plots_for_diff_imputers_and_models_v2(dataset_name: str, metric_name: str, db_client,
+                                                  evaluation_scenarios: List[str], group: str = 'overall',
+                                                  base_font_size: int = 18, ylim: Optional[List[float]] = None):
+    sns.set_style("whitegrid")
+    metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) if 'equalized_odds' not in metric_name.lower() else metric_name
+
+    models_order = ['dt_clf', 'lr_clf', 'lgbm_clf', 'rf_clf', 'mlp_clf']
+    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
+                      'k_means_clustering', 'datawig', 'automl', 'boost_clean']
+
+    # Function to get the data for plotting
+    to_plot = []
+    for scenario in evaluation_scenarios:
+        data = get_data_for_box_plots_for_diff_imputers_and_models(dataset_name=dataset_name,
+                                                                   evaluation_scenario=scenario,
+                                                                   metric_name=metric_name,
+                                                                   group=group,
+                                                                   db_client=db_client)
+        data['Evaluation_Scenario'] = scenario
+        to_plot.append(data)
+    to_plot = pd.concat(to_plot)
+
+    chart = (
+        alt.Chart().mark_boxplot(
+            ticks=True,
+            median={'stroke': 'black', 'strokeWidth': 0.7},
+        ).encode(
+            x=alt.X("Null_Imputer_Name:N",
+                    title=None,
+                    sort=imputers_order,
+                    axis=alt.Axis(labels=False)),
+            y=alt.Y("Metric_Value:Q",
+                    title=f"{data['Evaluation_Scenario'].iloc[0]}",
+                    scale=alt.Scale(zero=False, domain=ylim if ylim is not None else alt.Undefined)),
+            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order),
+        )
+    )
+
+    baseline_horizontal_line = (
+        alt.Chart().mark_rule().encode(
+            y="Baseline_Median:Q",
+            color=alt.value("blue"),
+            size=alt.value(2)
+        )
+    )
+
+    if metric_name == 'Accuracy':
+        base_rate_horizontal_line = (
+            alt.Chart().mark_rule().encode(
+                y="Base_Rate:Q",
+                color=alt.value("red"),
+                size=alt.value(2)
+            )
+        )
+        final_chart = (
+            alt.layer(
+                chart, baseline_horizontal_line, base_rate_horizontal_line,
+                data=to_plot,
+            ).properties(
+                width=150,
+            ).facet(
+                column=alt.Column('Model_Name:N',
+                                  title=None,
+                                  sort=models_order),
+                row=alt.Row('Evaluation_Scenario:N',
+                            title=None,
+                            sort=evaluation_scenarios)
+            )
+        )
+
+    else:
+        final_chart = (
+            alt.layer(
+                chart, baseline_horizontal_line,
+                data=to_plot,
+            ).properties(
+                width=150,
+            ).facet(
+                column=alt.Column('Model_Name:N',
+                                  title=None,
+                                  sort=models_order),
+                row=alt.Row('Evaluation_Scenario:N',
+                            title=None,
+                            sort=evaluation_scenarios),
+                header=alt.Header(labelFontSize=base_font_size + 4, labelOrient='left')
+            )
+        )
+
+    final_chart = (
+        final_chart.configure_legend(
+            titleFontSize=base_font_size + 4,
+            labelFontSize=base_font_size + 2,
+            symbolStrokeWidth=10,
+            labelLimit=400,
+            titleLimit=300,
+            columns=4,
+            orient='top',
+            direction='horizontal',
+            titleAnchor='middle',
+            symbolOffset=50,
+        ).configure_facet(
+            spacing=5,
+        ).configure_view(
+            stroke=None
+        ).configure_header(
+            labelOrient='bottom',
+            labelPadding=5,
+            labelFontSize=base_font_size + 2,
+            titleFontSize=base_font_size + 6,
+        ).configure_axis(
+            labelFontSize=base_font_size + 4,
+            titleFontSize=base_font_size + 6,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        ).configure_title(
+            fontSize=base_font_size + 6,
+        )
+    )
+
+    return final_chart
+
