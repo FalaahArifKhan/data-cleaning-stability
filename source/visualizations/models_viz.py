@@ -1188,6 +1188,7 @@ def create_box_plots_for_diff_imputers_and_models(dataset_name: str, metric_name
 
     return final_chart
 
+
 def base_box_plots_for_diff_imputers_and_models_exp1(metric_name: str, base_font_size: int = 18, ylim=Undefined, to_plot=None, title: str = 'Test'):
     sns.set_style("whitegrid")
     metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) if 'equalized_odds' not in metric_name.lower() else metric_name
@@ -1260,21 +1261,18 @@ def base_box_plots_for_diff_imputers_and_models_exp1(metric_name: str, base_font
 
     return final_chart
 
+
 def create_box_plots_for_diff_imputers_and_models_exp1(dataset_name: str, metric_name: str, db_client,
                                                   evaluation_scenarios: List[str], group: str = 'overall',
                                                   base_font_size: int = 18, ylim=Undefined):
     sns.set_style("whitegrid")
     metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) if 'equalized_odds' not in metric_name.lower() else metric_name
 
-    models_order = ['dt_clf', 'lr_clf', 'lgbm_clf', 'rf_clf', 'mlp_clf']
-    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-                      'k_means_clustering', 'datawig', 'automl', 'boost_clean']
-
     # Function to get the data for plotting
-    to_plot = []
     base_plots = []
     for scenario in evaluation_scenarios:
         test_injection_scenario = scenario.split('_')[-1].upper()
+        test_injection_strategy, test_error_rate = test_injection_scenario[:-1], test_injection_scenario[-1]
         data = get_data_for_box_plots_for_diff_imputers_and_models_exp1(dataset_name=dataset_name,
                                                                         evaluation_scenario=scenario,
                                                                         metric_name=metric_name,
@@ -1282,18 +1280,14 @@ def create_box_plots_for_diff_imputers_and_models_exp1(dataset_name: str, metric
                                                                         db_client=db_client,
                                                                         test_injection_scenario=test_injection_scenario)
         data['Evaluation_Scenario'] = scenario
-        title = f"{test_injection_scenario} train&test sets with {int(test_injection_scenario[-1])*10}% error rate"
+        title = f"{test_injection_strategy} train&test sets with {int(test_error_rate) * 10}% error rate"
         base_plot = base_box_plots_for_diff_imputers_and_models_exp1(metric_name=metric_name, base_font_size=base_font_size, ylim=ylim, to_plot=data, title=title)
         base_plots.append(base_plot)
-        to_plot.append(data)
-    to_plot = pd.concat(to_plot)
 
-    
+        print(f'Prepared a plot for {scenario}')
+
     # Concatenate two base charts
     main_base_chart = alt.vconcat(*base_plots)
-    # for base_chart in base_plots:
-    #     print(type(base_chart))
-    #     main_base_chart &= base_chart
     
     final_grid_chart = (
         main_base_chart.configure_legend(
@@ -1306,7 +1300,7 @@ def create_box_plots_for_diff_imputers_and_models_exp1(dataset_name: str, metric
             orient='top',
             direction='vertical',
             titleAnchor='middle',
-            symbolOffset=120,
+            symbolOffset=50,
         ).configure_facet(
             spacing=5,
         ).configure_view(
