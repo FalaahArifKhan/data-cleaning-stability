@@ -1,3 +1,5 @@
+from typing import List, Optional
+
 import pandas as pd
 import altair as alt
 import seaborn as sns
@@ -13,7 +15,8 @@ from source.visualizations.model_metrics_extraction_for_viz import (get_models_m
                                                                     get_baseline_model_median, get_base_rate,
                                                                     get_baseline_model_metrics,
                                                                     get_data_for_box_plots_for_diff_imputers_and_datasets,
-                                                                    get_data_for_box_plots_for_diff_imputers_and_models)
+                                                                    get_data_for_box_plots_for_diff_imputers_and_models,
+                                                                    get_data_for_box_plots_for_diff_imputers_and_models_exp1)
 
 
 def create_scatter_plots_for_diff_models_and_single_eval_scenario(dataset_name: str, evaluation_scenario: str,
@@ -1187,3 +1190,137 @@ def create_box_plots_for_diff_imputers_and_models(dataset_name: str, metric_name
     final_chart = final_chart.resolve_scale(x='independent')
 
     return final_chart
+
+
+def base_box_plots_for_diff_imputers_and_models_exp1(metric_name: str, base_font_size: int = 18, ylim=Undefined, to_plot=None, title: str = 'Test'):
+    sns.set_style("whitegrid")
+    metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) if 'equalized_odds' not in metric_name.lower() else metric_name
+
+    models_order = ['dt_clf', 'lr_clf', 'lgbm_clf', 'rf_clf', 'mlp_clf']
+    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
+                      'k_means_clustering', 'datawig', 'automl', 'boost_clean']
+
+    chart = (
+        alt.Chart().mark_boxplot(
+            ticks=True,
+            median={'stroke': 'black', 'strokeWidth': 0.7},
+        ).encode(
+            x=alt.X("Null_Imputer_Name:N",
+                    title=None,
+                    sort=imputers_order,
+                    axis=alt.Axis(labels=False)),
+            y=alt.Y("Metric_Value:Q",
+                    title=metric_name.replace('_', ' '),
+                    scale=alt.Scale(zero=False, domain=ylim)),
+            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order),
+        )
+    )
+
+    baseline_horizontal_line = (
+        alt.Chart().mark_rule().encode(
+            y="Baseline_Median:Q",
+            color=alt.value("blue"),
+            size=alt.value(2)
+        )
+    )
+
+    if metric_name == 'Accuracy':
+        base_rate_horizontal_line = (
+            alt.Chart().mark_rule().encode(
+                y="Base_Rate:Q",
+                color=alt.value("red"),
+                size=alt.value(2)
+            )
+        )
+        final_chart = (
+            alt.layer(
+                chart, baseline_horizontal_line, base_rate_horizontal_line,
+                data=to_plot,
+            ).properties(
+                width=150,
+            ).facet(
+                column=alt.Column('Model_Name:N',
+                                  title=title,
+                                  sort=models_order),
+            )
+        )
+
+    else:
+        final_chart = (
+            alt.layer(
+                chart, baseline_horizontal_line,
+                data=to_plot,
+            ).properties(
+                width=150,
+            ).facet(
+                column=alt.Column('Model_Name:N',
+                                  title=title,
+                                  sort=models_order),
+            )
+        )
+
+    # Separate BoostClean from others
+    final_chart = final_chart.resolve_scale(x='independent')
+
+    return final_chart
+
+
+def create_box_plots_for_diff_imputers_and_models_exp1(dataset_name: str, metric_name: str, db_client,
+                                                  evaluation_scenarios: List[str], group: str = 'overall',
+                                                  base_font_size: int = 18, ylim=Undefined):
+    sns.set_style("whitegrid")
+    metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) if 'equalized_odds' not in metric_name.lower() else metric_name
+
+    # Function to get the data for plotting
+    base_plots = []
+    for scenario in evaluation_scenarios:
+        test_injection_scenario = scenario.split('_')[-1].upper()
+        test_injection_strategy, test_error_rate = test_injection_scenario[:-1], test_injection_scenario[-1]
+        data = get_data_for_box_plots_for_diff_imputers_and_models_exp1(dataset_name=dataset_name,
+                                                                        evaluation_scenario=scenario,
+                                                                        metric_name=metric_name,
+                                                                        group=group,
+                                                                        db_client=db_client,
+                                                                        test_injection_scenario=test_injection_scenario)
+        data['Evaluation_Scenario'] = scenario
+        title = f"{test_injection_strategy} train&test sets with {int(test_error_rate) * 10}% error rate"
+        base_plot = base_box_plots_for_diff_imputers_and_models_exp1(metric_name=metric_name, base_font_size=base_font_size, ylim=ylim, to_plot=data, title=title)
+        base_plots.append(base_plot)
+
+        print(f'Prepared a plot for {scenario}')
+
+    # Concatenate two base charts
+    main_base_chart = alt.vconcat(*base_plots)
+    
+    final_grid_chart = (
+        main_base_chart.configure_legend(
+            titleFontSize=base_font_size + 4,
+            labelFontSize=base_font_size + 2,
+            symbolStrokeWidth=10,
+            labelLimit=400,
+            titleLimit=300,
+            columns=4,
+            orient='top',
+            direction='vertical',
+            titleAnchor='middle',
+            symbolOffset=50,
+        ).configure_facet(
+            spacing=5,
+        ).configure_view(
+            stroke=None
+        ).configure_header(
+            labelOrient='bottom',
+            labelPadding=5,
+            labelFontSize=base_font_size + 2,
+            titleFontSize=base_font_size + 6,
+        ).configure_axis(
+            labelFontSize=base_font_size + 4,
+            titleFontSize=base_font_size + 6,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        ).configure_title(
+            fontSize=base_font_size + 6,
+        )
+    )
+
+    return final_grid_chart
