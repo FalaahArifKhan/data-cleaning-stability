@@ -962,9 +962,11 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
 
     sns.set_style("whitegrid")
     if metric_name in ('Label_Stability', 'Std'):
+        plot_height = 300
         symbol_offset = 50
         resolve_scale_mode = 'shared'
     else:
+        plot_height = 200
         symbol_offset = 130
         resolve_scale_mode = 'independent'
 
@@ -1021,6 +1023,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                 data=to_plot,
             ).properties(
                 width=150,
+                height=plot_height,
             ).facet(
                 column=alt.Column('Dataset_Name:N',
                                   title=title,
@@ -1036,6 +1039,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                 data=to_plot,
             ).properties(
                 width=150,
+                height=plot_height,
             ).facet(
                 column=alt.Column('Dataset_Name:N',
                                   title=title,
