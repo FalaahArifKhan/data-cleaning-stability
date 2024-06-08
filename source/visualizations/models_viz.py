@@ -1320,7 +1320,4 @@ def create_box_plots_for_diff_imputers_and_models_exp1(dataset_name: str, metric
         )
     )
 
-    # Set a shared scale for the y-axis
-    final_grid_chart = final_grid_chart.resolve_scale(x='independent')
-
     return final_grid_chart
