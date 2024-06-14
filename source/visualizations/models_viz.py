@@ -730,6 +730,80 @@ def create_line_bands_for_diff_imputers(dataset_name: str, model_name: str, metr
     return final_grid_chart
 
 
+def create_line_bands_for_no_shift(dataset_name: str, model_name: str, metric_name: str, db_client,
+                                   group: str = 'overall', ylim=Undefined, with_band=True):
+    base_font_size = 20
+    mcar_base_chart1, _, _ = (
+        get_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
+                                                                  evaluation_scenario='exp2_3_mcar3',
+                                                                  title='MCAR train',
+                                                                  model_name=model_name,
+                                                                  metric_name=metric_name,
+                                                                  db_client=db_client,
+                                                                  group=group,
+                                                                  base_font_size=base_font_size,
+                                                                  ylim=ylim,
+                                                                  with_band=with_band))
+    print('Prepared a plot for an MCAR train set')
+    _, mar_base_chart2, _ = (
+        get_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
+                                                                  evaluation_scenario='exp2_3_mar3',
+                                                                  title='MAR train',
+                                                                  model_name=model_name,
+                                                                  metric_name=metric_name,
+                                                                  db_client=db_client,
+                                                                  group=group,
+                                                                  base_font_size=base_font_size,
+                                                                  ylim=ylim,
+                                                                  with_band=with_band))
+    print('Prepared a plot for an MAR train set')
+    _, _, mnar_base_chart3 = (
+        get_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
+                                                                  evaluation_scenario='exp2_3_mnar3',
+                                                                  title='MNAR train',
+                                                                  model_name=model_name,
+                                                                  metric_name=metric_name,
+                                                                  db_client=db_client,
+                                                                  group=group,
+                                                                  base_font_size=base_font_size,
+                                                                  ylim=ylim,
+                                                                  with_band=with_band))
+    print('Prepared a plot for an MNAR train set')
+
+    # Concatenate two base charts
+    main_base_chart = alt.hconcat()
+    main_base_chart |= mcar_base_chart1
+    main_base_chart |= mar_base_chart2
+    main_base_chart |= mnar_base_chart3
+
+    final_grid_chart = (
+        main_base_chart.configure_axis(
+            labelFontSize=base_font_size + 2,
+            titleFontSize=base_font_size + 2,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        ).configure_title(
+            fontSize=base_font_size + 2
+        ).configure_legend(
+            titleFontSize=base_font_size + 2,
+            labelFontSize=base_font_size + 2,
+            symbolStrokeWidth=10,
+            labelLimit=400,
+            titleLimit=300,
+            columns=3,
+            orient='top',
+            direction='horizontal',
+            titleAnchor='middle',
+            symbolOffset=80,
+        )
+    )
+
+    # Set a shared scale for the y-axis
+    final_grid_chart = final_grid_chart.resolve_scale(y='shared')
+
+    return final_grid_chart
+
+
 def get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_set: str, metric_name: str,
                                                               baseline_metrics_mean_df: pd.DataFrame, train_set: str,
                                                               base_font_size: int = 18, ylim=Undefined, with_band=True):
