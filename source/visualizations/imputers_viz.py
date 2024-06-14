@@ -221,6 +221,112 @@ def create_box_plots_for_diff_imputers(dataset_name: str, column_name: str,
     return final_grid_chart
 
 
+def create_box_plots_for_mixed_exp(dataset_name: str, column_names: list, metric_name: str, db_client,
+                                   group: str = 'overall', base_font_size: int = 18,
+                                   without_dummy: bool = False, ylim=Undefined):
+    evaluation_scenario = 'mixed_exp'
+
+    sns.set_style("whitegrid")
+    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
+                      'k_means_clustering', 'datawig', 'automl']
+    if without_dummy:
+        imputers_order = [t for t in imputers_order if t != ErrorRepairMethod.median_dummy.value]
+
+    metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')])
+    imputers_metric_df = pd.DataFrame()
+    for column_name in column_names:
+        if group == 'overall':
+            column_imputers_metric_df = get_imputers_metric_df(db_client=db_client,
+                                                               dataset_name=dataset_name,
+                                                               evaluation_scenario=evaluation_scenario,
+                                                               column_name=column_name,
+                                                               group=group)
+        else:
+            column_imputers_metric_df = get_imputers_disparity_metric_df(db_client=db_client,
+                                                                         dataset_name=dataset_name,
+                                                                         evaluation_scenario=evaluation_scenario,
+                                                                         column_name=column_name,
+                                                                         metric_name=metric_name,
+                                                                         group=group)
+
+        imputers_metric_df = pd.concat([imputers_metric_df, column_imputers_metric_df])
+
+    if group != 'overall':
+        metric_name = metric_name + '_Difference'
+
+    if without_dummy:
+        to_plot = imputers_metric_df[
+            (imputers_metric_df['Dataset_Part'].str.contains('X_test')) &
+            (imputers_metric_df['Null_Imputer_Name'] != ErrorRepairMethod.median_dummy.value)
+            ]
+    else:
+        to_plot = imputers_metric_df[imputers_metric_df['Dataset_Part'].str.contains('X_test')]
+
+    metric_title = metric_name.replace('_', ' ')
+    metric_title = (
+        metric_title.replace('Rmse', 'RMSE')
+        .replace('Kl Divergence Pred', 'KL Divergence Pred')
+        .replace('Kl Divergence Total', 'KL Divergence Total')
+    )
+
+    chart = (
+        alt.Chart(to_plot).mark_boxplot(
+            ticks=True,
+            median={'stroke': 'black', 'strokeWidth': 0.7},
+        ).encode(
+            x=alt.X("Null_Imputer_Name:N",
+                    title=None,
+                    sort=imputers_order,
+                    axis=alt.Axis(labels=False)),
+            y=alt.Y(f"{metric_name}:Q",
+                    title=metric_title,
+                    scale=alt.Scale(zero=False, domain=ylim)),
+            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order),
+            column=alt.Column('Column_With_Nulls:N', title=None)
+        ).properties(
+            width=180,
+        )
+    )
+
+    final_grid_chart = (
+        chart.configure_axis(
+            labelFontSize=base_font_size + 4,
+            titleFontSize=base_font_size + 6,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        ).configure_title(
+            fontSize=base_font_size + 2
+        ).configure_legend(
+            titleFontSize=base_font_size + 4,
+            labelFontSize=base_font_size + 2,
+            symbolStrokeWidth=10,
+            labelLimit=400,
+            titleLimit=300,
+            columns=3,
+            orient='top',
+            direction='horizontal',
+            titleAnchor='middle',
+            symbolOffset=10,
+        ).configure_facet(
+            spacing=10
+        ).configure_view(
+            stroke=None
+        ).configure_header(
+            labelOrient='bottom',
+            labelPadding=5,
+            labelFontSize=base_font_size + 2,
+            titleFontSize=base_font_size + 2,
+        ).configure_axis(
+            labelFontSize=base_font_size + 4,
+            titleFontSize=base_font_size + 6,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        )
+    )
+
+    return final_grid_chart
+
+
 def get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_set: str, metric_name: str, title: str,
                                                          base_font_size: int = 18, ylim=Undefined, with_band=True,
                                                          without_dummy=False):
