@@ -638,6 +638,84 @@ def create_exp2_line_bands_for_diff_imputers(dataset_name: str, column_name: str
     return final_grid_chart
 
 
+def create_exp2_line_bands_for_no_shift(dataset_name: str, column_name: str, metric_name: str, db_client,
+                                        group: str = 'overall', ylim=Undefined, with_band=True,
+                                        without_dummy: bool = False):
+    base_font_size = 20
+    mcar_base_chart1, _, _ = (
+        get_exp2_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
+                                                                       evaluation_scenarios=['exp2_3_mcar1', 'exp2_3_mcar3', 'exp2_3_mcar5'],
+                                                                       train_set='MCAR',
+                                                                       column_name=column_name,
+                                                                       metric_name=metric_name,
+                                                                       db_client=db_client,
+                                                                       group=group,
+                                                                       base_font_size=base_font_size,
+                                                                       ylim=ylim,
+                                                                       with_band=with_band,
+                                                                       without_dummy=without_dummy))
+    print('Prepared a plot for an MCAR train set')
+    _, mar_base_chart2, _ = (
+        get_exp2_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
+                                                                       evaluation_scenarios=['exp2_3_mar1', 'exp2_3_mar3', 'exp2_3_mar5'],
+                                                                       train_set='MAR',
+                                                                       column_name=column_name,
+                                                                       metric_name=metric_name,
+                                                                       db_client=db_client,
+                                                                       group=group,
+                                                                       base_font_size=base_font_size,
+                                                                       ylim=ylim,
+                                                                       with_band=with_band,
+                                                                       without_dummy=without_dummy))
+    print('Prepared a plot for an MAR train set')
+    _, _, mnar_base_chart3 = (
+        get_exp2_line_bands_for_diff_imputers_and_single_eval_scenario(dataset_name=dataset_name,
+                                                                       evaluation_scenarios=['exp2_3_mnar1', 'exp2_3_mnar3', 'exp2_3_mnar5'],
+                                                                       train_set='MNAR',
+                                                                       column_name=column_name,
+                                                                       metric_name=metric_name,
+                                                                       db_client=db_client,
+                                                                       group=group,
+                                                                       base_font_size=base_font_size,
+                                                                       ylim=ylim,
+                                                                       with_band=with_band,
+                                                                       without_dummy=without_dummy))
+    print('Prepared a plot for an MNAR train set')
+
+    # Concatenate two base charts
+    main_base_chart = alt.hconcat()
+    main_base_chart |= mcar_base_chart1
+    main_base_chart |= mar_base_chart2
+    main_base_chart |= mnar_base_chart3
+
+    final_grid_chart = (
+        main_base_chart.configure_axis(
+            labelFontSize=base_font_size + 2,
+            titleFontSize=base_font_size + 2,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        ).configure_title(
+            fontSize=base_font_size + 2
+        ).configure_legend(
+            titleFontSize=base_font_size + 2,
+            labelFontSize=base_font_size + 2,
+            symbolStrokeWidth=10,
+            labelLimit=400,
+            titleLimit=300,
+            columns=3,
+            orient='top',
+            direction='horizontal',
+            titleAnchor='middle',
+            symbolOffset=80,
+        )
+    )
+
+    # Set a shared scale for the y-axis
+    final_grid_chart = final_grid_chart.resolve_scale(y='shared')
+
+    return final_grid_chart
+
+
 def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: str, test_injection_scenario: str,
                                                           metric_name: str, db_client, dataset_to_column_name: dict = None,
                                                           dataset_to_group: dict = None, without_dummy: bool = False):
