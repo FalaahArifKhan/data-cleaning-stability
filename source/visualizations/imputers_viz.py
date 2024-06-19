@@ -197,7 +197,7 @@ def create_box_plots_for_diff_imputers(dataset_name: str, column_name: str,
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
-            symbolOffset=156,
+            symbolOffset=150 if without_dummy else 120,
         ).configure_facet(
             spacing=10
         ).configure_view(
