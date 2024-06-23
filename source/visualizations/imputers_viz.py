@@ -302,7 +302,7 @@ def create_box_plots_for_mixed_exp(dataset_name: str, column_names: list, metric
             symbolStrokeWidth=10,
             labelLimit=400,
             titleLimit=300,
-            columns=3,
+            columns=4,
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
