@@ -210,7 +210,7 @@ def calculate_kl_divergence_with_kde(true: pd.DataFrame, pred: pd.DataFrame, ver
         true_kde = gaussian_kde(true_scaled)
         pred_kde = gaussian_kde(pred_scaled)
 
-        # Evaluate KDEs at a set of points
+        # Evaluate PDFs at a set of points
         x = np.linspace(min(min(true_scaled), min(pred_scaled)), max(max(true_scaled), max(pred_scaled)), 1000)
         true_dist = true_kde.evaluate(x)
         pred_dist = pred_kde.evaluate(x)
