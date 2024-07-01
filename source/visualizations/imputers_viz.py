@@ -949,7 +949,7 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenar
 
 def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: str, test_injection_scenario: str,
                                                     dataset_to_column_name: dict, metric_name: str,
-                                                    db_client, dataset_to_group: dict = None, base_font_size: int = 18,
+                                                    db_client, dataset_to_group: dict = None, base_font_size: int = 22,
                                                     without_dummy: bool = False, ylim=Undefined):
     train_injection_scenario = train_injection_scenario.upper()
     test_injection_scenario = test_injection_scenario.upper()
@@ -1005,7 +1005,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                     axis=alt.Axis(labels=False)),
             y=alt.Y(f"{new_metric_name}:Q",
                     title=metric_title,
-                    scale=alt.Scale(zero=False, domain=ylim)),
+                    scale=alt.Scale(zero=True if metric_name.lower() == 'kl_divergence_pred' else False, domain=ylim)),
             color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order),
             column=alt.Column('Dataset_Name_With_Column',
                               title=None,
@@ -1028,7 +1028,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
             titleAnchor='middle',
             symbolOffset=120,
         ).configure_facet(
-            spacing=5,
+            spacing=15 if new_metric_name.lower() == 'kl_divergence_pred' or 'difference' in new_metric_name.lower() else 5,
         ).configure_view(
             stroke=None
         ).configure_header(
