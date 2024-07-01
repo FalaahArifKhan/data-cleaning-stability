@@ -1,4 +1,5 @@
-from typing import List, Optional
+from typing import List
+from textwrap import wrap
 
 import pandas as pd
 import altair as alt
@@ -1103,23 +1104,33 @@ def create_exp2_line_bands_for_no_shift(dataset_name: str, model_name: str, metr
 
 def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: str, test_injection_scenario: str,
                                                     metric_name: str, db_client, dataset_to_group: dict = None,
-                                                    base_font_size: int = 18, ylim=Undefined):
+                                                    base_font_size: int = 22, ylim=Undefined):
     train_injection_scenario = train_injection_scenario.upper()
     test_injection_scenario = test_injection_scenario.upper()
     metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) if 'equalized_odds' not in metric_name.lower() else metric_name
 
     sns.set_style("whitegrid")
     if metric_name in ('Label_Stability', 'Std'):
+        spacing = 10
         plot_height = 300
         symbol_offset = 50
         resolve_scale_mode = 'shared'
     else:
+        spacing = 5
         plot_height = 200
         symbol_offset = 130
         resolve_scale_mode = 'independent'
 
     imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
                       'k_means_clustering', 'datawig', 'automl', 'boost_clean']
+    dataset_to_sequence_num = {
+        DIABETES_DATASET: 1,
+        GERMAN_CREDIT_DATASET: 2,
+        ACS_INCOME_DATASET: 3,
+        LAW_SCHOOL_DATASET: 4,
+        BANK_MARKETING_DATASET: 5,
+        CARDIOVASCULAR_DISEASE_DATASET: 6,
+    }
 
     # Create a title
     train_injection_strategy, train_error_rate = train_injection_scenario[:-1], int(train_injection_scenario[-1]) * 10
@@ -1132,6 +1143,11 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                                                                     metric_name=metric_name,
                                                                     db_client=db_client,
                                                                     dataset_to_group=dataset_to_group)
+
+    to_plot['Dataset_Name_With_Model_Name'] = to_plot['Dataset_Name'] + ' (' + to_plot['Source_Model_Name'] + ')'
+    if metric_name == 'Label_Stability':
+        to_plot['Dataset_Name_With_Model_Name'] = to_plot['Dataset_Name_With_Model_Name'].apply(wrap, args=[10]) # Wrap on whitespace with a max line length of 18 chars
+    to_plot['Dataset_Sequence_Number'] = to_plot['Dataset_Name'].apply(lambda x: dataset_to_sequence_num[x])
 
     chart = (
         alt.Chart().mark_boxplot(
@@ -1173,10 +1189,9 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                 width=150,
                 height=plot_height,
             ).facet(
-                column=alt.Column('Dataset_Name:N',
-                                  title=title,
-                                  sort=[DIABETES_DATASET, GERMAN_CREDIT_DATASET, ACS_INCOME_DATASET, LAW_SCHOOL_DATASET,
-                                        BANK_MARKETING_DATASET, CARDIOVASCULAR_DISEASE_DATASET]),
+                column=alt.Column('Dataset_Name_With_Model_Name:N',
+                                  title=None,
+                                  sort=alt.SortField(field='Dataset_Sequence_Number', order='ascending')),
             )
         )
 
@@ -1189,10 +1204,9 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                 width=150,
                 height=plot_height,
             ).facet(
-                column=alt.Column('Dataset_Name:N',
-                                  title=title,
-                                  sort=[DIABETES_DATASET, GERMAN_CREDIT_DATASET, ACS_INCOME_DATASET, LAW_SCHOOL_DATASET,
-                                        BANK_MARKETING_DATASET, CARDIOVASCULAR_DISEASE_DATASET]),
+                column=alt.Column('Dataset_Name_With_Model_Name:N',
+                                  title=None,
+                                  sort=alt.SortField(field='Dataset_Sequence_Number', order='ascending')),
             )
         )
 
@@ -1209,7 +1223,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
             titleAnchor='middle',
             symbolOffset=symbol_offset,
         ).configure_facet(
-            spacing=5,
+            spacing=spacing,
         ).configure_view(
             stroke=None
         ).configure_header(

@@ -984,7 +984,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                                                                                      without_dummy=without_dummy)
 
     to_plot['Dataset_Name_With_Column'] = to_plot['Dataset_Name'] + ' (' + to_plot['Column_With_Nulls'] + ')'
-    to_plot['Dataset_Name_With_Column'] = to_plot['Dataset_Name_With_Column'].apply(wrap, args=[18]) # Wrap on whitespace with a max line length of 10 chars
+    to_plot['Dataset_Name_With_Column'] = to_plot['Dataset_Name_With_Column'].apply(wrap, args=[18]) # Wrap on whitespace with a max line length of 18 chars
     to_plot['Dataset_Sequence_Number'] = to_plot['Dataset_Name'].apply(lambda x: dataset_to_sequence_num[x])
 
     metric_title = new_metric_name.replace('_', ' ')

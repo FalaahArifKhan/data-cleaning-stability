@@ -90,6 +90,7 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenar
         if metric_name == 'Accuracy':
             models_metric_df['Base_Rate'] = get_base_rate(dataset_name)
 
+        models_metric_df['Source_Model_Name'] = model_name
         models_metric_df_for_diff_datasets = pd.concat([models_metric_df_for_diff_datasets, models_metric_df])
         print(f'Extracted data for {dataset_name}')
 
