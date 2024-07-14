@@ -1,6 +1,6 @@
-# data-cleaning-stability
+# Fairness and Stability under Realistic Missingness and Missingness Shift: Results of a Large-Scale Empirical Study
 
-Studying the impact of data cleaning techniques on fairness and stability
+Studying the impact of data cleaning techniques on fairness and stability.
 
 
 ## Setup
