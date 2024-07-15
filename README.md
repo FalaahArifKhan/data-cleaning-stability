@@ -151,7 +151,7 @@ def new_imputation_method(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
 
 ### Adding a new evaluation scenario
 
-1. Add a _missingness scenario_ configuration for the desired dataset in `configs/scenarios_config.py` to the `ERROR_INJECTION_SCENARIOS_CONFIG` dict. Missingness scenario should follow the structure below: `missing_features` are columns for null injection and `setting` is a dict, specifying error rates and conditions for error injection.
+1. Add a configuration for the new _missingness scenario_ and the desired dataset to the `ERROR_INJECTION_SCENARIOS_CONFIG` dict in `configs/scenarios_config.py`. Missingness scenario should follow the structure below: `missing_features` are columns for null injection, and `setting` is a dict, specifying error rates and conditions for error injection.
 ```python
 ACS_INCOME_DATASET: {
     "MCAR": [
@@ -169,7 +169,7 @@ ACS_INCOME_DATASET: {
     ...
 }
 ```
-2. Create a new _evaluation scenario_ with the new _missingness scenario_ in `configs/scenarios_config.py` to the `EVALUATION_SCENARIOS_CONFIG` dict. A new _missingness scenario_ can be used alone or combined with others. `train_injection_scenario` and `test_injection_scenarios` define settings of error injection for train and test sets, respectively. `test_injection_scenarios` takes a list as an input since the benchmark has an optimisation for multiple test sets.
+2. Create a new _evaluation scenario_ with the new _missingness scenario_ in the `EVALUATION_SCENARIOS_CONFIG` dict in `configs/scenarios_config.py`. A new _missingness scenario_ can be used alone or combined with others. `train_injection_scenario` and `test_injection_scenarios` define settings of error injection for train and test sets, respectively. `test_injection_scenarios` takes a list as an input since the benchmark has an optimisation for multiple test sets.
 ```python
 EVALUATION_SCENARIOS_CONFIG = {
     'mixed_exp': {
