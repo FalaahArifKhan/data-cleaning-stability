@@ -34,6 +34,7 @@ CONNECTION_STRING=your_mongodb_connection_string
 
 * `source` directory contains code with custom classes for managing benchmark, database client, error injectors, null imputers, visualizations and some utils functions.
 * `notebooks` directory contains Jupyter notebooks with EDA and results visualization.
+    * `EDA` subdirectory contains notebooks with correlation and feature importance analysis from Section 3.3 for 6 datasets used in our experiments.
 * `configs` directory contains all constants and configs for datasets, null imputers, classifiers and evaluation scenarios.
 * `tests` directory contains tests covering benchmark and null imputers.
 * `scripts` directory contains main scripts for evaluating null imputers, baselines and models.
@@ -118,3 +119,55 @@ def new_imputation_method(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
 2. Add the configuration of your new imputer to `configs/null_imputers_config.py` to the _NULL_IMPUTERS_CONFIG_ dictionary.
 3. Add your name imputer name to the _ErrorRepairMethod_ enum in `configs/constants.py`.
 4. [Optional] If a standard imputation pipeline does not work for a new null imputer, add a new if-statement to `source/custom_classes/benchmark.py` to the _impute_nulls method.
+
+### Adding a new evaluation scenario
+
+1. Add the configuration of missingness scenario for desired dataset in `configs/scenarios_config.py` in `ERROR_INJECTION_SCENARIOS_CONFIG` dict. Missingness scenario should below structure where `missing_features` are columns for null injection and `setting` is dict specifying error rates and conditions (optional).
+```python
+ACS_INCOME_DATASET: {
+    "MCAR": [
+        {
+            'missing_features': ['WKHP', 'AGEP', 'SCHL', 'MAR'],
+            'setting': {'error_rates': [0.1, 0.2, 0.3, 0.4, 0.5]},
+        },
+    ],
+    "MAR": [
+        {
+            'missing_features': ['WKHP', 'SCHL'],
+            'setting': {'condition': ('SEX', '2'), 'error_rates': [0.08, 0.12, 0.20, 0.28, 0.35]}
+        }
+    ]
+}
+```
+2. Add created missingness scenario in in `configs/scenarios_config.py` to `EVALUATION_SCENARIOS_CONFIG` dict. New scenario can be used alone or combined with others. `train_injection_scenario` and `test_injection_scenarios` define scenario in train and test splits.
+```python
+EVALUATION_SCENARIOS_CONFIG = {
+    'mixed_exp': {
+        'train_injection_scenario': 'MCAR1 & MAR1 & MNAR1',
+        'test_injection_scenarios': ['MCAR1 & MAR1 & MNAR1'],
+    },
+    'exp1_mcar3': {
+        'train_injection_scenario': 'MCAR3',
+        'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
+    }
+}
+```
+
+### Adding new dataset
+
+1. To add new dataset you need to use virny wrapper BaseFlowDataset, where reading and preprocessing takes place
+[link to documentation](https://dataresponsibly.github.io/Virny/examples/Multiple_Models_Interface_Use_Case/#preprocess-the-dataset-and-create-a-baseflowdataset-class).
+2. Create config yaml file in `configs/yaml_files` with settings for number of estimators, bootstrap fraction and sensitive attributes dict like in exampple.
+```yaml
+dataset_name: folk
+bootstrap_fraction: 0.8
+n_estimators: 50
+computation_mode: error_analysis
+sensitive_attributes_dct: {'SEX': '2', 'RAC1P': ['2', '3', '4', '5', '6', '7', '8', '9'], 'SEX & RAC1P': None}
+```
+3. In `configs/dataset_config.py` add created wrapper for your dataset specifing kwarg arguments, test set fraction and config yaml path in `DATASET_CONFIG` dict.
+
+### Adding new model
+
+1. To add new model add new model name to `MLModels` enum in `configs/constants.py`.
+2. Set up model instance and hyperparameters grid for tuning inside function `get_models_params_for_tuning` in `configs/models_config_for_tuning.py`. Model instance should inherit sklearn BaseEstimator from scikit-learn in order to support logic with tuning and fitting model ([link to documentation](https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html)).
