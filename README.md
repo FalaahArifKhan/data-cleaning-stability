@@ -1,6 +1,6 @@
 # Fairness and Stability under Realistic Missingness and Missingness Shift: Results of a Large-Scale Empirical Study
 
-This repository contains the source code, scripts, and datasets for Fairness and Stability under Realistic Missingness and Missingness Shift benchmark. Benchmark uses state of the art MVM techniques on a suite of novel evaluation settings on popular fairness benchmark datasets, including multi-mechanism missingness (when several different missingness patterns co-exist in the data) and missingness shift (when the missingness mechanism changes between development/training and deployment/testing), and using a large set of holistic evaluation metrics, including fairness and stability. The benchmark includes functionality for storing experiment results in a database, with MongoDB chosen for our purposes. Additionally, the benchmark is designed to be extensible, allowing researchers to incorporate custom datasets and apply new MVM techniques.
+This repository contains the source code, scripts, and datasets for "Fairness and Stability under Realistic Missingness and Missingness Shift" benchmark. Benchmark uses state-of-the-art MVM techniques on a suite of novel evaluation settings on popular fairness benchmark datasets, including multi-mechanism missingness (when several different missingness patterns co-exist in the data) and missingness shift (when the missingness mechanism changes between development/training and deployment/testing), and using a large set of holistic evaluation metrics, including fairness and stability. The benchmark includes functionality for storing experiment results in a database, with MongoDB chosen for our purposes. Additionally, the benchmark is designed to be extensible, allowing researchers to incorporate custom datasets and apply new MVM techniques.
 
 
 ## Setup
@@ -9,14 +9,14 @@ Create a virtual environment and install requirements:
 ```
 python -m venv venv 
 source venv/bin/activate
-pip install --upgrade pip
-pip install -r requiremnents.txt
+pip3 install --upgrade pip3
+pip3 install -r requiremnents.txt
 ```
 
 Install datawig:
 ```shell
-pip install mxnet-cu110
-pip install datawig --no-deps
+pip3 install mxnet-cu110
+pip3 install datawig --no-deps
 
 # In case of an import error for libcuda.so, use the command below recommended in
 # https://stackoverflow.com/questions/54249577/importerror-libcuda-so-1-cannot-open-shared-object-file
@@ -26,8 +26,8 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-11.0/compat
 Add MongoDB secrets (optional)
 ```
 # Create configs/secrets.env file with database variables
-# DB_NAME=your_mongodb_name
-# CONNECTION_STRING=your_mongodb_connection_string
+DB_NAME=your_mongodb_name
+CONNECTION_STRING=your_mongodb_connection_string
 ```
 
 ## Repository structure
