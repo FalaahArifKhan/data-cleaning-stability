@@ -1,18 +1,108 @@
 # Fairness and Stability under Realistic Missingness and Missingness Shift: Results of a Large-Scale Empirical Study
 
-Studying the impact of data cleaning techniques on fairness and stability.
+This repository contains the source code, scripts, and datasets for "Fairness and Stability under Realistic Missingness and Missingness Shift" benchmark. Benchmark uses state-of-the-art MVM techniques on a suite of novel evaluation settings on popular fairness benchmark datasets, including multi-mechanism missingness (when several different missingness patterns co-exist in the data) and missingness shift (when the missingness mechanism changes between development/training and deployment/testing), and using a large set of holistic evaluation metrics, including fairness and stability. The benchmark includes functionality for storing experiment results in a database, with MongoDB chosen for our purposes. Additionally, the benchmark is designed to be extensible, allowing researchers to incorporate custom datasets and apply new MVM techniques.
 
 
 ## Setup
 
+Create a virtual environment and install requirements:
+```
+python -m venv venv 
+source venv/bin/activate
+pip3 install --upgrade pip3
+pip3 install -r requiremnents.txt
+```
+
 Install datawig:
 ```shell
-pip install mxnet-cu110
-pip install datawig --no-deps
+pip3 install mxnet-cu110
+pip3 install datawig --no-deps
+
+# In case of an import error for libcuda.so, use the command below recommended in
+# https://stackoverflow.com/questions/54249577/importerror-libcuda-so-1-cannot-open-shared-object-file
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-11.0/compat
+```
+
+Add MongoDB secrets (optional)
+```
+# Create configs/secrets.env file with database variables
+DB_NAME=your_mongodb_name
+CONNECTION_STRING=your_mongodb_connection_string
+```
+
+## Repository structure
+
+* `source` directory contains code with custom classes for managing benchmark, database client, error injectors, null imputers, visualizations and some utils functions.
+* `notebooks` directory contains Jupyter notebooks with EDA and results visualization.
+    * `EDA` subdirectory contains notebooks with correlation and feature importance analysis from Section 3.3 for 6 datasets used in our experiments.
+* `configs` directory contains all constants and configs for datasets, null imputers, classifiers and evaluation scenarios.
+* `tests` directory contains tests covering benchmark and null imputers.
+* `scripts` directory contains main scripts for evaluating null imputers, baselines and models.
+
+
+## Usage
+
+### MVM technique evaluation
+
+This console command evaluates single or multiple null imputation techniques on chosen dataset. The argument `evaluation_scenarios` defines which missingness scenario to use. Available scenarios are listed in `configs/scenarios_config.py`. `tune_imputers` is a bool parameter whether to tune imputers. `save_imputed_datasets` is a bool parameter whether to save locally imputed datasets for future use. `dataset` and `null_imputers` arguments should be chosen from supported datasets and MVM techniques. `run_nums` defines number of runs with different seeds.
+```
+python ./scripts/impute_nulls_with_predictor.py \
+    --dataset folk \
+    --null_imputers [\"miss_forest\",\"datawig\"] \
+    --run_nums [1,2,3] \
+    --tune_imputers true \
+    --save_imputed_datasets true \
+    --evaluation_scenarios [\"exp1_mcar3\"]
+```
+
+### Models evaluation
+
+This console command evaluates single or multiple null imputation techniques along with classifiers training on chosen dataset. Arguments `evaluation_scenarios`, `dataset`, `null_imputers`, `run_nums` are used for same purpose as in `impute_nulls_with_predictor.py`. `models` defines which classifiers train in pipeline. `ml_impute` is a bool argument which decides whether to impute null dynamically or use precomputed saved datasets (if they are available).
+```
+python ./scripts/evaluate_models.py \
+    --dataset folk \
+    --null_imputers [\"miss_forest\",\"datawig\"] \
+    --models [\"lr_clf\",\"mlp_clf\"] \
+    --run_nums [1,2,3] \
+    --tune_imputers true \
+    --save_imputed_datasets true \
+    --ml_impute true \
+    --evaluation_scenarios [\"exp1_mcar3\"]
+```
+
+### Baseline evaluation
+
+This console command evaluates classifiers on clean datasets (without injected nulls) for getting baseline metrics. Arguments follow same logic as in `evaluate_models.py`.
+```
+python ./scripts/evaluate_baseline.py \
+    --dataset folk \
+    --models [\"lr_clf\",\"mlp_clf\"] \
+    --run_nums [1,2,3]
 ```
 
 
 ## Extending the benchmark
+
+### Adding a new dataset
+
+1. To add new dataset you need to use virny wrapper BaseFlowDataset, where reading and preprocessing takes place
+   [link to documentation](https://dataresponsibly.github.io/Virny/examples/Multiple_Models_Interface_Use_Case/#preprocess-the-dataset-and-create-a-baseflowdataset-class).
+2. Create config yaml file in `configs/yaml_files` with settings for number of estimators, bootstrap fraction and sensitive attributes dict like in exampple.
+```yaml
+dataset_name: folk
+bootstrap_fraction: 0.8
+n_estimators: 50
+computation_mode: error_analysis
+sensitive_attributes_dct: {'SEX': '2', 'RAC1P': ['2', '3', '4', '5', '6', '7', '8', '9'], 'SEX & RAC1P': None}
+```
+3. In `configs/dataset_config.py` add created wrapper for your dataset specifing kwarg arguments, test set fraction and config yaml path in `DATASET_CONFIG` dict.
+
+
+### Adding a new ML model
+
+1. To add new model add new model name to `MLModels` enum in `configs/constants.py`.
+2. Set up model instance and hyperparameters grid for tuning inside function `get_models_params_for_tuning` in `configs/models_config_for_tuning.py`. Model instance should inherit sklearn BaseEstimator from scikit-learn in order to support logic with tuning and fitting model ([link to documentation](https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html)).
+
 
 ### Adding a new null imputer
 
@@ -50,3 +140,37 @@ def new_imputation_method(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
 2. Add the configuration of your new imputer to `configs/null_imputers_config.py` to the _NULL_IMPUTERS_CONFIG_ dictionary.
 3. Add your name imputer name to the _ErrorRepairMethod_ enum in `configs/constants.py`.
 4. [Optional] If a standard imputation pipeline does not work for a new null imputer, add a new if-statement to `source/custom_classes/benchmark.py` to the _impute_nulls method.
+
+
+### Adding a new evaluation scenario
+
+1. Add the configuration of missingness scenario for desired dataset in `configs/scenarios_config.py` in `ERROR_INJECTION_SCENARIOS_CONFIG` dict. Missingness scenario should below structure where `missing_features` are columns for null injection and `setting` is dict specifying error rates and conditions (optional).
+```python
+ACS_INCOME_DATASET: {
+    "MCAR": [
+        {
+            'missing_features': ['WKHP', 'AGEP', 'SCHL', 'MAR'],
+            'setting': {'error_rates': [0.1, 0.2, 0.3, 0.4, 0.5]},
+        },
+    ],
+    "MAR": [
+        {
+            'missing_features': ['WKHP', 'SCHL'],
+            'setting': {'condition': ('SEX', '2'), 'error_rates': [0.08, 0.12, 0.20, 0.28, 0.35]}
+        }
+    ]
+}
+```
+2. Add created missingness scenario in in `configs/scenarios_config.py` to `EVALUATION_SCENARIOS_CONFIG` dict. New scenario can be used alone or combined with others. `train_injection_scenario` and `test_injection_scenarios` define scenario in train and test splits.
+```python
+EVALUATION_SCENARIOS_CONFIG = {
+    'mixed_exp': {
+        'train_injection_scenario': 'MCAR1 & MAR1 & MNAR1',
+        'test_injection_scenarios': ['MCAR1 & MAR1 & MNAR1'],
+    },
+    'exp1_mcar3': {
+        'train_injection_scenario': 'MCAR3',
+        'test_injection_scenarios': ['MCAR3', 'MAR3', 'MNAR3'],
+    }
+}
+```
