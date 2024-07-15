@@ -83,6 +83,27 @@ python ./scripts/evaluate_baseline.py \
 
 ## Extending the benchmark
 
+### Adding a new dataset
+
+1. To add new dataset you need to use virny wrapper BaseFlowDataset, where reading and preprocessing takes place
+   [link to documentation](https://dataresponsibly.github.io/Virny/examples/Multiple_Models_Interface_Use_Case/#preprocess-the-dataset-and-create-a-baseflowdataset-class).
+2. Create config yaml file in `configs/yaml_files` with settings for number of estimators, bootstrap fraction and sensitive attributes dict like in exampple.
+```yaml
+dataset_name: folk
+bootstrap_fraction: 0.8
+n_estimators: 50
+computation_mode: error_analysis
+sensitive_attributes_dct: {'SEX': '2', 'RAC1P': ['2', '3', '4', '5', '6', '7', '8', '9'], 'SEX & RAC1P': None}
+```
+3. In `configs/dataset_config.py` add created wrapper for your dataset specifing kwarg arguments, test set fraction and config yaml path in `DATASET_CONFIG` dict.
+
+
+### Adding a new ML model
+
+1. To add new model add new model name to `MLModels` enum in `configs/constants.py`.
+2. Set up model instance and hyperparameters grid for tuning inside function `get_models_params_for_tuning` in `configs/models_config_for_tuning.py`. Model instance should inherit sklearn BaseEstimator from scikit-learn in order to support logic with tuning and fitting model ([link to documentation](https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html)).
+
+
 ### Adding a new null imputer
 
 1. Create a new imputation method for your imputer in `source/null_imputers/imputation_methods.py` similar to:
@@ -120,6 +141,7 @@ def new_imputation_method(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
 3. Add your name imputer name to the _ErrorRepairMethod_ enum in `configs/constants.py`.
 4. [Optional] If a standard imputation pipeline does not work for a new null imputer, add a new if-statement to `source/custom_classes/benchmark.py` to the _impute_nulls method.
 
+
 ### Adding a new evaluation scenario
 
 1. Add the configuration of missingness scenario for desired dataset in `configs/scenarios_config.py` in `ERROR_INJECTION_SCENARIOS_CONFIG` dict. Missingness scenario should below structure where `missing_features` are columns for null injection and `setting` is dict specifying error rates and conditions (optional).
@@ -152,22 +174,3 @@ EVALUATION_SCENARIOS_CONFIG = {
     }
 }
 ```
-
-### Adding new dataset
-
-1. To add new dataset you need to use virny wrapper BaseFlowDataset, where reading and preprocessing takes place
-[link to documentation](https://dataresponsibly.github.io/Virny/examples/Multiple_Models_Interface_Use_Case/#preprocess-the-dataset-and-create-a-baseflowdataset-class).
-2. Create config yaml file in `configs/yaml_files` with settings for number of estimators, bootstrap fraction and sensitive attributes dict like in exampple.
-```yaml
-dataset_name: folk
-bootstrap_fraction: 0.8
-n_estimators: 50
-computation_mode: error_analysis
-sensitive_attributes_dct: {'SEX': '2', 'RAC1P': ['2', '3', '4', '5', '6', '7', '8', '9'], 'SEX & RAC1P': None}
-```
-3. In `configs/dataset_config.py` add created wrapper for your dataset specifing kwarg arguments, test set fraction and config yaml path in `DATASET_CONFIG` dict.
-
-### Adding new model
-
-1. To add new model add new model name to `MLModels` enum in `configs/constants.py`.
-2. Set up model instance and hyperparameters grid for tuning inside function `get_models_params_for_tuning` in `configs/models_config_for_tuning.py`. Model instance should inherit sklearn BaseEstimator from scikit-learn in order to support logic with tuning and fitting model ([link to documentation](https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html)).
