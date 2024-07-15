@@ -1,16 +1,74 @@
 # Fairness and Stability under Realistic Missingness and Missingness Shift: Results of a Large-Scale Empirical Study
 
-Studying the impact of data cleaning techniques on fairness and stability.
+This repository contains the source code, scripts, and datasets for Fairness and Stability under Realistic Missingness and Missingness Shift benchmark. Benchmark uses state of the art MVM techniques on a suite of novel evaluation settings on popular fairness benchmark datasets, including multi-mechanism missingness (when several different missingness patterns co-exist in the data) and missingness shift (when the missingness mechanism changes between development/training and deployment/testing), and using a large set of holistic evaluation metrics, including fairness and stability. The benchmark includes functionality for storing experiment results in a database, with MongoDB chosen for our purposes. Additionally, the benchmark is designed to be extensible, allowing researchers to incorporate custom datasets and apply new MVM techniques.
 
 
 ## Setup
 
+Create a virtual environment and install requirements:
+```
+python -m venv venv 
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requiremnents.txt
+```
 Install datawig:
 ```shell
 pip install mxnet-cu110
 pip install datawig --no-deps
 ```
+Add MongoDB secrets (optional)
+```
+# create configs/secrets.env file with database variables
+# DB_NAME=your_mongodb_name
+# CONNECTION_STRING=your_mongodb_connection_string
+```
 
+## Repository structure
+* `source` directory contains code with custom classes for managing benchmark, database client, error injectors, null imputers, visualizations and some utils functions.
+* `notebooks` directory contains Jupyter notebooks with EDA and results visualization.
+* `configs` directory contains all constants and configs for datasets, null imputers, classifiers and evaluation scenarios.
+* `tests` directory contains tests covering benchmark and null imputers.
+* `scripts` directory contains main scripts for evaluating null imputers, baselines and models.
+
+
+## Usage
+
+### MVM technique evaluation
+This command evaluates single or multiple null imputation techniques on chosen dataset. The argument `evaluation_scenarios` defines which missingness scenario to use. Available scenarios are listed in `configs/scenarios_config.py`. `tune_imputers` is a bool parameter whether to tune imputers. `save_imputed_datasets` is a bool parameter whether to save locally imputed datasets for future use. `dataset` and `null_imputers` arguments should be chosen from supported datasets and MVM techniques. `run_nums` defines number of runs with different seeds.
+
+```
+python ./scripts/impute_nulls_with_predictor.py \
+    --dataset "folk" \
+    --null_imputers "['miss_forest', 'datawig']" \
+    --run_nums "[1, 2, 3]" \
+    --tune_imputers True \
+    --save_imputed_datasets True \
+    --evaluation_scenarios "['exp1_mcar3']"
+```
+
+### Models evaluation
+This command evaluates single or multiple null imputation techniques along with classifiers training on chosen dataset. Arguments `evaluation_scenarios`, `dataset`, `null_imputers`, `run_nums` are used for same purpose as in `impute_nulls_with_predictor.py`. `models` defines which classifiers train in pipeline. `ml_impute` is a bool argument which decides whether to impute null dynamically or use precomputed saved datasets (if they are available).
+```
+python ./scripts/evaluate_models.py \
+    --dataset "folk" \
+    --null_imputers "['miss_forest', 'datawig']" \
+    --models "['lr_clf', 'mlp_clf']" \
+    --run_nums "[1, 2, 3]" \
+    --tune_imputers True \
+    --save_imputed_datasets True \
+    --ml_impute True \
+    --evaluation_scenarios "['exp1_mcar3']"
+```
+
+### Baseline evaluation
+This command evaluates classifiers on clean datasets (without injected nulls) for getting baseline metrics. Arguments follow same logic as in `evaluate_models.py`.
+```
+python ./scripts/evaluate_baseline.py \
+    --dataset "folk" \
+    --models "['lr_clf', 'mlp_clf']" \
+    --run_nums "[1, 2, 3]"
+```
 
 ## Extending the benchmark
 
