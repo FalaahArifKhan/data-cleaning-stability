@@ -17,6 +17,10 @@ Install datawig:
 ```shell
 pip install mxnet-cu110
 pip install datawig --no-deps
+
+# In case of an import error for libcuda.so, use the command below recommended in
+# https://stackoverflow.com/questions/54249577/importerror-libcuda-so-1-cannot-open-shared-object-file
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-11.0/compat
 ```
 
 Add MongoDB secrets (optional)
