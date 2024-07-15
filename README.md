@@ -6,7 +6,7 @@ This repository contains the source code, scripts, and datasets for "Fairness an
 ## Setup
 
 Create a virtual environment and install requirements:
-```
+```shell
 python -m venv venv 
 source venv/bin/activate
 pip3 install --upgrade pip3
@@ -24,7 +24,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-11.0/compat
 ```
 
 Add MongoDB secrets (optional)
-```
+```dotenv
 # Create configs/secrets.env file with database variables
 DB_NAME=your_mongodb_name
 CONNECTION_STRING=your_mongodb_connection_string
@@ -33,11 +33,18 @@ CONNECTION_STRING=your_mongodb_connection_string
 ## Repository structure
 
 * `source` directory contains code with custom classes for managing benchmark, database client, error injectors, null imputers, visualizations and some utils functions.
-* `notebooks` directory contains Jupyter notebooks with EDA and results visualization.
-    * `EDA` subdirectory contains notebooks with correlation and feature importance analysis from Section 3.3 for 6 datasets used in our experiments.
 * `configs` directory contains all constants and configs for datasets, null imputers, classifiers and evaluation scenarios.
-* `tests` directory contains tests covering benchmark and null imputers.
 * `scripts` directory contains main scripts for evaluating null imputers, baselines and models.
+* `tests` directory contains tests covering benchmark and null imputers.
+* `notebooks` directory contains Jupyter notebooks with EDA and results visualization.
+    * `cluster_analysis` subdirectory contains notebooks with analysis of the number of clusters in datasets using silhoette scores and PCA, t-SNE, UMAP algorithms. Used to choose the correct number of clusters for the `clustering` null imputer.
+    * `EDA` subdirectory contains notebooks with analysis of feature importance and feature correlation with the target from Section 3.3 in the paper for 6 datasets used in our experiments.
+    * `visualizations` subdirectory contains notebooks with visualisations. It includes two subdirectories with visualisations for imputation performance and model performance. Each of these subdirectories has the following structure:
+      * `single_mechanism_exp` folder includes plots for single-mechanism missingness in both train and test sets (_Section 4_ in the paper).
+      * `multi_mechanism_exp` folder includes plots for multi-mechanism missingness in both train and test sets (_Section 5_ in the paper).
+      * `exp1` folder includes plots for missingness shift with a fixed error rate in train and test sets (_Appendix D.1_ in the paper).
+      * `exp2` folder includes plots for missingness shift with a variable error rate in the train set and a fixed error rate in the test set (_Section 6_ in the paper).
+      * `exp3` folder includes plots for missingness shift with a fixed error rate in the train set and a variable error rate in the test set (_Section 6_ in the paper).
 
 
 ## Usage
@@ -45,7 +52,7 @@ CONNECTION_STRING=your_mongodb_connection_string
 ### MVM technique evaluation
 
 This console command evaluates single or multiple null imputation techniques on chosen dataset. The argument `evaluation_scenarios` defines which missingness scenario to use. Available scenarios are listed in `configs/scenarios_config.py`. `tune_imputers` is a bool parameter whether to tune imputers. `save_imputed_datasets` is a bool parameter whether to save locally imputed datasets for future use. `dataset` and `null_imputers` arguments should be chosen from supported datasets and MVM techniques. `run_nums` defines number of runs with different seeds.
-```
+```shell
 python ./scripts/impute_nulls_with_predictor.py \
     --dataset folk \
     --null_imputers [\"miss_forest\",\"datawig\"] \
@@ -58,7 +65,7 @@ python ./scripts/impute_nulls_with_predictor.py \
 ### Models evaluation
 
 This console command evaluates single or multiple null imputation techniques along with classifiers training on chosen dataset. Arguments `evaluation_scenarios`, `dataset`, `null_imputers`, `run_nums` are used for same purpose as in `impute_nulls_with_predictor.py`. `models` defines which classifiers train in pipeline. `ml_impute` is a bool argument which decides whether to impute null dynamically or use precomputed saved datasets (if they are available).
-```
+```shell
 python ./scripts/evaluate_models.py \
     --dataset folk \
     --null_imputers [\"miss_forest\",\"datawig\"] \
@@ -73,7 +80,7 @@ python ./scripts/evaluate_models.py \
 ### Baseline evaluation
 
 This console command evaluates classifiers on clean datasets (without injected nulls) for getting baseline metrics. Arguments follow same logic as in `evaluate_models.py`.
-```
+```shell
 python ./scripts/evaluate_baseline.py \
     --dataset folk \
     --models [\"lr_clf\",\"mlp_clf\"] \
