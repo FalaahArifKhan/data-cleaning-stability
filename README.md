@@ -1,4 +1,4 @@
-# Fairness and Stability under Realistic Missingness and Missingness Shift: Results of a Large-Scale Empirical Study
+# Still More Shades of Null: A Benchmark for Responsible Missing Value Imputation
 
 This repository contains the source code, scripts, and datasets for "Fairness and Stability under Realistic Missingness and Missingness Shift" benchmark. Benchmark uses state-of-the-art MVM techniques on a suite of novel evaluation settings on popular fairness benchmark datasets, including multi-mechanism missingness (when several different missingness patterns co-exist in the data) and missingness shift (when the missingness mechanism changes between development/training and deployment/testing), and using a large set of holistic evaluation metrics, including fairness and stability. The benchmark includes functionality for storing experiment results in a database, with MongoDB chosen for our purposes. Additionally, the benchmark is designed to be extensible, allowing researchers to incorporate custom datasets and apply new MVM techniques.
 
