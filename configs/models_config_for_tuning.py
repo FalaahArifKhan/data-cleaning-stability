@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 from pprint import pprint
 from sklearn.linear_model import LogisticRegression
@@ -6,6 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from lightgbm import LGBMClassifier
 
+from configs.virny_wrappers import TabPFNClassifierWrapper
 from configs.constants import MLModels
 
 
@@ -55,6 +57,12 @@ def get_models_params_for_tuning(models_tuning_seed):
                 'activation': ['logistic', 'tanh', 'relu'],
                 'solver': ['lbfgs', 'sgd', 'adam'],
                 'learning_rate': ['constant', 'invscaling', 'adaptive']
+            }
+        },
+        MLModels.tabpfn_clf.value: {
+            'model': TabPFNClassifierWrapper(device='cuda' if torch.cuda.is_available() else 'cpu'),
+            'params': {
+                'N_ensemble_configurations': [1, 5, 10, 20, 50, 100],
             }
         }
     }

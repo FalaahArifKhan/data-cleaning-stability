@@ -1,4 +1,5 @@
 virny@git+https://github.com/DataResponsibly/Virny.git@development
+tabpfn~=0.1.10
 tensorflow~=2.8.0
 autokeras==1.0.20
 kmodes==0.12.2
