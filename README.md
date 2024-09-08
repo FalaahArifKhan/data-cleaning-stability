@@ -169,6 +169,7 @@ ACS_INCOME_DATASET: {
     ...
 }
 ```
+
 2. Create a new _evaluation scenario_ with the new _missingness scenario_ in the `EVALUATION_SCENARIOS_CONFIG` dict in `configs/scenarios_config.py`. A new _missingness scenario_ can be used alone or combined with others. `train_injection_scenario` and `test_injection_scenarios` define settings of error injection for train and test sets, respectively. `test_injection_scenarios` takes a list as an input since the benchmark has an optimisation for multiple test sets.
 ```python
 EVALUATION_SCENARIOS_CONFIG = {
