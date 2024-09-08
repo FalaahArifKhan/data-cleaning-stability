@@ -238,7 +238,7 @@ def create_box_plots_for_diff_models_and_single_eval_scenario(dataset_name: str,
         axis=1
     )
 
-    metric_title = metric_name.replace('_', ' ')
+    metric_title = metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' ')
     chart = (
         alt.Chart(models_metric_df).mark_boxplot(
             ticks=True,
@@ -380,7 +380,7 @@ def create_box_plots_for_diff_imputers_and_single_eval_scenario_v2(dataset_name:
                                                 group=group)
     models_metric_df['Baseline_Median'] = baseline_median
 
-    metric_title = metric_name.replace('_', ' ')
+    metric_title = metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' ')
     chart = (
         alt.Chart().mark_boxplot(
             ticks=True,
@@ -532,17 +532,18 @@ def get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_
     title = f'{title} & {test_set} test'
     models_metric_df_for_test_set = models_metric_df[models_metric_df['Test_Injection_Strategy'] == test_set]
 
+    metric_title = metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' ')
     line_chart = alt.Chart(models_metric_df_for_test_set).mark_line().encode(
         x=alt.X(field='Test_Error_Rate', type='quantitative', title='Test Error Rate',
                 scale=alt.Scale(nice=False), axis=alt.Axis(labelExpr=f"(datum.value == 0.1) || (datum.value == 0.3) || (datum.value == 0.5) ? datum.label : ''")),
-        y=alt.Y('mean(Metric_Value)', type='quantitative', title=metric_name.replace('_', ' '), scale=alt.Scale(zero=False, domain=ylim)),
+        y=alt.Y('mean(Metric_Value)', type='quantitative', title=metric_title, scale=alt.Scale(zero=False, domain=ylim)),
         color=alt.Color('Null_Imputer_Name:N', title=None, sort=imputers_order),
     )
     if with_band:
         band_chart = alt.Chart(models_metric_df_for_test_set).mark_errorband(extent="stdev").encode(
             x=alt.X(field='Test_Error_Rate', type='quantitative', title='Test Error Rate',
                     scale=alt.Scale(nice=False), axis=alt.Axis(labelExpr=f"(datum.value == 0.1) || (datum.value == 0.3) || (datum.value == 0.5) ? datum.label : ''")),
-            y=alt.Y(field='Metric_Value', type='quantitative', title=metric_name.replace('_', ' '), scale=alt.Scale(zero=False, domain=ylim)),
+            y=alt.Y(field='Metric_Value', type='quantitative', title=metric_title, scale=alt.Scale(zero=False, domain=ylim)),
             color=alt.Color('Null_Imputer_Name:N', title=None, sort=imputers_order),
         )
         base_chart = (band_chart + line_chart)
@@ -814,17 +815,18 @@ def get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, 
     title = f'{train_set} train & {test_set} test'
     models_metric_df_for_test_set = models_metric_df[models_metric_df['Test_Injection_Strategy'] == test_set]
 
+    metric_title = metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' ')
     line_chart = alt.Chart(models_metric_df_for_test_set).mark_line().encode(
         x=alt.X(field='Train_Error_Rate', type='quantitative', title='Train Error Rate',
                 scale=alt.Scale(nice=False), axis=alt.Axis(labelExpr=f"(datum.value == 0.1) || (datum.value == 0.3) || (datum.value == 0.5) ? datum.label : ''")),
-        y=alt.Y('mean(Metric_Value)', type='quantitative', title=metric_name.replace('_', ' '), scale=alt.Scale(zero=False, domain=ylim)),
+        y=alt.Y('mean(Metric_Value)', type='quantitative', title=metric_title, scale=alt.Scale(zero=False, domain=ylim)),
         color=alt.Color('Null_Imputer_Name:N', title=None, sort=imputers_order),
     )
     if with_band:
         band_chart = alt.Chart(models_metric_df_for_test_set).mark_errorband(extent="stdev").encode(
             x=alt.X(field='Train_Error_Rate', type='quantitative', title='Train Error Rate',
                     scale=alt.Scale(nice=False), axis=alt.Axis(labelExpr=f"(datum.value == 0.1) || (datum.value == 0.3) || (datum.value == 0.5) ? datum.label : ''")),
-            y=alt.Y(field='Metric_Value', type='quantitative', title=metric_name.replace('_', ' '), scale=alt.Scale(zero=False, domain=ylim)),
+            y=alt.Y(field='Metric_Value', type='quantitative', title=metric_title, scale=alt.Scale(zero=False, domain=ylim)),
             color=alt.Color('Null_Imputer_Name:N', title=None, sort=imputers_order),
         )
         base_chart = (band_chart + line_chart)
@@ -1116,7 +1118,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
         symbol_offset = 50
         resolve_scale_mode = 'shared'
     else:
-        spacing = 5
+        spacing = 15
         plot_height = 200
         symbol_offset = 130
         resolve_scale_mode = 'independent'
@@ -1159,7 +1161,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                     sort=imputers_order,
                     axis=alt.Axis(labels=False)),
             y=alt.Y("Metric_Value:Q",
-                    title=metric_name.replace('_', ' '),
+                    title=metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' '),
                     scale=alt.Scale(zero=False, domain=ylim)),
             color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order),
         )
@@ -1173,7 +1175,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
         )
     )
 
-    if metric_name == 'Accuracy':
+    if metric_name == 'Accuracy2':
         base_rate_horizontal_line = (
             alt.Chart().mark_rule().encode(
                 y="Base_Rate:Q",
@@ -1272,7 +1274,7 @@ def create_box_plots_for_diff_imputers_and_models(dataset_name: str, metric_name
                     sort=imputers_order,
                     axis=alt.Axis(labels=False)),
             y=alt.Y("Metric_Value:Q",
-                    title=metric_name.replace('_', ' '),
+                    title=metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' '),
                     scale=alt.Scale(zero=False, domain=ylim)),
             color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order),
         )
