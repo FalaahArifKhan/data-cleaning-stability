@@ -58,6 +58,7 @@ class MLModels(Enum):
     lgbm_clf = 'lgbm_clf'
     rf_clf = 'rf_clf'
     mlp_clf = 'mlp_clf'
+    tabpfn_clf = 'tabpfn_clf'
 
     def __str__(self):
         return self.value

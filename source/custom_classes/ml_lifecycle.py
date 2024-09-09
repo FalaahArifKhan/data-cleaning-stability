@@ -45,7 +45,7 @@ class MLLifecycle:
         self.init_data_loader = DATASET_CONFIG[dataset_name]['data_loader'](**DATASET_CONFIG[dataset_name]['data_loader_kwargs'])
 
         self._logger = get_logger()
-        self._db = DatabaseClient(secrets_path=get_secrets_path('secrets_3.env'))
+        self._db = DatabaseClient(secrets_path=get_secrets_path('secrets.env'))
         # Create a unique uuid per session to manipulate in the database
         # by all experimental results generated in this session
         self._session_uuid = str(uuid.uuid1())
