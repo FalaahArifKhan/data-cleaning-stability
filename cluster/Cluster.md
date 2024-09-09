@@ -1,8 +1,16 @@
 # Cluster
 
-## Development on the Cluster
+## Useful Materials
 
 NYU HPC dashboard -- [https://ood-4.hpc.nyu.edu/pun/sys/dashboard](https://ood-4.hpc.nyu.edu/pun/sys/dashboard)
+
+
+## Development on the Cluster
+
+SSH to the cluster:
+```shell
+ssh dh3553@greene.hpc.nyu.edu
+```
 
 Commands for development on the cluster using GPUs:
 ```shell
