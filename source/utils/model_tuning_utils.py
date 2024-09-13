@@ -1,3 +1,6 @@
+import os
+import shutil
+import pathlib
 import lightgbm
 import warnings
 import numpy as np
@@ -12,14 +15,12 @@ from datetime import datetime
 from pytorch_lightning import seed_everything
 from pytorch_tabular.config import DataConfig, TrainerConfig, OptimizerConfig, ModelConfig
 from pytorch_tabular.tabular_model_tuner import TabularModelTuner
-from pytorch_tabular.tabular_model import TabularModel
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import make_scorer, accuracy_score, f1_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
 
 from virny.custom_classes.base_dataset import BaseFlowDataset
-from configs.constants import COMMON_SEED
 from source.custom_classes.grid_search_cv_with_early_stopping import GridSearchCVWithEarlyStopping
 
 
@@ -61,8 +62,8 @@ def tune_sklearn_models(models_params_for_tuning: dict, base_flow_dataset: BaseF
     return tuned_params_df, models_config
 
 
-def tune_pytorch_tabular_models(models_params_for_tuning: dict, base_flow_dataset: BaseFlowDataset,
-                                dataset_name: str, experiment_seed: int):
+def tune_pytorch_tabular_models(models_params_for_tuning: dict, base_flow_dataset: BaseFlowDataset, dataset_name: str,
+                                null_imputer_name: str, evaluation_scenario: str, experiment_seed: int):
     """
     Tune each defined model from pytorch tabular on a validation set.
     """
@@ -73,11 +74,13 @@ def tune_pytorch_tabular_models(models_params_for_tuning: dict, base_flow_datase
         tuning_start_time = datetime.now()
         print(f"{tuning_start_time.strftime('%Y/%m/%d, %H:%M:%S')}: Tuning {model_name}...", flush=True)
 
+        saved_models_prefix = os.path.join(model_name, null_imputer_name, dataset_name, evaluation_scenario)
         cur_model, cur_f1_score, cur_accuracy, cur_params = validate_pytorch_tabular_model(model_config=model_params['model'],
                                                                                            optimizer_config=model_params['optimizer_config'],
                                                                                            trainer_config=model_params['trainer_config'],
                                                                                            search_space=model_params['params'],
                                                                                            base_flow_dataset=base_flow_dataset,
+                                                                                           saved_models_prefix=saved_models_prefix,
                                                                                            experiment_seed=experiment_seed)
         tuning_end_time = datetime.now()
         print(f'{tuning_end_time.strftime("%Y/%m/%d, %H:%M:%S")}: Tuning for {model_name} is finished '
@@ -122,7 +125,7 @@ def validate_model(model, x, y, params, n_folds):
 
 def validate_pytorch_tabular_model(model_config: ModelConfig, optimizer_config: OptimizerConfig,
                                    trainer_config: TrainerConfig, search_space: dict,
-                                   base_flow_dataset, experiment_seed: int):
+                                   base_flow_dataset, saved_models_prefix, experiment_seed: int):
     """
     Use GridSearchCV for a special model from pytorch tabular
      to find the best hyperparameters based on the validation set
@@ -141,12 +144,21 @@ def validate_pytorch_tabular_model(model_config: ModelConfig, optimizer_config: 
         continuous_cols=[col for col in base_flow_dataset.X_train_val.columns if col.startswith('num_')],
         categorical_cols=[col for col in base_flow_dataset.X_train_val.columns if col.startswith('cat_')],
     )
+
+    saved_models_path = (pathlib.Path(__file__).parent.parent.parent
+                           .joinpath('results')
+                           .joinpath('intermediate_state')
+                           .joinpath('saved_models')
+                           .joinpath(saved_models_prefix)
+                           .joinpath(str(experiment_seed)))
     tuner = TabularModelTuner(
         data_config=data_config,
         model_config=model_config,
         optimizer_config=optimizer_config,
-        trainer_config=trainer_config
+        trainer_config=trainer_config,
+        suppress_lightning_logger=True,
     )
+    tuner.trainer_config.checkpoints_path = saved_models_path
 
     seed_everything(seed=experiment_seed)
     with warnings.catch_warnings():
@@ -157,13 +169,17 @@ def validate_pytorch_tabular_model(model_config: ModelConfig, optimizer_config: 
             search_space=search_space,
             strategy="random_search",
             # n_trials=100,
-            n_trials=5,
+            n_trials=3,
             metric=macro_f1_score,
             mode="max",
             progress_bar=True,
             random_state=experiment_seed,
             verbose=False # Make True if you want to log metrics and params each iteration
         )
+
+    # Remove all files created by TabularModelTuner to save storage space
+    shutil.rmtree(saved_models_path)
+    shutil.rmtree(pathlib.Path(__file__).parent.parent.parent.joinpath('lightning_logs'))
 
     return (result.best_model,
             result.best_score,

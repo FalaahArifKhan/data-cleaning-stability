@@ -102,6 +102,8 @@ class MLLifecycle:
                 tune_pytorch_tabular_models(models_params_for_tuning=pytorch_tabular_models_for_tuning,
                                             base_flow_dataset=base_flow_dataset,
                                             dataset_name=self.virny_config.dataset_name,
+                                            null_imputer_name=null_imputer_name,
+                                            evaluation_scenario=evaluation_scenario,
                                             experiment_seed=experiment_seed)
 
         # Save tunes parameters in database
