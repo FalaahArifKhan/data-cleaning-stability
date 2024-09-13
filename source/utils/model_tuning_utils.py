@@ -9,6 +9,7 @@ from pprint import pprint, pformat
 from copy import deepcopy
 from datetime import datetime
 
+from pytorch_lightning import seed_everything
 from pytorch_tabular.config import DataConfig, TrainerConfig, OptimizerConfig, ModelConfig
 from pytorch_tabular.tabular_model_tuner import TabularModelTuner
 from pytorch_tabular.tabular_model import TabularModel
@@ -140,17 +141,6 @@ def validate_pytorch_tabular_model(model_config: ModelConfig, optimizer_config: 
         continuous_cols=[col for col in base_flow_dataset.X_train_val.columns if col.startswith('num_')],
         categorical_cols=[col for col in base_flow_dataset.X_train_val.columns if col.startswith('cat_')],
     )
-
-    # tabular_model = TabularModel(
-    #     data_config=data_config,
-    #     model_config=model_config,
-    #     optimizer_config=optimizer_config,
-    #     trainer_config=trainer_config,
-    #     verbose=True
-    # )
-    # print('\ntabular_model.config')
-    # print(tabular_model.config)
-
     tuner = TabularModelTuner(
         data_config=data_config,
         model_config=model_config,
@@ -158,6 +148,7 @@ def validate_pytorch_tabular_model(model_config: ModelConfig, optimizer_config: 
         trainer_config=trainer_config
     )
 
+    seed_everything(seed=experiment_seed)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         result = tuner.tune(
@@ -166,7 +157,7 @@ def validate_pytorch_tabular_model(model_config: ModelConfig, optimizer_config: 
             search_space=search_space,
             strategy="random_search",
             # n_trials=100,
-            n_trials=3,
+            n_trials=5,
             metric=macro_f1_score,
             mode="max",
             progress_bar=True,
