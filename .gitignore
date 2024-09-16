@@ -5,6 +5,9 @@
 data/*
 logs/*
 results/*
+.pt_tmp
+lightning_logs
+saved_models
 
 # Created by https://www.gitignore.io/api/python,pycharm+all
 # Edit at https://www.gitignore.io/?templates=python,pycharm+all

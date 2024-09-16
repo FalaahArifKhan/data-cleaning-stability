@@ -1,6 +1,7 @@
 import os
 import copy
 import tqdm
+import shutil
 import pathlib
 import pandas as pd
 from pprint import pprint
@@ -73,6 +74,18 @@ class Benchmark(MLLifecycle):
                                        db_writer_func=self._db.get_db_writer(collection_name=EXP_COLLECTION_NAME),
                                        notebook_logs_stdout=False,
                                        verbose=0)
+
+        # Remove all files created by Pytorch Tabular TabularModelTuner to save storage space
+        shutil.rmtree(pathlib.Path(__file__).parent.parent.parent.joinpath('lightning_logs'), ignore_errors=True)
+        for model_name in model_names:
+            saved_models_prefix = os.path.join(model_name, null_imputer_name, self.dataset_name, evaluation_scenario)
+            saved_models_path = (pathlib.Path(__file__).parent.parent.parent
+                                 .joinpath('results')
+                                 .joinpath('intermediate_state')
+                                 .joinpath('saved_models')
+                                 .joinpath(saved_models_prefix)
+                                 .joinpath(str(experiment_seed)))
+            shutil.rmtree(saved_models_path, ignore_errors=True)
 
     def evaluate_baselines(self, run_nums: list, model_names: list):
         self._db.connect()

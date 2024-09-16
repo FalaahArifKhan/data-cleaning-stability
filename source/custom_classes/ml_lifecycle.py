@@ -2,6 +2,7 @@ import os
 import uuid
 import shutil
 import pathlib
+import pytorch_tabular
 import pandas as pd
 
 from datetime import datetime, timezone
@@ -19,7 +20,7 @@ from configs.datasets_config import DATASET_CONFIG
 from configs.scenarios_config import ERROR_INJECTION_SCENARIOS_CONFIG
 from source.utils.custom_logger import get_logger
 from source.utils.dataframe_utils import calculate_kl_divergence
-from source.utils.model_tuning_utils import tune_ML_models
+from source.utils.model_tuning_utils import tune_sklearn_models, tune_pytorch_tabular_models
 from source.utils.common_helpers import (generate_guid, create_base_flow_dataset, get_injection_scenarios)
 from source.custom_classes.database_client import DatabaseClient, get_secrets_path
 from source.error_injectors.nulls_injector import NullsInjector
@@ -76,17 +77,39 @@ class MLLifecycle:
                         evaluation_scenario, null_imputer_name):
         # Get hyper-parameters for tuning. Each time reinitialize an init model and its hyper-params for tuning.
         all_models_params_for_tuning = get_models_params_for_tuning(experiment_seed)
-        models_params_for_tuning = {model_name: all_models_params_for_tuning[model_name] for model_name in model_names}
+
+        # Separate models on sklearn API and pytorch tabular API
+        sklearn_models_for_tuning = dict()
+        pytorch_tabular_models_for_tuning = dict()
+        for model_name in model_names:
+            model_obj = all_models_params_for_tuning[model_name]['model']
+            if isinstance(model_obj, pytorch_tabular.config.ModelConfig):
+                pytorch_tabular_models_for_tuning[model_name] = all_models_params_for_tuning[model_name]
+            else:
+                sklearn_models_for_tuning[model_name] = all_models_params_for_tuning[model_name]
 
         # Tune models and create a models config for metrics computation
-        tuned_params_df, models_config = tune_ML_models(models_params_for_tuning=models_params_for_tuning,
-                                                        base_flow_dataset=base_flow_dataset,
-                                                        dataset_name=self.virny_config.dataset_name,
-                                                        n_folds=self.num_folds_for_tuning)
+        sklearn_tuned_params_df, sklearn_models_config = pd.DataFrame(), dict()
+        if len(sklearn_models_for_tuning) > 0:
+            sklearn_tuned_params_df, sklearn_models_config = tune_sklearn_models(models_params_for_tuning=sklearn_models_for_tuning,
+                                                                                 base_flow_dataset=base_flow_dataset,
+                                                                                 dataset_name=self.virny_config.dataset_name,
+                                                                                 n_folds=self.num_folds_for_tuning)
+
+        pytorch_tabular_tuned_params_df, pytorch_tabular_models_config = pd.DataFrame(), dict()
+        if len(pytorch_tabular_models_for_tuning) > 0:
+            pytorch_tabular_tuned_params_df, pytorch_tabular_models_config = \
+                tune_pytorch_tabular_models(models_params_for_tuning=pytorch_tabular_models_for_tuning,
+                                            base_flow_dataset=base_flow_dataset,
+                                            dataset_name=self.virny_config.dataset_name,
+                                            null_imputer_name=null_imputer_name,
+                                            evaluation_scenario=evaluation_scenario,
+                                            experiment_seed=experiment_seed)
 
         # Save tunes parameters in database
+        models_config = {**sklearn_models_config, **pytorch_tabular_models_config}
+        tuned_params_df = pd.concat([sklearn_tuned_params_df, pytorch_tabular_tuned_params_df])
         date_time_str = datetime.now(timezone.utc)
-        tuned_params_df['Model_Best_Params'] = tuned_params_df['Model_Best_Params']
         tuned_params_df['Model_Tuning_Guid'] = tuned_params_df['Model_Name'].apply(
             lambda model_name: generate_guid(ordered_hierarchy_lst=[self.dataset_name, null_imputer_name,
                                                                     evaluation_scenario, experiment_seed, model_name])

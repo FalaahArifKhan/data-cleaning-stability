@@ -1,4 +1,3 @@
-import torch
 import numpy as np
 from pprint import pprint
 from sklearn.linear_model import LogisticRegression
@@ -7,7 +6,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
 from lightgbm import LGBMClassifier
 
-from configs.virny_wrappers import TabPFNClassifierWrapper
+from pytorch_tabular.models import GANDALFConfig
+from pytorch_tabular.config import OptimizerConfig, TrainerConfig
+
 from configs.constants import MLModels
 
 
@@ -59,12 +60,25 @@ def get_models_params_for_tuning(models_tuning_seed):
                 'learning_rate': ['constant', 'invscaling', 'adaptive']
             }
         },
-        MLModels.tabpfn_clf.value: {
-            'model': TabPFNClassifierWrapper(device='cuda' if torch.cuda.is_available() else 'cpu'),
+        ####################################################################
+        # Use Pytorch Tabular API to work with tabular neural networks
+        ####################################################################
+        MLModels.gandalf_clf.value: {
+            'model': GANDALFConfig(task="classification", seed=models_tuning_seed),
+            'optimizer_config': OptimizerConfig(),
+            'trainer_config': TrainerConfig(batch_size=512,
+                                            max_epochs=100,
+                                            seed=models_tuning_seed,
+                                            early_stopping="valid_loss", # Monitor valid_loss for early stopping
+                                            early_stopping_mode="min", # Set the mode as min because for val_loss, lower is better
+                                            early_stopping_patience=5), # No. of epochs of degradation training will wait before terminating
             'params': {
-                'N_ensemble_configurations': [1, 5, 10, 20, 50, 100],
+                'model_config__gflu_stages': [i for i in range(2, 31)],
+                'model_config__gflu_dropout': [0.01 * i for i in range(6)],
+                'model_config__gflu_feature_init_sparsity': [0.1 * i for i in range(6)],
+                'model_config__learning_rate': [1e-3, 1e-4, 1e-5, 1e-6],
             }
-        }
+        },
     }
 
 

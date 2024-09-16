@@ -1,6 +1,7 @@
 from enum import Enum
 
 
+COMMON_SEED = 42
 EXPERIMENT_RUN_SEEDS = [100 * i for i in range(1, 11)]
 NUM_FOLDS_FOR_TUNING = 3
 EXP_COLLECTION_NAME = 'exp_nulls_data_cleaning'
@@ -58,7 +59,7 @@ class MLModels(Enum):
     lgbm_clf = 'lgbm_clf'
     rf_clf = 'rf_clf'
     mlp_clf = 'mlp_clf'
-    tabpfn_clf = 'tabpfn_clf'
+    gandalf_clf = 'gandalf_clf'
 
     def __str__(self):
         return self.value
