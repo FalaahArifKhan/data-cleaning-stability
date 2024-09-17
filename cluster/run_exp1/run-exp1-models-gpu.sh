@@ -2,7 +2,8 @@
 declare -a job_configs=(
     "heart deletion exp1_mar3 gandalf_clf 3"
     "heart deletion exp1_mcar3 gandalf_clf 6"
-    "heart deletion exp1_mnar3 gandalf_clf 3,6"
+    "heart deletion exp1_mnar3 gandalf_clf 3"
+    "heart deletion exp1_mnar3 gandalf_clf 6"
 )
 
 TEMPLATE_FILE="../cluster/run_exp1/run-exp1-models-gpu-template.sbatch"
