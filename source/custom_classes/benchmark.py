@@ -441,6 +441,20 @@ class Benchmark(MLLifecycle):
                                                 notebook_logs_stdout=False,
                                                 verbose=0)
 
+        # Remove all files created by Pytorch Tabular TabularModelTuner to save storage space
+        for model_name in model_names:
+            saved_models_prefix = os.path.join(model_name, null_imputer_name, self.dataset_name, evaluation_scenario)
+            saved_models_path = (pathlib.Path(__file__).parent.parent.parent
+                                 .joinpath('results')
+                                 .joinpath('intermediate_state')
+                                 .joinpath('saved_models')
+                                 .joinpath(saved_models_prefix)
+                                 .joinpath(str(experiment_seed)))
+            if getpass.getuser() in ('dh3553', 'np2969'):
+                # Use bigger storage on the HPC cluster
+                saved_models_path = str(saved_models_path).replace('home', 'scratch')
+            shutil.rmtree(saved_models_path, ignore_errors=True)
+
     def _run_exp_iter(self, init_data_loader, run_num, evaluation_scenario, null_imputer_name,
                       model_names, tune_imputers, ml_impute, save_imputed_datasets):
         data_loader = copy.deepcopy(init_data_loader)
