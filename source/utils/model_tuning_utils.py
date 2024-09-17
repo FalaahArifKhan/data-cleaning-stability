@@ -172,7 +172,7 @@ def validate_pytorch_tabular_model(model_config: ModelConfig, optimizer_config: 
             validation=val,
             search_space=search_space,
             strategy="random_search",
-            n_trials=25 if base_flow_dataset.X_train_val.shape[0] > 20_000 else 10,
+            n_trials=25 if base_flow_dataset.X_train_val.shape[0] > 20_000 else 100,
             metric=macro_f1_score,
             mode="max",
             progress_bar=True,
