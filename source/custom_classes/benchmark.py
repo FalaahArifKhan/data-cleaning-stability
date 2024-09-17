@@ -77,7 +77,6 @@ class Benchmark(MLLifecycle):
                                        verbose=0)
 
         # Remove all files created by Pytorch Tabular TabularModelTuner to save storage space
-        shutil.rmtree(pathlib.Path(__file__).parent.parent.parent.joinpath('logs').joinpath('lightning_logs'), ignore_errors=True)
         for model_name in model_names:
             saved_models_prefix = os.path.join(model_name, null_imputer_name, self.dataset_name, evaluation_scenario)
             saved_models_path = (pathlib.Path(__file__).parent.parent.parent
