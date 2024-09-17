@@ -8,6 +8,10 @@ results/*
 .pt_tmp
 lightning_logs
 saved_models
+cluster/run_baselines/sbatch_files
+cluster/run_exp1/sbatch_files
+cluster/run_exp2_3/sbatch_files
+cluster/run_mixed_exp/sbatch_files
 
 # Created by https://www.gitignore.io/api/python,pycharm+all
 # Edit at https://www.gitignore.io/?templates=python,pycharm+all
