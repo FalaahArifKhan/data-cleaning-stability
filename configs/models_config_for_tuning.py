@@ -67,7 +67,8 @@ def get_models_params_for_tuning(models_tuning_seed):
             'model': GANDALFConfig(task="classification", seed=models_tuning_seed),
             'optimizer_config': OptimizerConfig(),
             'trainer_config': TrainerConfig(batch_size=512,
-                                            max_epochs=100,
+                                            # max_epochs=100,
+                                            max_epochs=10,
                                             seed=models_tuning_seed,
                                             early_stopping="valid_loss", # Monitor valid_loss for early stopping
                                             early_stopping_mode="min", # Set the mode as min because for val_loss, lower is better
