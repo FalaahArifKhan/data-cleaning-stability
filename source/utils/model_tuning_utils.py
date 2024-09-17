@@ -1,4 +1,5 @@
 import os
+import getpass
 import shutil
 import pathlib
 import lightgbm
@@ -151,6 +152,9 @@ def validate_pytorch_tabular_model(model_config: ModelConfig, optimizer_config: 
                            .joinpath('saved_models')
                            .joinpath(saved_models_prefix)
                            .joinpath(str(experiment_seed)))
+    if getpass.getuser() in ('dh3553', 'np2969'):
+        # Use bigger storage on the HPC cluster
+        saved_models_path = str(saved_models_path).replace('home', 'scratch')
     tuner = TabularModelTuner(
         data_config=data_config,
         model_config=model_config,

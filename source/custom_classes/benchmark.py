@@ -2,6 +2,7 @@ import os
 import copy
 import tqdm
 import shutil
+import getpass
 import pathlib
 import pandas as pd
 from pprint import pprint
@@ -76,7 +77,7 @@ class Benchmark(MLLifecycle):
                                        verbose=0)
 
         # Remove all files created by Pytorch Tabular TabularModelTuner to save storage space
-        shutil.rmtree(pathlib.Path(__file__).parent.parent.parent.joinpath('lightning_logs'), ignore_errors=True)
+        shutil.rmtree(pathlib.Path(__file__).parent.parent.parent.joinpath('logs').joinpath('lightning_logs'), ignore_errors=True)
         for model_name in model_names:
             saved_models_prefix = os.path.join(model_name, null_imputer_name, self.dataset_name, evaluation_scenario)
             saved_models_path = (pathlib.Path(__file__).parent.parent.parent
@@ -85,6 +86,9 @@ class Benchmark(MLLifecycle):
                                  .joinpath('saved_models')
                                  .joinpath(saved_models_prefix)
                                  .joinpath(str(experiment_seed)))
+            if getpass.getuser() in ('dh3553', 'np2969'):
+                # Use bigger storage on the HPC cluster
+                saved_models_path = str(saved_models_path).replace('home', 'scratch')
             shutil.rmtree(saved_models_path, ignore_errors=True)
 
     def evaluate_baselines(self, run_nums: list, model_names: list):

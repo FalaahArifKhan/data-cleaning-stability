@@ -1,7 +1,7 @@
 # =======================================================================================
 # Local
 # =======================================================================================
-python ./scripts/evaluate_baseline.py \
+python ../scripts/evaluate_baseline.py \
     --dataset diabetes \
     --models \[\"gandalf_clf\"\] \
     --run_nums \[2\]
