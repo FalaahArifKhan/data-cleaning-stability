@@ -313,11 +313,11 @@ def create_box_plots_for_diff_models(dataset_name: str, null_imputer_name: str, 
             symbolStrokeWidth=10,
             labelLimit=400,
             titleLimit=300,
-            columns=5,
+            columns=6,
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
-            symbolOffset=150,
+            symbolOffset=110,
         ).configure_facet(
             spacing=10
         ).configure_view(
