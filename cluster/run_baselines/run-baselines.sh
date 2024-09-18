@@ -1,5 +1,6 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
+    "bank gandalf_clf 6"
     "folk gandalf_clf 1"
     "folk gandalf_clf 2"
     "folk gandalf_clf 3"
