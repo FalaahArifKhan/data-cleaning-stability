@@ -6,6 +6,7 @@
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=END
 #SBATCH --mail-user=dh3553@nyu.edu
+#SBATCH --account=pr_152_general
 #SBATCH --job-name=<DATASET>_<NULL_IMPUTER>_<EVALUATION_SCENARIO>
 #SBATCH --output=%j_<DATASET>_<NULL_IMPUTER>_<EVALUATION_SCENARIO>.out
 #SBATCH --error=%j_<DATASET>_<NULL_IMPUTER>_<EVALUATION_SCENARIO>.err

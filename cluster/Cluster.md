@@ -12,6 +12,11 @@ SSH to the cluster:
 ssh dh3553@greene.hpc.nyu.edu
 ```
 
+Get your project ID:
+```shell
+sacctmgr list assoc format=user,account%25 where user=<NYU id>
+```
+
 Commands for development on the cluster using GPUs:
 ```shell
 # To request one GPU card, 16 GB memory, and 12 hour running duration
