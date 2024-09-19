@@ -2,7 +2,7 @@
 # Local
 # =======================================================================================
 python ../scripts/evaluate_baseline.py \
-    --dataset diabetes \
+    --dataset folk \
     --models \[\"gandalf_clf\"\] \
     --run_nums \[2\]
 
@@ -15,7 +15,7 @@ python ./scripts/evaluate_models.py \
     --ml_impute true \
     --evaluation_scenarios \[\"exp1_mcar3\"\]
 
-python ./scripts/evaluate_models.py \
+python ../scripts/evaluate_models.py \
     --dataset law_school \
     --null_imputers \[\"deletion\"\] \
     --models \[\"gandalf_clf\"\] \
