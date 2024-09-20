@@ -1,15 +1,15 @@
 #!/bin/bash
 
 #SBATCH --nodes=1
-#SBATCH --mem=32GB
+#SBATCH --mem=96GB
 #SBATCH --cpus-per-task=24
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=END
 #SBATCH --mail-user=dh3553@nyu.edu
 #SBATCH --account=pr_152_general
-#SBATCH --job-name=<DATASET>_<MODEL>
-#SBATCH --output=%j_<DATASET>_<MODEL>.out
-#SBATCH --error=%j_<DATASET>_<MODEL>.err
+#SBATCH --job-name=cpu_python
+#SBATCH --output=%j.out
+#SBATCH --error=%j.err
 
 module purge
 
