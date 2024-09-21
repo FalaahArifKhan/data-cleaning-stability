@@ -60,5 +60,6 @@ if __name__ == '__main__':
 
     now = datetime.now(timezone.utc)
     date_time_str = now.strftime("%Y%m%d__%H%M%S")
-    tuned_df_path = os.path.join(os.getcwd(), 'models_tuning', f'tuning_results_{DATASET_NAME}.csv')
-    tuned_params_df.to_csv(tuned_df_path, sep=",", columns=tuned_params_df.columns, float_format="%.4f", index=False)
+    # tuned_df_path = os.path.join(os.getcwd(), 'models_tuning', f'tuning_results_{DATASET_NAME}.csv')
+    tuned_params_df.to_csv(f'tuning_results_{DATASET_NAME}.csv', sep=",",
+                           columns=tuned_params_df.columns, float_format="%.4f", index=False)
