@@ -18,6 +18,6 @@ python ../notebooks/EDA/tune_ACS_Employment.py
 "
 
 singularity exec \
-	    --overlay /scratch/dh3553/ml_life_cycle_project/vldb_env.ext3:rw \
+	    --overlay /scratch/dh3553/ml_life_cycle_project/vldb_env.ext3:ro \
 	    /scratch/work/public/singularity/ubuntu-20.04.1.sif \
 	    /bin/bash -c "source /ext3/env.sh; ${EXECUTION_COMMAND}"
