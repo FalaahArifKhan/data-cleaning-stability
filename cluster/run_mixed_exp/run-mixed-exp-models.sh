@@ -1,11 +1,12 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "heart boost_clean mixed_exp lr_clf 1"
-    "heart boost_clean mixed_exp lr_clf 2"
-    "heart boost_clean mixed_exp lr_clf 3"
-    "heart boost_clean mixed_exp lr_clf 4"
-    "heart boost_clean mixed_exp lr_clf 5"
-    "heart boost_clean mixed_exp lr_clf 6"
+#     "heart boost_clean mixed_exp lr_clf 1"
+#     "heart boost_clean mixed_exp lr_clf 2"
+#     "heart boost_clean mixed_exp lr_clf 3"
+#     "heart boost_clean mixed_exp lr_clf 4"
+#     "heart boost_clean mixed_exp lr_clf 5"
+#     "heart boost_clean mixed_exp lr_clf 6"
+
 #     "heart deletion mixed_exp gandalf_clf 1"
 #     "heart deletion mixed_exp gandalf_clf 2"
 #     "heart deletion mixed_exp gandalf_clf 3"
@@ -40,7 +41,7 @@ declare -a job_configs=(
 #     "heart automl mixed_exp gandalf_clf 2"
 #     "heart automl mixed_exp gandalf_clf 3"
 #     "heart automl mixed_exp gandalf_clf 4"
-#     "heart automl mixed_exp gandalf_clf 5"
+    "heart automl mixed_exp gandalf_clf 5"
 #     "heart automl mixed_exp gandalf_clf 6"
 )
 
