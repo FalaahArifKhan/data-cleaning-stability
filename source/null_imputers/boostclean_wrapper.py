@@ -193,6 +193,7 @@ class BoostCleanWrapper(BaseInprocessingWrapper):
         return X_train_repairs
         
     def fit(self, X_train, y_train):
+        y_train = pd.DataFrame(y_train)
         data_dct = self._build_dataset_objects(X_train, y_train)
         
         if self.computed_repaired_datasets_paths is None:
