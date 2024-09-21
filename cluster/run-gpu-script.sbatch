@@ -7,6 +7,7 @@
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=END
 #SBATCH --mail-user=dh3553@nyu.edu
+#SBATCH --account=pr_152_general
 #SBATCH --output=datawig_%j.out
 #SBATCH --error=datawig_%j.err
 

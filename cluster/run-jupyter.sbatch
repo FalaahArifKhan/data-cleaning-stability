@@ -5,6 +5,7 @@
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=32GB
 #SBATCH --time=48:00:00
+#SBATCH --account=pr_152_general
 
 module purge
 
