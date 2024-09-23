@@ -1134,12 +1134,6 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
         CARDIOVASCULAR_DISEASE_DATASET: 6,
     }
 
-    # Create a title
-    train_injection_strategy, train_error_rate = train_injection_scenario[:-1], int(train_injection_scenario[-1]) * 10
-    test_injection_strategy, test_error_rate = test_injection_scenario[:-1], int(test_injection_scenario[-1]) * 10
-    title = (f'{train_injection_strategy} train set with {train_error_rate}% error rate and '
-             f'{test_injection_strategy} test set with {test_error_rate}% error rate')
-
     to_plot = get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenario=train_injection_scenario,
                                                                     test_injection_scenario=test_injection_scenario,
                                                                     metric_name=metric_name,

@@ -45,12 +45,15 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenar
         ACS_INCOME_DATASET: 'mlp_clf',
         LAW_SCHOOL_DATASET: 'lr_clf',
         BANK_MARKETING_DATASET: 'lgbm_clf',
-        CARDIOVASCULAR_DISEASE_DATASET: 'lgbm_clf',
+        CARDIOVASCULAR_DISEASE_DATASET: 'gandalf_clf',
     }
     evaluation_scenario = get_evaluation_scenario(train_injection_scenario)
 
     models_metric_df_for_diff_datasets = pd.DataFrame()
     for dataset_name in DATASET_CONFIG.keys():
+        if dataset_name not in (DIABETES_DATASET, CARDIOVASCULAR_DISEASE_DATASET):
+            continue
+
         group = 'overall' if dataset_to_group is None else dataset_to_group[dataset_name]
         model_name = dataset_to_model_name_dct[dataset_name]
 
@@ -69,6 +72,7 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenar
                                                               group=group)
             models_metric_df['Dataset_Name'] = dataset_name
 
+        print('models_metric_df.shape:', models_metric_df.shape)
         models_metric_df = models_metric_df[models_metric_df['Metric'] == metric_name]
         models_metric_df = models_metric_df.rename(columns={group: 'Metric_Value'})
 
@@ -78,6 +82,7 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenar
             axis=1
         )
         models_metric_df = models_metric_df[models_metric_df['Test_Injection_Scenario'] == test_injection_scenario]
+        print('models_metric_df.shape:', models_metric_df.shape)
 
         # Add a baseline median to models_metric_df to display it as a horizontal line
         baseline_median = get_baseline_model_median(dataset_name=dataset_name,
@@ -265,6 +270,7 @@ def get_models_metric_df(db_client, dataset_name: str, evaluation_scenario: str,
         'subgroup': group,
         'tag': 'OK',
     }
+    print('query:', query)
     metric_df = db_client.read_metric_df_from_db(collection_name=EXP_COLLECTION_NAME,
                                                  query=query)
     if db_client.db_name == 'data_cleaning_stability_2':
