@@ -51,9 +51,6 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenar
 
     models_metric_df_for_diff_datasets = pd.DataFrame()
     for dataset_name in DATASET_CONFIG.keys():
-        if dataset_name not in (DIABETES_DATASET, CARDIOVASCULAR_DISEASE_DATASET):
-            continue
-
         group = 'overall' if dataset_to_group is None else dataset_to_group[dataset_name]
         model_name = dataset_to_model_name_dct[dataset_name]
 
