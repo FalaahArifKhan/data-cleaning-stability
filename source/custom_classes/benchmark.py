@@ -35,6 +35,7 @@ class Benchmark(MLLifecycle):
         null_imputer_name = 'baseline'
         evaluation_scenario = 'baseline'
         data_loader = copy.deepcopy(init_data_loader)
+        print('data_loader.full_df.shape:', data_loader.full_df.shape)
 
         custom_table_fields_dct = dict()
         experiment_seed = EXPERIMENT_RUN_SEEDS[run_num - 1]

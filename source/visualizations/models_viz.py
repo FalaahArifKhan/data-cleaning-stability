@@ -1141,8 +1141,12 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                                                                     dataset_to_group=dataset_to_group)
 
     to_plot['Dataset_Name_With_Model_Name'] = to_plot['Dataset_Name'] + ' (' + to_plot['Source_Model_Name'] + ')'
+    to_plot['Dataset_Name_With_Model_Name'] = (
+        to_plot.apply(lambda row: '  ' + row['Dataset_Name'] + '  (' + row['Source_Model_Name'] + ')' if row['Source_Model_Name'] == 'gandalf_clf'
+        else row['Dataset_Name'] + ' (' + row['Source_Model_Name'] + ')', axis=1)
+    )
     if metric_name == 'Label_Stability':
-        to_plot['Dataset_Name_With_Model_Name'] = to_plot['Dataset_Name_With_Model_Name'].apply(wrap, args=[10]) # Wrap on whitespace with a max line length of 18 chars
+        to_plot['Dataset_Name_With_Model_Name'] = to_plot['Dataset_Name_With_Model_Name'].apply(wrap, args=[13]) # Wrap on whitespace with a max line length of 18 chars
     to_plot['Dataset_Sequence_Number'] = to_plot['Dataset_Name'].apply(lambda x: dataset_to_sequence_num[x])
 
     chart = (

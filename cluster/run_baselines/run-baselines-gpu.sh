@@ -1,8 +1,11 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "heart gandalf_clf 1,2"
-    "heart gandalf_clf 3,4"
-    "heart gandalf_clf 5,6"
+    "folk_emp gandalf_clf 1"
+    "folk_emp gandalf_clf 2"
+    "folk_emp gandalf_clf 3"
+    "folk_emp gandalf_clf 4"
+    "folk_emp gandalf_clf 5"
+    "folk_emp gandalf_clf 6"
 )
 
 TEMPLATE_FILE="../cluster/run_baselines/run-baselines-gpu-template.sbatch"

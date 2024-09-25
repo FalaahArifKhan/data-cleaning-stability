@@ -1,5 +1,5 @@
 from configs.constants import (GERMAN_CREDIT_DATASET, BANK_MARKETING_DATASET, CARDIOVASCULAR_DISEASE_DATASET,
-                               DIABETES_DATASET, LAW_SCHOOL_DATASET, ACS_INCOME_DATASET)
+                               DIABETES_DATASET, LAW_SCHOOL_DATASET, ACS_INCOME_DATASET, ACS_EMPLOYMENT_DATASET)
 
 
 EVALUATION_SCENARIOS_CONFIG = {
@@ -117,6 +117,66 @@ ERROR_INJECTION_SCENARIOS_CONFIG = {
             {
                 'missing_features': ['WKHP'],
                 'setting': {'condition': ('WKHP', {'ge': 40.0}), 'error_rates': [0.01, 0.02, 0.05, 0.10, 0.15]},
+            },
+            {
+                'missing_features': ['AGEP'],
+                'setting': {'condition': ('AGEP', {'le': 50}), 'error_rates': [0.01, 0.02, 0.05, 0.10, 0.15]},
+            },
+            {
+                'missing_features': ['AGEP'],
+                'setting': {'condition': ('AGEP', {'gt': 50}), 'error_rates': [0.09, 0.18, 0.25, 0.30, 0.35]},
+            },
+            {
+                'missing_features': ['SCHL'],
+                'setting': {'condition': ('SCHL', [str(i) for i in range(1, 21)]), 'error_rates': [0.09, 0.18, 0.25, 0.30, 0.35]},
+            },
+            {
+                'missing_features': ['SCHL'],
+                'setting': {'condition': ('SCHL', [str(i) for i in range(21, 25)]), 'error_rates': [0.01, 0.02, 0.05, 0.10, 0.15]},
+            },
+        ],
+    },
+    ACS_EMPLOYMENT_DATASET: {
+        "MCAR": [
+            {
+                'missing_features': ['DIS', 'MIL', 'AGEP', 'SCHL'],
+                'setting': {'error_rates': [0.1, 0.2, 0.3, 0.4, 0.5]},
+            },
+        ],
+        "MAR": [
+            {
+                'missing_features': ['MIL', 'AGEP'],
+                'setting': {'condition': ('SEX', '2'), 'error_rates': [0.08, 0.12, 0.20, 0.28, 0.35]},
+            },
+            {
+                'missing_features': ['MIL', 'AGEP'],
+                'setting': {'condition': ('SEX', '1'), 'error_rates': [0.02, 0.08, 0.10, 0.12, 0.15]},
+            },
+            {
+                'missing_features': ['DIS', 'SCHL'],
+                'setting': {'condition': ('RAC1P', ['2', '3', '4', '5', '6', '7', '8', '9']), 'error_rates': [0.08, 0.12, 0.20, 0.28, 0.35]},
+            },
+            {
+                'missing_features': ['DIS', 'SCHL'],
+                'setting': {'condition': ('RAC1P', '1'), 'error_rates': [0.02, 0.08, 0.10, 0.12, 0.15]},
+            },
+        ],
+        "MNAR": [
+            {
+                'missing_features': ['DIS'],
+                'setting': {'condition': ('DIS', '2'), 'error_rates': [0.01, 0.02, 0.05, 0.10, 0.14]},
+            },
+            {
+                'missing_features': ['DIS'],
+                'setting': {'condition': ('DIS', '1'), 'error_rates': [0.09, 0.18, 0.25, 0.30, 0.36]},
+            },
+            {
+                'missing_features': ['MIL'],
+                'setting': {'condition': ('MIL', ['2', '3']), 'error_rates': [0.01, 0.02, 0.05, 0.05, 0.05]},
+            },
+            {
+                'missing_features': ['MIL'],
+                'setting': {'condition': ('MIL', ['1', '4']), 'error_rates': [0.09, 0.18, 0.25, 0.35, 0.45]},
             },
             {
                 'missing_features': ['AGEP'],
