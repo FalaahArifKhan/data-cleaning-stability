@@ -1,8 +1,11 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "folk datawig mixed_exp 1,2"
-    "folk datawig mixed_exp 3,4"
-    "folk datawig mixed_exp 5,6"
+    "folk_emp datawig mixed_exp 1"
+    "folk_emp datawig mixed_exp 2"
+    "folk_emp datawig mixed_exp 3"
+    "folk_emp datawig mixed_exp 4"
+    "folk_emp datawig mixed_exp 5"
+    "folk_emp datawig mixed_exp 6"
 )
 
 TEMPLATE_FILE="../cluster/run_mixed_exp/run-mixed-exp-imputers-gpu-template.sbatch"

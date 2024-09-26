@@ -58,7 +58,7 @@ def parse_input_args():
 
 if __name__ == '__main__':
     start_time = datetime.now()
-    preconfigure_experiment(env_file_path=get_secrets_path('secrets_3.env'))
+    preconfigure_experiment(env_file_path=get_secrets_path('secrets.env'))
     args = parse_input_args()
 
     benchmark = Benchmark(dataset_name=args.dataset,
