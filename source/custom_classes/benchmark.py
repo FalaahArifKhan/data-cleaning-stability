@@ -172,6 +172,13 @@ class Benchmark(MLLifecycle):
             zip(X_tests_with_nulls_wo_sensitive_attrs_lst, X_tests_imputed_wo_sensitive_attrs_lst)
         ))
 
+        if save_imputed_datasets:
+            self._save_imputed_datasets_to_fs(X_train_val=X_train_val_imputed_wo_sensitive_attrs,
+                                              X_tests_lst=X_tests_imputed_wo_sensitive_attrs_lst,
+                                              null_imputer_name=null_imputer_name,
+                                              evaluation_scenario=evaluation_scenario,
+                                              experiment_seed=experiment_seed)
+
         # Save performance metrics and tuned parameters of the null imputer in database
         self._save_imputation_metrics_to_db(train_imputation_metrics_df=train_imputation_metrics_df,
                                             test_imputation_metrics_dfs_lst=test_imputation_metrics_dfs_lst,
@@ -180,13 +187,6 @@ class Benchmark(MLLifecycle):
                                             evaluation_scenario=evaluation_scenario,
                                             experiment_seed=experiment_seed,
                                             null_imputer_params_dct=null_imputer_params_dct)
-
-        if save_imputed_datasets:
-            self._save_imputed_datasets_to_fs(X_train_val=X_train_val_imputed_wo_sensitive_attrs,
-                                              X_tests_lst=X_tests_imputed_wo_sensitive_attrs_lst,
-                                              null_imputer_name=null_imputer_name,
-                                              evaluation_scenario=evaluation_scenario,
-                                              experiment_seed=experiment_seed)
 
         # Create base flow datasets for Virny to compute metrics
         main_base_flow_dataset, extra_base_flow_datasets = \
