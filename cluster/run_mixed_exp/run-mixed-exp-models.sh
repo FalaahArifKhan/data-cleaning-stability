@@ -1,39 +1,7 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "folk_emp deletion mixed_exp gandalf_clf 1"
-    "folk_emp deletion mixed_exp gandalf_clf 2"
-    "folk_emp deletion mixed_exp gandalf_clf 3"
-    "folk_emp deletion mixed_exp gandalf_clf 4"
-    "folk_emp deletion mixed_exp gandalf_clf 5"
-    "folk_emp deletion mixed_exp gandalf_clf 6"
-
-    "folk_emp median-mode mixed_exp gandalf_clf 1"
-    "folk_emp median-mode mixed_exp gandalf_clf 2"
-    "folk_emp median-mode mixed_exp gandalf_clf 3"
-    "folk_emp median-mode mixed_exp gandalf_clf 4"
-    "folk_emp median-mode mixed_exp gandalf_clf 5"
-    "folk_emp median-mode mixed_exp gandalf_clf 6"
-
-    "folk_emp median-dummy mixed_exp gandalf_clf 1"
-    "folk_emp median-dummy mixed_exp gandalf_clf 2"
-    "folk_emp median-dummy mixed_exp gandalf_clf 3"
-    "folk_emp median-dummy mixed_exp gandalf_clf 4"
-    "folk_emp median-dummy mixed_exp gandalf_clf 5"
-    "folk_emp median-dummy mixed_exp gandalf_clf 6"
-
     "folk_emp miss_forest mixed_exp gandalf_clf 1"
-    "folk_emp miss_forest mixed_exp gandalf_clf 2"
-    "folk_emp miss_forest mixed_exp gandalf_clf 3"
-    "folk_emp miss_forest mixed_exp gandalf_clf 4"
     "folk_emp miss_forest mixed_exp gandalf_clf 5"
-    "folk_emp miss_forest mixed_exp gandalf_clf 6"
-
-    "folk_emp k_means_clustering mixed_exp gandalf_clf 1"
-    "folk_emp k_means_clustering mixed_exp gandalf_clf 2"
-    "folk_emp k_means_clustering mixed_exp gandalf_clf 3"
-    "folk_emp k_means_clustering mixed_exp gandalf_clf 4"
-    "folk_emp k_means_clustering mixed_exp gandalf_clf 5"
-    "folk_emp k_means_clustering mixed_exp gandalf_clf 6"
 )
 
 TEMPLATE_FILE="../cluster/run_mixed_exp/run-mixed-exp-models-template.sbatch"
