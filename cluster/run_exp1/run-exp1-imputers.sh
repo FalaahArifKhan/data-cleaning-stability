@@ -16,9 +16,11 @@ declare -a job_configs=(
 #     "folk_emp automl exp1_mar3 5,6"
 #     "folk_emp automl exp1_mnar3 1,2"
 
-    "folk_emp miss_forest exp1_mar3 2"
-    "folk_emp automl exp1_mnar3 3,4"
-    "folk_emp automl exp1_mnar3 5,6"
+#     "folk_emp miss_forest exp1_mar3 2"
+#     "folk_emp automl exp1_mnar3 3,4"
+#     "folk_emp automl exp1_mnar3 5,6"
+
+    "folk_emp miss_forest exp1_mar3 1"
 )
 
 TEMPLATE_FILE="../cluster/run_exp1/run-exp1-imputers-template.sbatch"

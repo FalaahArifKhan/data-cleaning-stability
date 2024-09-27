@@ -2,10 +2,13 @@
 declare -a job_configs=(
 #     "folk_emp miss_forest mixed_exp 3,4"
 #     "folk_emp automl mixed_exp 1,2"
-    "folk_emp miss_forest mixed_exp 2"
-    "folk_emp miss_forest mixed_exp 6"
-    "folk_emp automl mixed_exp 3,4"
-    "folk_emp automl mixed_exp 5,6"
+#     "folk_emp miss_forest mixed_exp 2"
+#     "folk_emp miss_forest mixed_exp 6"
+#     "folk_emp automl mixed_exp 3,4"
+#     "folk_emp automl mixed_exp 5,6"
+
+    "folk_emp miss_forest mixed_exp 1"
+    "folk_emp miss_forest mixed_exp 5"
 )
 
 TEMPLATE_FILE="../cluster/run_mixed_exp/run-mixed-exp-imputers-template.sbatch"
