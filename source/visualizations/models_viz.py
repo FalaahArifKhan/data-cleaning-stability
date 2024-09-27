@@ -7,7 +7,8 @@ import seaborn as sns
 from altair.utils.schemapi import Undefined
 
 from configs.constants import (DIABETES_DATASET, GERMAN_CREDIT_DATASET, BANK_MARKETING_DATASET,
-                               CARDIOVASCULAR_DISEASE_DATASET, ACS_INCOME_DATASET, LAW_SCHOOL_DATASET)
+                               CARDIOVASCULAR_DISEASE_DATASET, ACS_INCOME_DATASET,
+                               LAW_SCHOOL_DATASET, ACS_EMPLOYMENT_DATASET)
 from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
 from source.visualizations.model_metrics_extraction_for_viz import (get_models_metric_df, get_baseline_models_metric_df,
                                                                     get_overall_metric_from_disparity_metric,
@@ -1132,6 +1133,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
         LAW_SCHOOL_DATASET: 4,
         BANK_MARKETING_DATASET: 5,
         CARDIOVASCULAR_DISEASE_DATASET: 6,
+        ACS_EMPLOYMENT_DATASET: 7,
     }
 
     to_plot = get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenario=train_injection_scenario,

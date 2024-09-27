@@ -3,7 +3,8 @@ from virny.custom_classes.metrics_composer import MetricsComposer
 from virny.configs.constants import *
 
 from configs.constants import (EXP_COLLECTION_NAME, DIABETES_DATASET, GERMAN_CREDIT_DATASET, BANK_MARKETING_DATASET,
-                               CARDIOVASCULAR_DISEASE_DATASET, ACS_INCOME_DATASET, LAW_SCHOOL_DATASET)
+                               CARDIOVASCULAR_DISEASE_DATASET, ACS_INCOME_DATASET, LAW_SCHOOL_DATASET,
+                               ACS_EMPLOYMENT_DATASET)
 from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
 from configs.datasets_config import DATASET_CONFIG
 from source.custom_classes.database_client import DatabaseClient
@@ -46,6 +47,7 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenar
         LAW_SCHOOL_DATASET: 'lr_clf',
         BANK_MARKETING_DATASET: 'lgbm_clf',
         CARDIOVASCULAR_DISEASE_DATASET: 'gandalf_clf',
+        ACS_EMPLOYMENT_DATASET: 'gandalf_clf',
     }
     evaluation_scenario = get_evaluation_scenario(train_injection_scenario)
 
@@ -223,7 +225,8 @@ def get_baseline_models_metric_df(db_client, dataset_name: str, metric_name: str
 
     columns_subset = ['Dataset_Name', 'Null_Imputer_Name', 'Virny_Random_State',
                       'Model_Name', 'Subgroup', 'Metric', 'Metric_Value']
-    metric_df = metric_df[columns_subset]
+    if metric_df.shape[0] > 0:
+        metric_df = metric_df[columns_subset]
 
     return metric_df
 
@@ -244,7 +247,8 @@ def get_baseline_model_metrics(dataset_name: str, model_name: str, metric_name: 
         models_metric_df = models_metric_df[models_metric_df['Metric'] == metric_name]
         models_metric_df = models_metric_df.rename(columns={group: 'Metric_Value'})
 
-    models_metric_df = models_metric_df[models_metric_df['Model_Name'] == model_name]
+    if models_metric_df.shape[0] > 0:
+        models_metric_df = models_metric_df[models_metric_df['Model_Name'] == model_name]
     return models_metric_df
 
 
@@ -281,7 +285,8 @@ def get_models_metric_df(db_client, dataset_name: str, evaluation_scenario: str,
 
     columns_subset = ['Dataset_Name', 'Null_Imputer_Name', 'Evaluation_Scenario', 'Virny_Random_State',
                       'Model_Name', 'Subgroup', 'Metric', 'Metric_Value', 'Test_Set_Index']
-    metric_df = metric_df[columns_subset]
+    if metric_df.shape[0] > 0:
+        metric_df = metric_df[columns_subset]
 
     return metric_df
 
