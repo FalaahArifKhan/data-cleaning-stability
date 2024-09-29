@@ -1,10 +1,10 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "folk_emp automl mixed_exp gandalf_clf 2"
-    "folk_emp automl mixed_exp gandalf_clf 4"
+#     "folk_emp automl mixed_exp gandalf_clf 2"
+#     "folk_emp automl mixed_exp gandalf_clf 4"
 
-#     "folk_emp boost_clean mixed_exp gandalf_clf 2"
-#     "folk_emp boost_clean mixed_exp gandalf_clf 4"
+    "folk_emp boost_clean mixed_exp gandalf_clf 2"
+    "folk_emp boost_clean mixed_exp gandalf_clf 4"
 )
 
 TEMPLATE_FILE="../cluster/run_mixed_exp/run-mixed-exp-models-template.sbatch"
