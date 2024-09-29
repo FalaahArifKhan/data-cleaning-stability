@@ -1121,7 +1121,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
     else:
         spacing = 15
         plot_height = 200
-        symbol_offset = 130
+        symbol_offset = 140
         resolve_scale_mode = 'independent'
 
     imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
@@ -1141,15 +1141,19 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                                                                     metric_name=metric_name,
                                                                     db_client=db_client,
                                                                     dataset_to_group=dataset_to_group)
-
-    to_plot['Dataset_Name_With_Model_Name'] = to_plot['Dataset_Name'] + ' (' + to_plot['Source_Model_Name'] + ')'
-    to_plot['Dataset_Name_With_Model_Name'] = (
-        to_plot.apply(lambda row: '  ' + row['Dataset_Name'] + '  (' + row['Source_Model_Name'] + ')' if row['Source_Model_Name'] == 'gandalf_clf'
-        else row['Dataset_Name'] + ' (' + row['Source_Model_Name'] + ')', axis=1)
-    )
-    if metric_name == 'Label_Stability':
-        to_plot['Dataset_Name_With_Model_Name'] = to_plot['Dataset_Name_With_Model_Name'].apply(wrap, args=[13]) # Wrap on whitespace with a max line length of 18 chars
     to_plot['Dataset_Sequence_Number'] = to_plot['Dataset_Name'].apply(lambda x: dataset_to_sequence_num[x])
+    to_plot['Dataset_Name'] = to_plot['Dataset_Name'].replace({ACS_INCOME_DATASET: 'folk_inc'})
+
+    if metric_name in ('Label_Stability', 'Std'):
+        to_plot['Dataset_Name_With_Model_Name'] = (
+            to_plot.apply(lambda row: '  ' + row['Dataset_Name'] + '  (' + row['Source_Model_Name'] + ')' if row['Source_Model_Name'] == 'gandalf_clf'
+            else row['Dataset_Name'] + ' (' + row['Source_Model_Name'] + ')', axis=1)
+        )
+    else:
+        to_plot['Dataset_Name_With_Model_Name'] = to_plot['Dataset_Name'] + ' (' + to_plot['Source_Model_Name'] + ')'
+
+    if metric_name in ('Label_Stability', 'Std'):
+        to_plot['Dataset_Name_With_Model_Name'] = to_plot['Dataset_Name_With_Model_Name'].apply(wrap, args=[13]) # Wrap on whitespace with a max line length of 18 chars
 
     chart = (
         alt.Chart().mark_boxplot(
@@ -1188,7 +1192,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                 chart, baseline_horizontal_line, base_rate_horizontal_line,
                 data=to_plot,
             ).properties(
-                width=150,
+                width=120,
                 height=plot_height,
             ).facet(
                 column=alt.Column('Dataset_Name_With_Model_Name:N',
@@ -1203,7 +1207,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                 chart, baseline_horizontal_line,
                 data=to_plot,
             ).properties(
-                width=150,
+                width=120,
                 height=plot_height,
             ).facet(
                 column=alt.Column('Dataset_Name_With_Model_Name:N',
