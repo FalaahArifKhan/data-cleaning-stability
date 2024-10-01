@@ -1,5 +1,5 @@
 {
-  "evaluation_scenario": "baseline",
-  "null_imputer_name": "baseline",
+  "dataset_name": "folk_emp",
+  "evaluation_scenario": "mixed_exp",
   "tag": "OK"
 }

@@ -12,7 +12,7 @@ SSH to the cluster:
 ssh dh3553@greene.hpc.nyu.edu
 ```
 
-Get your project ID:
+Get your project IDs:
 ```shell
 sacctmgr list assoc format=user,account%25 where user=<NYU id>
 ```
