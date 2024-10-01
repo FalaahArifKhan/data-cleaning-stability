@@ -188,7 +188,7 @@ def get_overall_metric_from_disparity_metric(disparity_metric):
         FPR: [EQUALIZED_ODDS_FPR],
         FNR: [EQUALIZED_ODDS_FNR],
         ACCURACY: [ACCURACY_DIFFERENCE],
-        SELECTION_RATE: [STATISTICAL_PARITY_DIFFERENCE, DISPARATE_IMPACT],
+        SELECTION_RATE: [STATISTICAL_PARITY_DIFFERENCE, DISPARATE_IMPACT, 'Selection_Rate_Difference'],
         # Stability disparity metrics
         LABEL_STABILITY: [LABEL_STABILITY_RATIO, LABEL_STABILITY_DIFFERENCE],
         JITTER: [JITTER_DIFFERENCE],

@@ -1116,11 +1116,13 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
     if metric_name in ('Label_Stability', 'Std'):
         spacing = 10
         plot_height = 300
+        plot_width = 140
         symbol_offset = 50
         resolve_scale_mode = 'shared'
     else:
         spacing = 15
         plot_height = 200
+        plot_width = 120
         symbol_offset = 140
         resolve_scale_mode = 'independent'
 
@@ -1192,7 +1194,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                 chart, baseline_horizontal_line, base_rate_horizontal_line,
                 data=to_plot,
             ).properties(
-                width=120,
+                width=plot_width,
                 height=plot_height,
             ).facet(
                 column=alt.Column('Dataset_Name_With_Model_Name:N',
@@ -1207,7 +1209,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
                 chart, baseline_horizontal_line,
                 data=to_plot,
             ).properties(
-                width=120,
+                width=plot_width,
                 height=plot_height,
             ).facet(
                 column=alt.Column('Dataset_Name_With_Model_Name:N',
