@@ -982,6 +982,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
     to_plot['Dataset_Name_With_Column'] = to_plot['Dataset_Name'] + ' (' + to_plot['Column_With_Nulls'] + ')'
     to_plot['Dataset_Name_With_Column'] = to_plot['Dataset_Name_With_Column'].apply(wrap, args=[18]) # Wrap on whitespace with a max line length of 18 chars
     to_plot['Dataset_Sequence_Number'] = to_plot['Dataset_Name'].apply(lambda x: dataset_to_sequence_num[x])
+    to_plot['Dataset_Name'] = to_plot['Dataset_Name'].replace({ACS_INCOME_DATASET: 'folk_inc'})
 
     metric_title = new_metric_name.replace('_', ' ')
     metric_title = (
@@ -1054,9 +1055,6 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_in
     evaluation_scenario = get_evaluation_scenario(train_injection_scenario)
     imputers_metric_df_for_diff_datasets = pd.DataFrame()
     for dataset_name in DATASET_CONFIG.keys():
-        if dataset_name ==  ACS_EMPLOYMENT_DATASET:
-            continue
-
         group = 'overall' if dataset_to_group is None else dataset_to_group[dataset_name]
         metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')])
         if metric_name.lower() == 'rmse':
@@ -1126,6 +1124,9 @@ def create_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_injectio
                                                                                                    db_client=db_client,
                                                                                                    dataset_to_group=dataset_to_group,
                                                                                                    without_dummy=without_dummy)
+    if dataset_to_group is not None and new_metric_name.lower() == 'rmse_difference':
+        to_plot = to_plot.loc[~((to_plot['Dataset_Name'] == GERMAN_CREDIT_DATASET) & (to_plot[new_metric_name] > 100))]
+
     dataset_to_sequence_num = {
         DIABETES_DATASET: 1,
         GERMAN_CREDIT_DATASET: 2,
@@ -1136,6 +1137,7 @@ def create_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_injectio
         ACS_EMPLOYMENT_DATASET: 7,
     }
     to_plot['Dataset_Sequence_Number'] = to_plot['Dataset_Name'].apply(lambda x: dataset_to_sequence_num[x])
+    to_plot['Dataset_Name'] = to_plot['Dataset_Name'].replace({ACS_INCOME_DATASET: 'folk_inc'})
 
     metric_title = new_metric_name.replace('_', ' ')
     metric_title = (
@@ -1161,7 +1163,7 @@ def create_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_injectio
                               title=None,
                               sort=alt.SortField(field='Dataset_Sequence_Number', order='ascending'))
         ).properties(
-            width=150,
+            width=130 if metric_name.lower() == 'kl_divergence_pred' else 120,
         )
     )
 
@@ -1176,7 +1178,7 @@ def create_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_injectio
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
-            symbolOffset=120,
+            symbolOffset=140 if dataset_to_group is not None else 110,
         ).configure_facet(
             spacing=15 if new_metric_name.lower() == 'kl_divergence_pred' or 'difference' in new_metric_name.lower() else 5,
         ).configure_view(
