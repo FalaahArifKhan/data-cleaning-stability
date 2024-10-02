@@ -1139,11 +1139,20 @@ def create_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_injectio
     to_plot['Dataset_Sequence_Number'] = to_plot['Dataset_Name'].apply(lambda x: dataset_to_sequence_num[x])
     to_plot['Dataset_Name'] = to_plot['Dataset_Name'].replace({ACS_INCOME_DATASET: 'folk_inc'})
 
+    if 'kl_divergence' in metric_name.lower():
+        to_plot['Extended_Dataset_Name'] = to_plot['Dataset_Name']
+    elif 'rmse' in metric_name.lower():
+        to_plot['Extended_Dataset_Name'] = to_plot['Dataset_Name'] + ' (num)'
+    else:
+        to_plot['Extended_Dataset_Name'] = to_plot['Dataset_Name'] + ' (cat)'
+
     metric_title = new_metric_name.replace('_', ' ')
     metric_title = (
         metric_title.replace('Rmse', 'RMSE')
         .replace('Kl Divergence Pred', 'KL Divergence Pred')
         .replace('Kl Divergence Total', 'KL Divergence Total')
+        .replace('KL Divergence Pred Difference', 'KLD Pred Difference')
+        .replace('KL Divergence Total Difference', 'KLD Total Difference')
     )
 
     chart = (
@@ -1159,10 +1168,11 @@ def create_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_injectio
                     title=metric_title,
                     scale=alt.Scale(zero=True if metric_name.lower() == 'kl_divergence_pred' else False, domain=ylim)),
             color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order),
-            column=alt.Column('Dataset_Name',
+            column=alt.Column('Extended_Dataset_Name',
                               title=None,
                               sort=alt.SortField(field='Dataset_Sequence_Number', order='ascending'))
         ).properties(
+            height=200,
             width=130 if metric_name.lower() == 'kl_divergence_pred' else 120,
         )
     )
