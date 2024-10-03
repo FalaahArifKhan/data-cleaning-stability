@@ -49,6 +49,28 @@ def get_correlation_with_target(df, target_name, feature_names, method='spearman
     set_default_plot_properties()
 
 
+def get_correlation_with_target_by_threshold(df, target_name, feature_names, threshold, method='spearman', heatmap_size=(16, 15)):
+    # Look at the feature correlation with target
+    filtered_df = df[feature_names + [target_name]]
+
+    sns_set_size(height=heatmap_size[0], width=heatmap_size[1])
+    ax = plt.axes()
+    corr_matrix = filtered_df.corr(method=method)[[target_name]]
+    filtered_corr_matrix = corr_matrix[corr_matrix[target_name].abs() >= threshold]
+    heatmap = sns.heatmap(
+        filtered_corr_matrix.sort_values(by=target_name, ascending=False),
+        ax=ax,
+        annot=True,
+        annot_kws={"size": 18}
+    )
+
+    ax.set_title(f'{method.capitalize()}\ncorrelation', fontsize=20)
+    plt.yticks(rotation=0, fontsize=18)
+    plt.show()
+
+    set_default_plot_properties()
+
+
 def get_correlation_matrix(df, feature_names, method='spearman', heatmap_size=(16, 15)):
     # Look at correlations among features
     filtered_df = df[feature_names]
