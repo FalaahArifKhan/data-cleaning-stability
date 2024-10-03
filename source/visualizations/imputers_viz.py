@@ -1172,7 +1172,7 @@ def create_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_injectio
                               title=None,
                               sort=alt.SortField(field='Dataset_Sequence_Number', order='ascending'))
         ).properties(
-            height=200,
+            # height=200,
             width=130 if metric_name.lower() == 'kl_divergence_pred' else 120,
         )
     )
