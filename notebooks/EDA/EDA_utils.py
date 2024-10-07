@@ -71,7 +71,7 @@ def get_correlation_with_target_by_threshold(df, target_name, feature_names, thr
     set_default_plot_properties()
 
 
-def get_correlation_matrix(df, feature_names, method='spearman', heatmap_size=(16, 15)):
+def get_correlation_matrix(df, feature_names, method='spearman', heatmap_size=(16, 15), xticks_rotation=45):
     # Look at correlations among features
     filtered_df = df[feature_names]
 
@@ -79,7 +79,23 @@ def get_correlation_matrix(df, feature_names, method='spearman', heatmap_size=(1
     ax = plt.axes()
     sns.heatmap(filtered_df.corr(method=method), ax=ax, annot=True)
     ax.set_title(f'{method.capitalize()} Correlation')
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=xticks_rotation)
+    plt.yticks(rotation=0)
+    plt.show()
+
+    set_default_plot_properties()
+
+
+def get_correlation_matrix_by_target_names(df, feature_names: list, target_names: list,
+                                           method='spearman', heatmap_size=(16, 15), xticks_rotation=45):
+    # Look at correlations among features
+    filtered_df = df[feature_names]
+
+    sns_set_size(height=heatmap_size[0], width=heatmap_size[1])
+    ax = plt.axes()
+    sns.heatmap(filtered_df.corr(method=method)[target_names], ax=ax, annot=True)
+    ax.set_title(f'{method.capitalize()} Correlation')
+    plt.xticks(rotation=xticks_rotation)
     plt.yticks(rotation=0)
     plt.show()
 
