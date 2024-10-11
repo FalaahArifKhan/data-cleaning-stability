@@ -54,7 +54,7 @@ def get_scatter_plot_data(missingness_types: list, dataset_to_column_name: dict,
     avg_model_performance_metrics_df = model_performance_metrics_df.groupby(['Dataset_Name', 'Null_Imputer_Name', 'Model_Name', 'Evaluation_Scenario', 'Missingness_Type']).mean(numeric_only=True).reset_index()
 
     # Merge avg_imputation_quality_metrics_df and avg_model_performance_metrics_df
-    merged_df_1 = pd.merge(avg_imputation_quality_metrics_df, avg_model_performance_metrics_df[['Dataset_Name', 'Null_Imputer_Name', 'Evaluation_Scenario', 'Missingness_Type', model_performance_metric_name]],
+    merged_df_1 = pd.merge(avg_imputation_quality_metrics_df, avg_model_performance_metrics_df[['Dataset_Name', 'Null_Imputer_Name', 'Model_Name', 'Evaluation_Scenario', 'Missingness_Type', model_performance_metric_name]],
                            on=['Dataset_Name', 'Null_Imputer_Name', 'Evaluation_Scenario', 'Missingness_Type'],
                            how='left')
 
@@ -90,7 +90,7 @@ def get_scatter_plot_data(missingness_types: list, dataset_to_column_name: dict,
 
 
 def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
-                        imputation_quality_metric_name: str, model_performance_metric_name: str,
+                        imputation_quality_metric_name: str, model_performance_metric_name: str, shape_by: str,
                         db_client_1, db_client_3, dataset_to_group: dict = None, base_font_size: int = 22,
                         without_dummy: bool = False, ylim=Undefined):
     sns.set_style("whitegrid")
@@ -129,12 +129,13 @@ def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
 
     # Create the scatter plot
     scatter_plot = (
-        alt.Chart().mark_circle(size=100).encode(
+        alt.Chart().mark_point(size=100).encode(
             x=alt.X(f'{model_performance_metric_name}:Q',
                     axis=alt.Axis(title=model_performance_metric_title)),
             y=alt.Y(f'{extended_imputation_quality_metric_name}:Q',
                     axis=alt.Axis(title=imputation_metric_title)),
             color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order),
+            shape=alt.Shape(f"{shape_by}:N", title=None),
             # column=alt.Column('Missingness_Type:N', title=None, sort=columns_order)
         )
     )
@@ -170,7 +171,7 @@ def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
             symbolStrokeWidth=10,
             labelLimit=400,
             titleLimit=300,
-            columns=4,
+            columns=2,
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
