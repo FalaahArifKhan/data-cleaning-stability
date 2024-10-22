@@ -128,33 +128,42 @@ def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
     model_performance_metric_title = model_performance_metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in model_performance_metric_name.lower() else model_performance_metric_name.replace('_', ' ')
 
     # Create the scatter plot
+    y_min = merged_df[extended_imputation_quality_metric_name].min()
+    y_max = merged_df[extended_imputation_quality_metric_name].max()
+
+    # y_min, y_max = -2.0, 4.0 # for KL Divergence Pred Difference'
     scatter_plot = (
         alt.Chart().mark_point(size=100).encode(
             x=alt.X(f'{model_performance_metric_name}:Q',
                     axis=alt.Axis(title=model_performance_metric_title)),
             y=alt.Y(f'{extended_imputation_quality_metric_name}:Q',
-                    axis=alt.Axis(title=imputation_metric_title)),
+                    axis=alt.Axis(title=imputation_metric_title),
+                    scale=alt.Scale(domain=[y_min, y_max])),
             color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order),
             shape=alt.Shape(f"{shape_by}:N", title=None),
             # column=alt.Column('Missingness_Type:N', title=None, sort=columns_order)
         )
     )
 
-    # Add dynamic y = x line (dashed)
-    line = (
-        alt.Chart().mark_line(
-            strokeDash=[5, 5], color='gray'
-        ).encode(
-            x=f'{model_performance_metric_name}_Line:Q',
-            y=f'{extended_imputation_quality_metric_name}_Line:Q',
-            # column=alt.Column('Missingness_Type:N', title=None, sort=columns_order)
-        )
-    )
+    # # Add dynamic y = x line (dashed)
+    # line = (
+    #     alt.Chart().mark_line(
+    #         strokeDash=[5, 5], color='gray'
+    #     ).encode(
+    #         x=f'{model_performance_metric_name}_Line:Q',
+    #         y=f'{extended_imputation_quality_metric_name}_Line:Q',
+    #         # column=alt.Column('Missingness_Type:N', title=None, sort=columns_order)
+    #     )
+    # )
+
+    #
+    merged_df['Missingness_Type'] = merged_df['Missingness_Type'].replace({'mixed_exp - MCAR1 & MAR1 & MNAR1': 'mixed_exp - mixed_exp'})
 
     # Add faceting based on Missingness_Type column
     faceted_plot = (
         alt.layer(
-            scatter_plot, line,
+            # scatter_plot, line,
+            scatter_plot,
             data=merged_df,
         ).properties(
             width=400,
@@ -171,11 +180,11 @@ def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
             symbolStrokeWidth=10,
             labelLimit=400,
             titleLimit=300,
-            columns=2,
+            columns=3,
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
-            symbolOffset=130 if dataset_to_group is not None else 100,
+            symbolOffset=100 if dataset_to_group is not None else 80,
         ).configure_view(
             stroke=None
         ).configure_facet(
