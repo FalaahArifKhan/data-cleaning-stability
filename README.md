@@ -38,7 +38,7 @@ CONNECTION_STRING=your_mongodb_connection_string
 * `tests` directory contains tests covering the benchmark and null imputers.
 * `notebooks` directory contains Jupyter notebooks with EDA and results visualization.
     * `cluster_analysis` subdirectory contains notebooks with analysis of the number of clusters in each dataset using silhoette scores and PCA, t-SNE, UMAP algorithms. Used to choose the correct number of clusters for the `clustering` null imputer.
-    * `EDA` subdirectory contains notebooks with analysis of feature importance and feature correlation with the target for 6 datasets used in our experiments (_Section 3.1_ and _Appendix B.2_ in the paper).
+    * `EDA` subdirectory contains notebooks with analysis of feature importance and feature correlation with the target for 7 datasets used in our experiments (_Section 3.1_ and _Appendix B.2_ in the paper).
     * `visualizations` subdirectory contains two subdirectories with visualisations for _imputation performance_ and _model performance_. Each of these subdirectories has the following structure:
       * `single_mechanism_exp` folder includes plots for single-mechanism missingness in both train and test sets (_Section 4.1, 4.2, 4.3_ and _Appendix C_ in the paper).
       * `multi_mechanism_exp` folder includes plots for multi-mechanism missingness in both train and test sets (_Section 4.1, 4.2, 4.3_ and _Appendix C_ in the paper).
