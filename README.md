@@ -46,7 +46,7 @@ CONNECTION_STRING=your_mongodb_connection_string
       * `exp2` folder includes plots for missingness shift with a variable error rate in the train set and a fixed error rate in the test set (_Section 5_ and _Appendix D_ in the paper).
       * `exp3` folder includes plots for missingness shift with a fixed error rate in the train set and a variable error rate in the test set (_Section 5_ and _Appendix D_ in the paper).
     * `Scatter_Plots.ipynb` notebook includes scatter plots for single-mechanism and multi-mechanism missingness colored by null imputers and shaped by datasets (_Section 4.4_ in the paper).
-    * `Correlations.ipynb` notebook includes plots for spearman correlation between MVI technique, model type, test missingness, and performance metrics (F1, fairness and stability) for different train missingness mechanisms (_Section 6_ in the paper).
+    * `Correlations.ipynb` notebook includes plots for Spearman correlation between MVI technique, model type, test missingness, and performance metrics (F1, fairness and stability) for different train missingness mechanisms (_Section 6_ in the paper).
 
 
 ## Usage
