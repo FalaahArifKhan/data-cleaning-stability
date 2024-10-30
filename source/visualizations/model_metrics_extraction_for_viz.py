@@ -201,6 +201,8 @@ def get_overall_metric_from_disparity_metric(disparity_metric):
         if disparity_metric in overall_to_disparity_metric_dct[overall_metric]:
             return overall_metric
 
+    return None
+
 
 def get_baseline_models_metric_df(db_client, dataset_name: str, metric_name: str, group: str):
     query = {

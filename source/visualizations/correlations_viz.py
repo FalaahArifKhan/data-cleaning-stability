@@ -39,7 +39,7 @@ def get_data_for_correlation_plots(db_client_1, db_client_3, dataset_names: list
 
             for injection_scenarios in missingness_type_to_train_and_test_sets[missingness_type]:
                 train_injection_scenario, test_injection_scenario = injection_scenarios['train'], injection_scenarios['test']
-                selected_dataset_to_group = dataset_to_group if 'equalized_odds' in metric_name.lower() or metric_name.lower() in ['selection_rate_difference', 'disparate_impact'] else None
+                selected_dataset_to_group = dataset_to_group if get_overall_metric_from_disparity_metric(disparity_metric=metric_name) is not None else None
                 missingness_type_df = get_data_for_correlation_plots_for_diff_imputers_and_datasets(db_client=db_client,
                                                                                                     dataset_names=dataset_names,
                                                                                                     train_injection_scenario=train_injection_scenario,
