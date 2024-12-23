@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.impute import SimpleImputer
 
 from source.null_imputers.automl_imputer import AutoMLImputer
+from source.null_imputers.gain_imputer import GAINImputer
 from source.null_imputers.missforest_imputer import MissForestImputer
 from source.null_imputers.kmeans_imputer import KMeansImputer
 from source.utils.pipeline_utils import encode_dataset_for_missforest, decode_dataset_for_missforest
@@ -78,6 +79,28 @@ def impute_with_automl(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst:
 
     X_train_imputed = imputer.transform(X_train_imputed)
     X_tests_imputed_lst = list(map(lambda X_test_imputed: imputer.transform(X_test_imputed), X_tests_imputed_lst))
+
+    null_imputer_params_dct = imputer.get_best_hyperparameters()
+    return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct
+
+
+def impute_with_gain(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: list,
+                     numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
+                     hyperparams: dict, **kwargs):
+    directory = kwargs['directory']
+    seed = kwargs['experiment_seed']
+    target_columns = list(set(numeric_columns_with_nulls) | set(categorical_columns_with_nulls))
+
+    X_train_imputed = copy.deepcopy(X_train_with_nulls)
+    X_tests_imputed_lst = list(map(lambda X_test_with_nulls: copy.deepcopy(X_test_with_nulls), X_tests_with_nulls_lst))
+
+    imputer = GAINImputer(hyperparameter_grid=kwargs["hyperparameter_grid"],
+                          seed=seed,
+                          model_path=directory)
+    imputer.fit(data=X_train_imputed, target_columns=target_columns)
+
+    X_train_imputed, _ = imputer.transform(X_train_imputed)
+    X_tests_imputed_lst = list(map(lambda X_test_imputed: imputer.transform(X_test_imputed)[0], X_tests_imputed_lst))
 
     null_imputer_params_dct = imputer.get_best_hyperparameters()
     return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct
