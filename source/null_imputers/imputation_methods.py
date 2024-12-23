@@ -6,7 +6,8 @@ from source.null_imputers.automl_imputer import AutoMLImputer
 from source.null_imputers.gain_imputer import GAINImputer
 from source.null_imputers.missforest_imputer import MissForestImputer
 from source.null_imputers.kmeans_imputer import KMeansImputer
-from source.utils.pipeline_utils import encode_dataset_for_missforest, decode_dataset_for_missforest
+from source.utils.pipeline_utils import (encode_dataset_for_missforest, decode_dataset_for_missforest,
+                                         encode_dataset_for_gain, decode_dataset_for_gain)
 from source.utils.dataframe_utils import get_numerical_columns_indexes
 
 
@@ -90,9 +91,14 @@ def impute_with_gain(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: l
     directory = kwargs['directory']
     seed = kwargs['experiment_seed']
     target_columns = list(set(numeric_columns_with_nulls) | set(categorical_columns_with_nulls))
+    numerical_columns = [c for c in X_train_with_nulls.columns if pd.api.types.is_numeric_dtype(X_train_with_nulls[c])]
+    categorical_columns = [c for c in X_train_with_nulls.columns if c not in numerical_columns]
 
     X_train_imputed = copy.deepcopy(X_train_with_nulls)
     X_tests_imputed_lst = list(map(lambda X_test_with_nulls: copy.deepcopy(X_test_with_nulls), X_tests_with_nulls_lst))
+    X_train_imputed, X_tests_imputed_lst = encode_dataset_for_gain(X_train=X_train_imputed,
+                                                                   X_tests_lst=X_tests_imputed_lst,
+                                                                   categorical_columns=categorical_columns)
 
     imputer = GAINImputer(hyperparameter_grid=kwargs["hyperparameter_grid"],
                           seed=seed,
@@ -102,7 +108,10 @@ def impute_with_gain(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: l
     X_train_imputed, _ = imputer.transform(X_train_imputed)
     X_tests_imputed_lst = list(map(lambda X_test_imputed: imputer.transform(X_test_imputed)[0], X_tests_imputed_lst))
 
-    null_imputer_params_dct = imputer.get_best_hyperparameters()
+    X_train_imputed, X_tests_imputed_lst = decode_dataset_for_gain(X_train=X_train_imputed,
+                                                                   X_tests_lst=X_tests_imputed_lst,
+                                                                   categorical_columns=categorical_columns)
+    null_imputer_params_dct = {col: imputer.hyperparameters for col in X_train_with_nulls.columns}
     return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct
 
 
