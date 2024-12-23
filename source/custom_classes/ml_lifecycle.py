@@ -235,6 +235,23 @@ class MLLifecycle:
             # Remove all files created by automl to save storage space
             shutil.rmtree(output_path)
 
+        elif null_imputer_name == ErrorRepairMethod.gain.value:
+            output_path = (pathlib.Path(__file__).parent.parent.parent
+                           .joinpath('results')
+                           .joinpath('intermediate_state')
+                           .joinpath(null_imputer_name)
+                           .joinpath(self.dataset_name)
+                           .joinpath(evaluation_scenario)
+                           .joinpath(str(experiment_seed)))
+            imputation_kwargs.update({'directory': output_path})
+            X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct = (
+                imputation_method(X_train_with_nulls=X_train_with_nulls,
+                                  X_tests_with_nulls_lst=X_tests_with_nulls_lst,
+                                  numeric_columns_with_nulls=train_numerical_null_columns,
+                                  categorical_columns_with_nulls=train_categorical_null_columns,
+                                  hyperparams=hyperparams,
+                                  **imputation_kwargs))
+
         else:
             X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct = (
                 imputation_method(X_train_with_nulls=X_train_with_nulls,

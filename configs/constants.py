@@ -44,6 +44,7 @@ class ErrorRepairMethod(Enum):
     k_means_clustering = 'k_means_clustering'
     datawig = 'datawig'
     automl = 'automl'
+    gain = 'gain'
     boost_clean = 'boost_clean'
     cp_clean = 'cp_clean'
 
