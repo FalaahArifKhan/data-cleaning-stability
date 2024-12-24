@@ -40,8 +40,8 @@ NULL_IMPUTERS_CONFIG = {
     ErrorRepairMethod.tdm.value: {
         "method": impute_with_tdm,
         "kwargs": {
-            # "niter": 10000,
-            "niter": 200,
+            "niter": 10_000,
+            # "niter": 1000,
             "batchsize": 512,
             "lr": 1e-2,
             "report_interval": 100,

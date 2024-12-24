@@ -19,7 +19,8 @@ import numpy as np
 
 
 class TDMImputer:
-    def __init__(self, projector, im_lr=1e-2, proj_lr=1e-2, opt=torch.optim.RMSprop, niter=2000, batchsize=128, n_pairs=1, noise=0.1):
+    def __init__(self, projector, im_lr=1e-2, proj_lr=1e-2, opt=torch.optim.RMSprop, niter=2000, batchsize=128,
+                 n_pairs=1, noise=0.1, early_stopping_patience=500):
         self.projector = projector
         self.im_lr = im_lr
         self.proj_lr = proj_lr
@@ -28,6 +29,7 @@ class TDMImputer:
         self.batchsize = batchsize
         self.n_pairs = n_pairs
         self.noise = noise
+        self.early_stopping_patience = early_stopping_patience
         self.is_fitted = False
 
     def fit(self, X_train, verbose=True, report_interval=500):
@@ -51,6 +53,8 @@ class TDMImputer:
         im_optimizer = self.opt([imps], lr=self.im_lr)
         proj_optimizer = self.opt(self.projector.parameters(), lr=self.proj_lr)
 
+        best_loss = float('inf')
+        patience_counter = 0
         for i in range(self.niter):
             X_filled = X_train.detach().clone()
             X_filled[mask.bool()] = imps
@@ -86,13 +90,26 @@ class TDMImputer:
             proj_loss.backward()
             proj_optimizer.step()
 
+            # Early stopping logic
+            total_loss = im_loss.item() + proj_loss.item()
+            if total_loss < best_loss:
+                best_loss = total_loss
+                patience_counter = 0
+            else:
+                patience_counter += 1
+
+            if patience_counter >= self.early_stopping_patience:
+                if verbose:
+                    logging.info(f"Early stopping at iteration {i} with best loss: {best_loss:.4f}")
+                break
+
             if verbose and i % report_interval == 0:
-                logging.info(f"Iteration {i}: Im Loss: {im_loss.item():.4f}, Proj Loss: {proj_loss.item():.4f}")
+                logging.info(f"Fitting Iteration {i}: Im Loss: {im_loss.item():.4f}, Proj Loss: {proj_loss.item():.4f}, Best Loss: {best_loss:.4f}")
 
         self.fitted_imps = imps.detach().clone()
         self.is_fitted = True
 
-    def transform(self, X_test):
+    def transform(self, X_test, verbose=True, report_interval=500):
         """
         Imputes missing values in the test dataset using the trained TDM model.
 
@@ -118,10 +135,11 @@ class TDMImputer:
 
         imps = (self.noise * torch.randn(mask.shape) + torch.nanmean(X_test, 0))[mask.bool()]
         imps.requires_grad = True
-
         im_optimizer = self.opt([imps], lr=self.im_lr)
 
-        for _ in range(self.niter):
+        best_loss = float('inf')
+        patience_counter = 0
+        for i in range(self.niter):
             X_filled = X_test.detach().clone()
             X_filled[mask.bool()] = imps
 
@@ -147,6 +165,22 @@ class TDMImputer:
             im_optimizer.zero_grad()
             im_loss.backward()
             im_optimizer.step()
+
+            # Early stopping logic
+            total_loss = im_loss.item()
+            if total_loss < best_loss:
+                best_loss = total_loss
+                patience_counter = 0
+            else:
+                patience_counter += 1
+
+            if patience_counter >= self.early_stopping_patience:
+                if verbose:
+                    logging.info(f"Early stopping at iteration {i} with best loss: {best_loss:.4f}")
+                break
+
+            if verbose and i % report_interval == 0:
+                logging.info(f"Transforming Iteration {i}: Im Loss: {im_loss.item():.4f}, Best Loss: {best_loss:.4f}")
 
         X_filled = X_test.detach().clone()
         X_filled[mask.bool()] = imps

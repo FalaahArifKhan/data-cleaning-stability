@@ -160,8 +160,9 @@ def impute_with_tdm(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: li
                          batchsize=kwargs["batchsize"])
     imputer.fit(X_train=X_train_imputed_tensor, verbose=True, report_interval=kwargs["report_interval"])
 
-    X_train_imputed_tensor = imputer.transform(X_train_imputed_tensor)
-    X_tests_imputed_tensors_lst = list(map(lambda X_test_imputed: imputer.transform(X_test_imputed), X_tests_imputed_tensors_lst))
+    X_train_imputed_tensor = imputer.transform(X_train_imputed_tensor, verbose=True, report_interval=kwargs["report_interval"])
+    X_tests_imputed_tensors_lst = list(map(lambda X_test_imputed: imputer.transform(X_test_imputed, verbose=True, report_interval=kwargs["report_interval"]),
+                                           X_tests_imputed_tensors_lst))
 
     # Convert tensors back to DataFrames
     X_train_imputed = pd.DataFrame(X_train_imputed_tensor.numpy(), columns=X_train_with_nulls.columns, index=X_train_with_nulls.index)
@@ -184,6 +185,7 @@ def impute_with_tdm(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: li
         "batchsize": imputer.batchsize,
         "n_pairs": imputer.n_pairs,
         "noise": imputer.noise,
+        "early_stopping_patience": imputer.early_stopping_patience,
     }
     null_imputer_params_dct = {col: hyperparams for col in X_train_with_nulls.columns}
 
