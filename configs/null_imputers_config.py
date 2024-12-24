@@ -3,8 +3,10 @@ import source.null_imputers.datawig_imputer as datawig_imputer
 from configs.constants import (GERMAN_CREDIT_DATASET, BANK_MARKETING_DATASET, CARDIOVASCULAR_DISEASE_DATASET,
                                DIABETES_DATASET, LAW_SCHOOL_DATASET, ACS_INCOME_DATASET,
                                ErrorRepairMethod, ErrorInjectionStrategy)
-from source.null_imputers.imputation_methods import (impute_with_deletion, impute_with_simple_imputer, impute_with_automl,
-                                                     impute_with_gain, impute_with_missforest, impute_with_kmeans)
+from source.null_imputers.imputation_methods import (impute_with_deletion, impute_with_simple_imputer,
+                                                     impute_with_automl,
+                                                     impute_with_gain, impute_with_missforest, impute_with_kmeans,
+                                                     impute_with_tdm)
 from source.null_imputers.joint_cleaning_and_training_methods import prepare_cpclean, prepare_boostclean
 
 
@@ -33,6 +35,18 @@ NULL_IMPUTERS_CONFIG = {
                     "learning_rate": [0.00001, 0.00005],
                 }
             }
+        }
+    },
+    ErrorRepairMethod.tdm.value: {
+        "method": impute_with_tdm,
+        "kwargs": {
+            # "niter": 10000,
+            "niter": 200,
+            "batchsize": 512,
+            "lr": 1e-2,
+            "report_interval": 100,
+            "network_depth": 3,
+            "network_width": 2,
         }
     },
 }

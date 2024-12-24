@@ -45,6 +45,7 @@ class ErrorRepairMethod(Enum):
     datawig = 'datawig'
     automl = 'automl'
     gain = 'gain'
+    tdm = 'tdm'
     boost_clean = 'boost_clean'
     cp_clean = 'cp_clean'
 
