@@ -1,12 +1,14 @@
 virny@git+https://github.com/DataResponsibly/Virny.git@development
 pytorch-tabular~=1.1.0
-tensorflow~=2.8.0
+tensorflow~=2.16.0
 autokeras==1.0.20
 kmodes==0.12.2
 numpy==1.23.5
 lightgbm==4.3.0
 POT~=0.9.5
 FrEIA~=0.2
+hnswlib~=0.8.0
+neural-tangents~=0.6.5
 matplotlib~=3.6.2
 pandas~=1.5.2
 altair~=4.2.0

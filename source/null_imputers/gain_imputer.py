@@ -27,21 +27,24 @@ import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import MinMaxScaler
-from tensorflow import keras
-from tensorflow.compat.v1 import logging as tf_logging
-from tensorflow.keras import Model, Sequential
-from tensorflow.keras.activations import relu, sigmoid
-from tensorflow.keras.initializers import GlorotNormal
-from tensorflow.keras.layers import Dense, Input, Layer, concatenate
-from tensorflow.keras.optimizers import Adam
-
 from .automl_imputer import BaseImputer
+
+# Check if the required dependencies are available
+if hasattr(tf, 'keras') and hasattr(tf.keras, 'Model'):
+    from tensorflow import keras
+    from tensorflow.compat.v1 import logging as tf_logging
+    from tensorflow.keras import Model, Sequential
+    from tensorflow.keras.activations import relu, sigmoid
+    from tensorflow.keras.initializers import GlorotNormal
+    from tensorflow.keras.layers import Dense, Input, Layer, concatenate
+    from tensorflow.keras.optimizers import Adam
+
+    tf.get_logger().setLevel('WARN')
+    tf_logging.set_verbosity(tf_logging.ERROR)
 
 
 logger = logging.getLogger()
 optuna.logging.set_verbosity(optuna.logging.WARNING)
-tf.get_logger().setLevel('WARN')
-tf_logging.set_verbosity(tf_logging.ERROR)
 
 
 def _merge_given_HPs_with_defaults(
@@ -496,7 +499,8 @@ class GAINImputer(GenerativeImputer):
             "noise": trial.suggest_discrete_uniform("noise", 0, 1, 1),
 
             # training
-            "batch_size": trial.suggest_discrete_uniform("batch_size", 0, 1024, 1),
+            # "batch_size": trial.suggest_discrete_uniform("batch_size", 0, 1024, 1),
+            "batch_size": trial.suggest_discrete_uniform("batch_size", 0, 512, 1),
             "max_epochs": trial.suggest_discrete_uniform("max_epochs", 0, 10000, 1),
             "early_stop": trial.suggest_discrete_uniform("early_stop", 0, 1000, 1),
 
