@@ -17,9 +17,14 @@ The original paper for the code below:
 import torch
 import numpy as np
 import hnswlib
-import neural_tangents as nt
+import tensorflow as tf
+from distutils.version import LooseVersion
 from tqdm import tqdm
-from neural_tangents import stax
+
+# Check if the required dependencies are available
+if LooseVersion(tf.__version__) >= LooseVersion("2.16"):
+    import neural_tangents as nt
+    from neural_tangents import stax
 
 
 def sample_batch_index(total, batch_size):

@@ -499,7 +499,8 @@ class GAINImputer(GenerativeImputer):
             "noise": trial.suggest_discrete_uniform("noise", 0, 1, 1),
 
             # training
-            "batch_size": trial.suggest_discrete_uniform("batch_size", 0, 1024, 1),
+            # "batch_size": trial.suggest_discrete_uniform("batch_size", 0, 1024, 1),
+            "batch_size": trial.suggest_discrete_uniform("batch_size", 0, 512, 1),
             "max_epochs": trial.suggest_discrete_uniform("max_epochs", 0, 10000, 1),
             "early_stop": trial.suggest_discrete_uniform("early_stop", 0, 1000, 1),
 
