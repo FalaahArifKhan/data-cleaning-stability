@@ -1,6 +1,7 @@
 import time
 import sys
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
 import tensorflow_probability as tfp
 tfb = tfp.bijectors
 import keras
@@ -33,7 +34,25 @@ def train(model, batch_size, max_iter=10000, name=None):
             sys.stdout.flush()
 
 
-def not_imputationRMSE(model, Xorg, Xz, X, S, L):
+def reverse_normalization(normalized_data, original_mean, original_std):
+    """
+    Reverses the normalization applied to data.
+
+    Parameters:
+    normalized_data (numpy.ndarray): The normalized data.
+    original_mean (numpy.ndarray): The mean of the original data (axis=0).
+    original_std (numpy.ndarray): The standard deviation of the original data (axis=0).
+
+    Returns:
+    numpy.ndarray: The denormalized data.
+    """
+    # Reverse the normalization steps
+    denormalized_data = normalized_data * original_std
+    denormalized_data = denormalized_data + original_mean
+    return denormalized_data
+
+
+def not_imputationRMSE(model, Xorg, Xz, X, S, L, cat_indices):
     """
     Imputation error of missing data, using the not-MIWAE
     """
@@ -69,7 +88,14 @@ def not_imputationRMSE(model, Xorg, Xz, X, S, L):
         if i % 100 == 0:
             print('{0} / {1}'.format(i, N))
 
-    return np.sqrt(np.sum((Xorg - XM) ** 2 * (1 - S)) / np.sum(1 - S)), XM
+    # Replace NaN values in X_org with values from XM
+    X_imp = np.where(np.isnan(Xorg), XM, Xorg)
+
+    # Round categorical columns with nulls
+    for i in cat_indices:
+        X_imp[:, i] = np.round(X_imp[:, i])
+
+    return np.sqrt(np.sum((Xorg - X_imp) ** 2 * (1 - S)) / np.sum(1 - S)), X_imp
 
 
 class notMIWAE:

@@ -344,15 +344,17 @@ def impute_with_nomi(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: l
 def impute_with_notmiwae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: list,
                          numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
                          hyperparams: dict, **kwargs):
-    from .notmiwae_imputer import train, not_imputationRMSE, notMIWAE
+    from .notmiwae_imputer import train, not_imputationRMSE, notMIWAE, reverse_normalization
 
-    def prepare_data_for_notmiwae(data: np.array):
+    def prepare_data_for_notmiwae(data: np.array, orig_mean=None, orig_std=None):
         N, D = data.shape
         dl = D - 1
 
         # ---- standardize data
-        data = data - np.mean(data, axis=0)
-        data = data / np.std(data, axis=0)
+        orig_mean = np.nanmean(data, axis=0) if orig_mean is None else orig_mean
+        orig_std = np.nanstd(data, axis=0) if orig_std is None else orig_std
+        data = data - orig_mean
+        data = data / orig_std
 
         Xtrain = data.copy()
         Xval_org = data.copy()
@@ -361,20 +363,17 @@ def impute_with_notmiwae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_ls
         Xz = Xnan.copy()
         Xz[np.isnan(Xnan)] = 0
 
-        S = np.array(~np.isnan(Xnan), dtype=np.float)
+        S = np.array(~np.isnan(Xnan), dtype=np.float32)
 
         Xval = Xval_org.copy()
         Xvalz = Xval.copy()
         Xvalz[np.isnan(Xval)] = 0
 
-        return Xtrain, Xnan, Xz, Xval, Xvalz, dl, S
+        return Xtrain, Xnan, Xz, Xval, Xvalz, dl, S, orig_mean, orig_std
 
-    directory = kwargs['directory']
+    directory = str(kwargs['directory'])
     dataset_name = kwargs['dataset_name']
-
-    print("X_train_with_nulls.shape:", X_train_with_nulls.shape)
-    print("X_train_with_nulls.dtypes:", X_train_with_nulls.dtypes)
-    print("X_train_with_nulls.head():", X_train_with_nulls.head())
+    cat_indices_with_nulls = [X_train_with_nulls.columns.get_loc(col) for col in categorical_columns_with_nulls]
 
     # Encode categorical columns
     X_train_encoded, cat_encoders, _ = encode_dataset_for_missforest(df=X_train_with_nulls,
@@ -389,7 +388,7 @@ def impute_with_notmiwae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_ls
     ]
 
     # Prepare data for not-MIWAE
-    Xtrain, Xnan, Xz, Xval, Xvalz, dl, S = prepare_data_for_notmiwae(X_train_encoded.to_numpy())
+    Xtrain, Xnan, Xz, Xval, Xvalz, dl, S, orig_mean, orig_std = prepare_data_for_notmiwae(X_train_encoded.to_numpy())
 
     # Apply an imputer
     imputer = notMIWAE(X=Xnan,
@@ -403,13 +402,29 @@ def impute_with_notmiwae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_ls
     train(imputer, batch_size=kwargs["batch_size"], max_iter=kwargs["max_iter"], name=directory)
 
     # Transform train
-    X_train_imputed_np = not_imputationRMSE(imputer, Xtrain, Xz, Xnan, S, kwargs["L"])[1]
+    X_train_imputed_np = not_imputationRMSE(model=imputer,
+                                            Xorg=Xtrain,
+                                            Xz=Xz,
+                                            X=Xnan,
+                                            S=S,
+                                            L=kwargs["L"],
+                                            cat_indices=cat_indices_with_nulls)[1]
+    X_train_imputed_np = reverse_normalization(X_train_imputed_np, orig_mean, orig_std)
 
     # Transform test
     X_tests_imputed_np_lst = []
     for X_test_encoded in X_tests_encoded_lst:
-        Xtrain2, Xnan2, Xz2, Xval2, Xvalz2, dl2, S2 = prepare_data_for_notmiwae(X_test_encoded.to_numpy())
-        X_test_imputed_np = not_imputationRMSE(imputer, Xtrain2, Xz2, Xnan2, S2, kwargs["L"])[1]
+        Xtrain2, Xnan2, Xz2, Xval2, Xvalz2, dl2, S2, _, _ = prepare_data_for_notmiwae(X_test_encoded.to_numpy(),
+                                                                                      orig_mean=orig_mean,
+                                                                                      orig_std=orig_std)
+        X_test_imputed_np = not_imputationRMSE(model=imputer,
+                                               Xorg=Xtrain2,
+                                               Xz=Xz2,
+                                               X=Xnan2,
+                                               S=S2,
+                                               L=kwargs["L"],
+                                               cat_indices=cat_indices_with_nulls)[1]
+        X_test_imputed_np = reverse_normalization(X_test_imputed_np, orig_mean, orig_std)
         X_tests_imputed_np_lst.append(X_test_imputed_np)
 
     # Convert numpy arrays back to DataFrames
@@ -426,18 +441,12 @@ def impute_with_notmiwae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_ls
         for X_test_imputed in X_tests_imputed_lst
     ]
 
-    print("X_train_imputed.shape:", X_train_imputed.shape)
-    print("X_train_imputed.dtypes:", X_train_imputed.dtypes)
-    print("X_train_imputed.head():", X_train_imputed.head())
-
     hyperparams = {
         "n_latent": imputer.n_latent,
         "n_hidden": imputer.n_hidden,
         "n_samples": imputer.n_samples,
         "out_dist": imputer.out_dist,
         "out_activation": imputer.out_activation,
-        "learnable_imputation": imputer.learnable_imputation,
-        "permutation_invariance": imputer.permutation_invariance,
         "embedding_size": imputer.embedding_size,
         "code_size": imputer.code_size,
         "missing_process": imputer.missing_process,

@@ -65,6 +65,7 @@ NULL_IMPUTERS_CONFIG = {
             "n_hidden": 128,
             "n_samples": 20,
             "max_iter": 100_000,
+            # "max_iter": 10_000,
             "batch_size": 16,
             "L": 10_000,
             "mprocess": 'selfmasking_known',
