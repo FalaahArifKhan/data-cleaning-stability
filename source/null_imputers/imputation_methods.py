@@ -339,3 +339,109 @@ def impute_with_nomi(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: l
     null_imputer_params_dct = {col: hyperparams for col in X_train_with_nulls.columns}
 
     return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct
+
+
+def impute_with_notmiwae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: list,
+                         numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
+                         hyperparams: dict, **kwargs):
+    from .notmiwae_imputer import train, not_imputationRMSE, notMIWAE
+
+    def prepare_data_for_notmiwae(data: np.array):
+        N, D = data.shape
+        dl = D - 1
+
+        # ---- standardize data
+        data = data - np.mean(data, axis=0)
+        data = data / np.std(data, axis=0)
+
+        Xtrain = data.copy()
+        Xval_org = data.copy()
+
+        Xnan = Xtrain.copy()
+        Xz = Xnan.copy()
+        Xz[np.isnan(Xnan)] = 0
+
+        S = np.array(~np.isnan(Xnan), dtype=np.float)
+
+        Xval = Xval_org.copy()
+        Xvalz = Xval.copy()
+        Xvalz[np.isnan(Xval)] = 0
+
+        return Xtrain, Xnan, Xz, Xval, Xvalz, dl, S
+
+    directory = kwargs['directory']
+    dataset_name = kwargs['dataset_name']
+
+    print("X_train_with_nulls.shape:", X_train_with_nulls.shape)
+    print("X_train_with_nulls.dtypes:", X_train_with_nulls.dtypes)
+    print("X_train_with_nulls.head():", X_train_with_nulls.head())
+
+    # Encode categorical columns
+    X_train_encoded, cat_encoders, _ = encode_dataset_for_missforest(df=X_train_with_nulls,
+                                                                     dataset_name=dataset_name,
+                                                                     categorical_columns_with_nulls=categorical_columns_with_nulls)
+    X_tests_encoded_lst = [
+        encode_dataset_for_missforest(df=X_test_with_nulls,
+                                      cat_encoders=cat_encoders,
+                                      dataset_name=dataset_name,
+                                      categorical_columns_with_nulls=categorical_columns_with_nulls)[0]
+        for X_test_with_nulls in X_tests_with_nulls_lst
+    ]
+
+    # Prepare data for not-MIWAE
+    Xtrain, Xnan, Xz, Xval, Xvalz, dl, S = prepare_data_for_notmiwae(X_train_encoded.to_numpy())
+
+    # Apply an imputer
+    imputer = notMIWAE(X=Xnan,
+                       Xval=Xval,
+                       n_latent=dl,
+                       n_samples=kwargs["n_samples"],
+                       n_hidden=kwargs["n_hidden"],
+                       missing_process=kwargs["mprocess"],
+                       name=directory)
+    # Fit
+    train(imputer, batch_size=kwargs["batch_size"], max_iter=kwargs["max_iter"], name=directory)
+
+    # Transform train
+    X_train_imputed_np = not_imputationRMSE(imputer, Xtrain, Xz, Xnan, S, kwargs["L"])[1]
+
+    # Transform test
+    X_tests_imputed_np_lst = []
+    for X_test_encoded in X_tests_encoded_lst:
+        Xtrain2, Xnan2, Xz2, Xval2, Xvalz2, dl2, S2 = prepare_data_for_notmiwae(X_test_encoded.to_numpy())
+        X_test_imputed_np = not_imputationRMSE(imputer, Xtrain2, Xz2, Xnan2, S2, kwargs["L"])[1]
+        X_tests_imputed_np_lst.append(X_test_imputed_np)
+
+    # Convert numpy arrays back to DataFrames
+    X_train_imputed = pd.DataFrame(X_train_imputed_np, columns=X_train_with_nulls.columns, index=X_train_with_nulls.index)
+    X_tests_imputed_lst = [
+        pd.DataFrame(X_test, columns=X_test_with_nulls.columns, index=X_test_with_nulls.index)
+        for X_test, X_test_with_nulls in zip(X_tests_imputed_np_lst, X_tests_with_nulls_lst)
+    ]
+
+    # Decode categories back
+    X_train_imputed = decode_dataset_for_missforest(X_train_imputed, cat_encoders, dataset_name=dataset_name)
+    X_tests_imputed_lst = [
+        decode_dataset_for_missforest(X_test_imputed, cat_encoders, dataset_name=dataset_name)
+        for X_test_imputed in X_tests_imputed_lst
+    ]
+
+    print("X_train_imputed.shape:", X_train_imputed.shape)
+    print("X_train_imputed.dtypes:", X_train_imputed.dtypes)
+    print("X_train_imputed.head():", X_train_imputed.head())
+
+    hyperparams = {
+        "n_latent": imputer.n_latent,
+        "n_hidden": imputer.n_hidden,
+        "n_samples": imputer.n_samples,
+        "out_dist": imputer.out_dist,
+        "out_activation": imputer.out_activation,
+        "learnable_imputation": imputer.learnable_imputation,
+        "permutation_invariance": imputer.permutation_invariance,
+        "embedding_size": imputer.embedding_size,
+        "code_size": imputer.code_size,
+        "missing_process": imputer.missing_process,
+    }
+    null_imputer_params_dct = {col: hyperparams for col in X_train_with_nulls.columns}
+
+    return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct
