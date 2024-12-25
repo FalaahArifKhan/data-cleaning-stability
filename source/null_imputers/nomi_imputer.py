@@ -53,9 +53,8 @@ def dist2sim(neigh_dist):
     return dist/denom
 
 
-def prediction(pred_fn, X_test, kernel_type="nngp", compute_cov = True):
-    pred_mean, pred_cov = pred_fn(x_test=X_test, get=kernel_type,
-                                  compute_cov= compute_cov)
+def prediction(pred_fn, X_test, kernel_type = "nngp", compute_cov = True):
+    pred_mean, pred_cov = pred_fn(x_test=X_test, get=kernel_type, compute_cov=compute_cov)
     return pred_mean, pred_cov
 
 
@@ -178,14 +177,19 @@ class NOMIImputer:
 
     def fit_transform(self, X):
         """
-        Fit and transform the NOMI imputer using the provided training data.
+        Fit and transform with the NOMI imputer using the provided training data.
 
         Parameters:
         - X: numpy array of shape (n_samples, n_features)
             The dataset containing missing values.
+
+        Returns:
+        - numpy array of shape (n_samples, n_features)
+            Dataset with imputed values.
         """
         data_x = X
-        data_m = data_x.isna()
+        data_m = np.isnan(data_x)
+        print("np.sum(data_m):", np.sum(data_m))
         norm_data, norm_parameters = normalization(data_x)
         norm_data_x = np.nan_to_num(norm_data, 0)
 
@@ -201,11 +205,18 @@ class NOMIImputer:
         )
         # Step 2: Iterative Imputation Process
         for iteration in range(self.max_iterations):
+            print(f'Started iteration {iteration + 1}', flush=True)
+
             # Iterates over each dimension of the dataset
-            for dim in tqdm(range(dims)):
+            for dim in tqdm(range(dims), desc="Training"):
                 # Extract observed values
                 X_wo_dim = np.delete(imputed_X, dim, 1)
                 i_not_nan_index = data_m_imputed[:, dim].astype(bool)
+
+                # Check for observed values
+                if not np.any(i_not_nan_index):
+                    print(f"No observed values for dimension {dim}, skipping.")
+                    continue
 
                 # Create training and test sets (X_train, Y_train for observed, X_test for missing)
                 X_train = X_wo_dim[i_not_nan_index]
@@ -242,22 +253,23 @@ class NOMIImputer:
 
                 # Prepare train_input and test_input matrices by combining weights with neighbor values.
                 y_neighbors = Y_train[neigh_ind[:,1:]]
-                train_input = weights*y_neighbors
+                train_input = weights * y_neighbors
 
                 neigh_ind_test, neigh_dist_test = index.knn_query(X_test, k=self.k_neighbors, filter=None)
                 neigh_dist_test = np.sqrt(neigh_dist_test)
 
                 weights_test = dist2sim(neigh_dist_test[:, :-1])
                 y_neighbors_test = Y_train[neigh_ind_test[:, :-1]]
-                test_input = weights_test*y_neighbors_test
+                test_input = weights_test * y_neighbors_test
 
                 # Use a prediction function (nt.predict.gradient_descent_mse_ensemble)
                 # to learn a regression model and predict missing values.
-                predict_fn = nt.predict.gradient_descent_mse_ensemble(kernel_fn,
-                                                                      train_input, Y_batch.reshape(-1, 1), diag_reg=1e-4)
+                predict_fn = nt.predict.gradient_descent_mse_ensemble(kernel_fn=kernel_fn,
+                                                                      x_train=train_input,
+                                                                      y_train=Y_batch.reshape(-1, 1),
+                                                                      diag_reg=1e-4)
 
                 y_pred, pred_cov = prediction(predict_fn, test_input, kernel_type="nngp")
-
 
                 if iteration == 0:
                     # Replace missing values directly with predictions
@@ -275,18 +287,20 @@ class NOMIImputer:
                     for i in range(greater_than_threshold_indices.shape[0]):
                         data_m_imputed[true_indices[greater_than_threshold_indices[i]]:, dim] = 1
 
-                    imputed_X[~i_not_nan_index, dim] = (1 - self.beta / pred_std)*imputed_X[~i_not_nan_index, dim] + self.beta / pred_std * y_pred.reshape(-1)
+                    imputed_X[~i_not_nan_index, dim] = (1 - self.beta / pred_std) * imputed_X[~i_not_nan_index, dim] + self.beta / pred_std * y_pred.reshape(-1)
                 else:
                     imputed_X[~i_not_nan_index, dim] = y_pred.reshape(-1)
 
-                # Save fitted variables for the transform method
-                if iteration + 1 == self.max_iterations:
-                    self.index_dct[dim] = index
-                    self.predict_fn_dct[dim] = predict_fn
-                    self.Y_train_dct[dim] = Y_train
+                # Save the latest fitted variables for the transform method.
+                # In case of multiple iterations per dimension, these variables will be overriden.
+                self.index_dct[dim] = index
+                self.predict_fn_dct[dim] = predict_fn
+                self.Y_train_dct[dim] = Y_train
+
+            print(f'Finished iteration {iteration + 1}', flush=True)
 
         # Step 3: Post-Processing
-        imputed_data = renormalization(imputed_X, norm_parameters) # Renormalize the imputed data
+        imputed_data = renormalization(imputed_X, norm_parameters) # Re-normalize the imputed data
         imputed_data = rounding(imputed_data, data_x) # Round values to match the original format
         self.is_fitted = True
 
@@ -308,7 +322,7 @@ class NOMIImputer:
             raise RuntimeError("The NOMIImputer must be fitted before calling transform.")
 
         data_x = X
-        data_m = data_x.isna()
+        data_m = np.isnan(data_x)
         norm_data, norm_parameters = normalization(data_x)
         norm_data_x = np.nan_to_num(norm_data, 0)
 
@@ -321,13 +335,18 @@ class NOMIImputer:
             stax.Dense(dims), stax.Relu(),
             stax.Dense(1), stax.Sigmoid_like()
         )
-        for dim in tqdm(range(dims)):
+        for dim in tqdm(range(dims), desc="Applying transform for each dimension"):
+            X_wo_dim = np.delete(imputed_X, dim, 1)
+            i_not_nan_index = data_m_imputed[:, dim].astype(bool)
+
+            # Check for observed values
+            if not np.any(i_not_nan_index):
+                print(f"No observed values for dimension {dim}, skipping.")
+                continue
+
             index = self.index_dct[dim]
             predict_fn = self.predict_fn_dct[dim]
             Y_train = self.Y_train_dct[dim]
-
-            X_wo_dim = np.delete(imputed_X, dim, 1)
-            i_not_nan_index = data_m_imputed[:, dim].astype(bool)
 
             X_test = X_wo_dim[~i_not_nan_index]
             if X_test.shape[0] == 0:

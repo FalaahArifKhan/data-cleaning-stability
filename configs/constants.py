@@ -46,6 +46,7 @@ class ErrorRepairMethod(Enum):
     automl = 'automl'
     gain = 'gain'
     tdm = 'tdm'
+    nomi = 'nomi'
     boost_clean = 'boost_clean'
     cp_clean = 'cp_clean'
 
