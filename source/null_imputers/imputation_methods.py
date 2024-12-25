@@ -290,6 +290,9 @@ def impute_with_nomi(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: l
     print("X_train_with_nulls.dtypes:", X_train_with_nulls.dtypes)
     print("X_train_with_nulls.head():", X_train_with_nulls.head())
 
+    num_indices_with_nulls = [X_train_with_nulls.columns.get_loc(col) for col in numeric_columns_with_nulls]
+    cat_indices_with_nulls = [X_train_with_nulls.columns.get_loc(col) for col in categorical_columns_with_nulls]
+
     # Encode categorical columns
     X_train_encoded, cat_encoders, _ = encode_dataset_for_missforest(df=X_train_with_nulls,
                                                                      dataset_name=dataset_name,
@@ -301,6 +304,7 @@ def impute_with_nomi(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: l
                                       categorical_columns_with_nulls=categorical_columns_with_nulls)[0]
         for X_test_with_nulls in X_tests_with_nulls_lst
     ]
+    print("X_train_encoded.head():", X_train_encoded.head())
 
     # Apply an imputer
     imputer = NOMIImputer(k_neighbors=kwargs['k_neighbors'],
@@ -308,8 +312,13 @@ def impute_with_nomi(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: l
                           max_iterations=kwargs['max_iterations'],
                           tau=kwargs['tau'],
                           beta=kwargs['beta'])
-    X_train_imputed_np = imputer.fit_transform(X_train_encoded.to_numpy())
-    X_tests_imputed_np_lst = list(map(lambda X_test_encoded: imputer.transform(X_test_encoded.to_numpy()), X_tests_encoded_lst))
+    print("np.sum(X_train_encoded mask):", np.sum(np.isnan(X_train_encoded.to_numpy())))
+    X_train_imputed_np = imputer.fit_transform(X_train_encoded.to_numpy(), num_indices_with_nulls, cat_indices_with_nulls)
+    X_tests_imputed_np_lst = list(map(lambda X_test_encoded:
+            imputer.transform(X_test_encoded.to_numpy(), num_indices_with_nulls, cat_indices_with_nulls),
+      X_tests_encoded_lst)
+    )
+    print("X_train_imputed_np[:5]:", X_train_imputed_np[:5])
 
     # Convert numpy arrays back to DataFrames
     X_train_imputed = pd.DataFrame(X_train_imputed_np, columns=X_train_with_nulls.columns, index=X_train_with_nulls.index)
@@ -317,6 +326,7 @@ def impute_with_nomi(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: l
         pd.DataFrame(X_test, columns=X_test_with_nulls.columns, index=X_test_with_nulls.index)
         for X_test, X_test_with_nulls in zip(X_tests_imputed_np_lst, X_tests_with_nulls_lst)
     ]
+    print("X_train_imputed.head():", X_train_imputed.head())
 
     # Decode categories back
     X_train_imputed = decode_dataset_for_missforest(X_train_imputed, cat_encoders, dataset_name=dataset_name)

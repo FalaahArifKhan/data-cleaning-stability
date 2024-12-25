@@ -138,26 +138,21 @@ def renormalization(norm_data, norm_parameters):
     return renorm_data
 
 
-def rounding(imputed_data, data_x):
+def rounding(imputed_data, cat_indices):
     """
     Round imputed data for categorical variables.
 
     Args:
       - imputed_data: imputed data
       - data_x: original data with missing values
+      - cat_indices: indices of categorical columns
 
     Returns:
       - rounded_data: rounded imputed data
     """
-
-    _, dim = data_x.shape
     rounded_data = imputed_data.copy()
-
-    for i in range(dim):
-        temp = data_x[~np.isnan(data_x[:, i]), i]
-        # Only for the categorical variable
-        if len(np.unique(temp)) < 20:
-            rounded_data[:, i] = np.round(rounded_data[:, i])
+    for i in cat_indices:
+        rounded_data[:, i] = np.round(rounded_data[:, i])
 
     return rounded_data
 
@@ -175,27 +170,29 @@ class NOMIImputer:
         self.Y_train_dct = dict()
         self.is_fitted = False
 
-    def fit_transform(self, X):
+    def fit_transform(self, X, num_indices_with_nulls, cat_indices_with_nulls):
         """
         Fit and transform with the NOMI imputer using the provided training data.
 
         Parameters:
         - X: numpy array of shape (n_samples, n_features)
             The dataset containing missing values.
+        - num_indices_with_nulls: indices of numerical columns with nulls.
+        - cat_indices_with_nulls: indices of categorical columns with nulls.
 
         Returns:
         - numpy array of shape (n_samples, n_features)
             Dataset with imputed values.
         """
         data_x = X
-        data_m = np.isnan(data_x)
-        print("np.sum(data_m):", np.sum(data_m))
+        data_m = 1 - np.isnan(data_x) # Reverse mask to comply with the NOMI API
         norm_data, norm_parameters = normalization(data_x)
         norm_data_x = np.nan_to_num(norm_data, 0)
 
         num, dims = norm_data_x.shape
         imputed_X = norm_data_x.copy()
         data_m_imputed = data_m.copy()
+        col_indices_with_nulls = num_indices_with_nulls + cat_indices_with_nulls
 
         # Step 1: Model Initialization
         _, _, kernel_fn = stax.serial(
@@ -208,7 +205,7 @@ class NOMIImputer:
             print(f'Started iteration {iteration + 1}', flush=True)
 
             # Iterates over each dimension of the dataset
-            for dim in tqdm(range(dims), desc="Training"):
+            for dim in tqdm(col_indices_with_nulls, desc="Training"):
                 # Extract observed values
                 X_wo_dim = np.delete(imputed_X, dim, 1)
                 i_not_nan_index = data_m_imputed[:, dim].astype(bool)
@@ -301,18 +298,20 @@ class NOMIImputer:
 
         # Step 3: Post-Processing
         imputed_data = renormalization(imputed_X, norm_parameters) # Re-normalize the imputed data
-        imputed_data = rounding(imputed_data, data_x) # Round values to match the original format
+        imputed_data = rounding(imputed_data, cat_indices_with_nulls) # Round values to match the original format
         self.is_fitted = True
 
         return imputed_data
 
-    def transform(self, X):
+    def transform(self, X, num_indices_with_nulls, cat_indices_with_nulls):
         """
         Impute missing values in the provided dataset using the trained model.
 
         Parameters:
         - X: numpy array of shape (n_samples, n_features)
             Dataset with missing values to impute.
+        - num_indices_with_nulls: indices of numerical columns with nulls.
+        - cat_indices_with_nulls: indices of categorical columns with nulls.
 
         Returns:
         - numpy array of shape (n_samples, n_features)
@@ -329,13 +328,14 @@ class NOMIImputer:
         num, dims = norm_data_x.shape
         imputed_X = norm_data_x.copy()
         data_m_imputed = data_m.copy()
+        col_indices_with_nulls = num_indices_with_nulls + cat_indices_with_nulls
 
         _, _, kernel_fn = stax.serial(
             stax.Dense(2 * dims), stax.Relu(),
             stax.Dense(dims), stax.Relu(),
             stax.Dense(1), stax.Sigmoid_like()
         )
-        for dim in tqdm(range(dims), desc="Applying transform for each dimension"):
+        for dim in tqdm(col_indices_with_nulls, desc="Applying transform for each dimension"):
             X_wo_dim = np.delete(imputed_X, dim, 1)
             i_not_nan_index = data_m_imputed[:, dim].astype(bool)
 
@@ -363,6 +363,6 @@ class NOMIImputer:
             imputed_X[~i_not_nan_index, dim] = y_pred.reshape(-1)
 
         imputed_data = renormalization(imputed_X, norm_parameters)
-        imputed_data = rounding(imputed_data, data_x)
+        imputed_data = rounding(imputed_data, cat_indices_with_nulls)
 
         return imputed_data
