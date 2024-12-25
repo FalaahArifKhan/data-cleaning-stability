@@ -6,7 +6,7 @@ from configs.constants import (GERMAN_CREDIT_DATASET, BANK_MARKETING_DATASET, CA
 from source.null_imputers.imputation_methods import (impute_with_deletion, impute_with_simple_imputer,
                                                      impute_with_automl,
                                                      impute_with_gain, impute_with_missforest, impute_with_kmeans,
-                                                     impute_with_tdm, impute_with_nomi)
+                                                     impute_with_tdm, impute_with_nomi, impute_with_notmiwae)
 from source.null_imputers.joint_cleaning_and_training_methods import prepare_cpclean, prepare_boostclean
 
 
@@ -57,6 +57,18 @@ NULL_IMPUTERS_CONFIG = {
             "max_iterations": 3,
             "tau": 1.0,
             "beta": 0.8,
+        }
+    },
+    ErrorRepairMethod.notmiwae.value: {
+        "method": impute_with_notmiwae,
+        "kwargs": {
+            "n_hidden": 128,
+            "n_samples": 20,
+            "max_iter": 100_000,
+            # "max_iter": 10_000,
+            "batch_size": 16,
+            "L": 10_000,
+            "mprocess": 'selfmasking_known',
         }
     },
 }

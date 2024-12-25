@@ -235,7 +235,7 @@ class MLLifecycle:
             # Remove all files created by automl to save storage space
             shutil.rmtree(output_path)
 
-        elif null_imputer_name == ErrorRepairMethod.gain.value:
+        elif null_imputer_name in (ErrorRepairMethod.gain.value, ErrorRepairMethod.notmiwae.value):
             output_path = (pathlib.Path(__file__).parent.parent.parent
                            .joinpath('results')
                            .joinpath('intermediate_state')
