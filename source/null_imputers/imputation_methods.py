@@ -15,7 +15,7 @@ from source.null_imputers.kmeans_imputer import KMeansImputer
 from source.null_imputers.nomi_imputer import NOMIImputer
 from source.null_imputers.tdm_imputer import TDMImputer
 from source.utils.pipeline_utils import (encode_dataset_for_missforest, decode_dataset_for_missforest,
-                                         encode_dataset_for_gain, decode_dataset_for_gain)
+                                         encode_dataset_for_gain, decode_dataset_for_gain, encode_dataset_for_nomi)
 from source.utils.dataframe_utils import get_numerical_columns_indexes
 
 
@@ -286,9 +286,7 @@ def impute_with_nomi(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: l
     cat_indices_with_nulls = [X_train_with_nulls.columns.get_loc(col) for col in categorical_columns_with_nulls]
 
     # Encode categorical columns
-    X_train_encoded, cat_encoders, _ = encode_dataset_for_missforest(df=X_train_with_nulls,
-                                                                     dataset_name=dataset_name,
-                                                                     categorical_columns_with_nulls=categorical_columns_with_nulls)
+    X_train_encoded, cat_encoders, _ = encode_dataset_for_nomi(df=X_train_with_nulls, dataset_name=dataset_name)
     X_tests_encoded_lst = [
         encode_dataset_for_missforest(df=X_test_with_nulls,
                                       cat_encoders=cat_encoders,
