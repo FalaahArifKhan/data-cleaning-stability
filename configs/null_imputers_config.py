@@ -27,11 +27,16 @@ NULL_IMPUTERS_CONFIG = {
                     "alpha": [1, 10],
                     "hint_rate": [0.7, 0.9]
                 },
+                "training": {
+                    "batch_size": [64, 128],
+                },
                 "generator": {
-                    "learning_rate": [0.0001, 0.0005],
+                    # "learning_rate": [0.0001, 0.0005],
+                    "learning_rate": [1e-5, 1e-4, 0.0005],
                 },
                 "discriminator": {
-                    "learning_rate": [0.00001, 0.00005],
+                    # "learning_rate": [0.00001, 0.00005],
+                    "learning_rate": [1e-6, 1e-5, 0.00005],
                 }
             }
         }

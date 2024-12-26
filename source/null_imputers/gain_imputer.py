@@ -437,7 +437,7 @@ class GAINImputer(GenerativeImputer):
         for train_index, test_index in k_fold.split(data):
 
             train = tf.data.Dataset.from_tensor_slices(data[train_index])
-            train_data = train.batch(self.hyperparameters["batch_size"])
+            train_data = train.batch(self.hyperparameters["batch_size"]).prefetch(tf.data.AUTOTUNE)
 
             early_stopping = EarlyStopping(self.hyperparameters["early_stop"])
 
