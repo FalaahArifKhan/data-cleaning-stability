@@ -1,12 +1,48 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
 #    "diabetes notmiwae exp1_mcar3 1,2,3"
+    "diabetes notmiwae exp1_mcar3 3,4,5"
+    "diabetes notmiwae exp1_mar3 1,2,3,4,5,6"
+    "diabetes notmiwae exp1_mnar3 1,2,3,4,5,6"
+    "diabetes notmiwae mixed_exp 1,2,3,4,5,6"
+
 #    "german notmiwae exp1_mcar3 1,2,3"
-#    "law_school notmiwae exp1_mcar3 1,2"
-    "folk notmiwae exp1_mcar3 1,2"
-#    "bank notmiwae exp1_mcar3 1,2"
-#    "heart notmiwae exp1_mcar3 1,2"
-#    "folk_emp notmiwae exp1_mcar3 1"
+    "german notmiwae exp1_mcar3 3,4,5"
+    "german notmiwae exp1_mar3 1,2,3,4,5,6"
+    "german notmiwae exp1_mnar3 1,2,3,4,5,6"
+    "german notmiwae mixed_exp 1,2,3,4,5,6"
+
+##    "law_school notmiwae exp1_mcar3 1,2"
+#    "law_school notmiwae exp1_mcar3 3,4,5,6"
+#    "law_school notmiwae exp1_mar3 1,2,3,4,5,6"
+#    "law_school notmiwae exp1_mnar3 1,2,3,4,5,6"
+#    "law_school notmiwae mixed_exp 1,2,3,4,5,6"
+#
+##    "folk notmiwae exp1_mcar3 1,2"
+#    "folk notmiwae exp1_mcar3 3,4,5,6"
+#    "folk notmiwae exp1_mar3 1,2,3,4,5,6"
+#    "folk notmiwae exp1_mnar3 1,2,3,4,5,6"
+#    "folk notmiwae mixed_exp 1,2,3,4,5,6"
+#
+##    "bank notmiwae exp1_mcar3 1,2"
+#    "bank notmiwae exp1_mcar3 3,4,5,6"
+#    "bank notmiwae exp1_mar3 1,2,3,4,5,6"
+#    "bank notmiwae exp1_mnar3 1,2,3,4,5,6"
+#    "bank notmiwae mixed_exp 1,2,3,4,5,6"
+#
+##    "heart notmiwae exp1_mcar3 1,2"
+#    "heart notmiwae exp1_mcar3 3,4,5,6"
+#    "heart notmiwae exp1_mar3 1,2,3,4,5,6"
+#    "heart notmiwae exp1_mnar3 1,2,3,4,5,6"
+#    "heart notmiwae mixed_exp 1,2,3,4,5,6"
+#
+#
+#
+##    "folk_emp notmiwae exp1_mcar3 1"
+#    "folk_emp notmiwae exp1_mcar3 2,3,4,5,6"
+#    "folk_emp notmiwae exp1_mar3 1,2,3,4,5,6"
+#    "folk_emp notmiwae exp1_mnar3 1,2,3,4,5,6"
+#    "folk_emp notmiwae mixed_exp 1,2,3,4,5,6"
 )
 
 TEMPLATE_FILE="../cluster/run_exp1/run-exp1-imputers-template.sbatch"
