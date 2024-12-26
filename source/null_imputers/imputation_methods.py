@@ -288,10 +288,9 @@ def impute_with_nomi(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: l
     # Encode categorical columns
     X_train_encoded, cat_encoders, _ = encode_dataset_for_nomi(df=X_train_with_nulls, dataset_name=dataset_name)
     X_tests_encoded_lst = [
-        encode_dataset_for_missforest(df=X_test_with_nulls,
-                                      cat_encoders=cat_encoders,
-                                      dataset_name=dataset_name,
-                                      categorical_columns_with_nulls=categorical_columns_with_nulls)[0]
+        encode_dataset_for_nomi(df=X_test_with_nulls,
+                                cat_encoders=cat_encoders,
+                                dataset_name=dataset_name)[0]
         for X_test_with_nulls in X_tests_with_nulls_lst
     ]
 
