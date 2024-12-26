@@ -3,10 +3,10 @@ declare -a job_configs=(
 #    "diabetes notmiwae exp1_mcar3 1,2,3"
 #    "german notmiwae exp1_mcar3 1,2,3"
 #    "law_school notmiwae exp1_mcar3 1,2"
-#    "folk notmiwae exp1_mcar3 1,2"
+    "folk notmiwae exp1_mcar3 1,2"
 #    "bank notmiwae exp1_mcar3 1,2"
 #    "heart notmiwae exp1_mcar3 1,2"
-    "folk_emp notmiwae exp1_mcar3 1"
+#    "folk_emp notmiwae exp1_mcar3 1"
 )
 
 TEMPLATE_FILE="../cluster/run_exp1/run-exp1-imputers-template.sbatch"
