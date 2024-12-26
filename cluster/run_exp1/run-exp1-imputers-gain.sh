@@ -5,8 +5,8 @@ declare -a job_configs=(
 #    "law_school gain exp1_mcar3 1,2"
 #    "folk gain exp1_mcar3 1"
 #    "bank gain exp1_mcar3 1"
-    "heart gain exp1_mcar3 1"
-#    "folk_emp gain exp1_mcar3 1"
+#    "heart gain exp1_mcar3 1"
+    "folk_emp gain exp1_mcar3 1"
 )
 
 TEMPLATE_FILE="../cluster/run_exp1/run-exp1-imputers-template.sbatch"
