@@ -12,29 +12,29 @@ declare -a job_configs=(
 #    "german gain exp1_mnar3 1,2,3,4,5,6"
 #    "german gain mixed_exp 1,2,3,4,5,6"
 
-#    "law_school gain exp1_mcar3 1,2"
-    "law_school gain exp1_mcar3 3,4,5,6"
-    "law_school gain exp1_mar3 1,2,3,4,5,6"
-    "law_school gain exp1_mnar3 1,2,3,4,5,6"
-    "law_school gain mixed_exp 1,2,3,4,5,6"
+##    "law_school gain exp1_mcar3 1,2"
+#    "law_school gain exp1_mcar3 3,4,5,6"
+#    "law_school gain exp1_mar3 1,2,3,4,5,6"
+#    "law_school gain exp1_mnar3 1,2,3,4,5,6"
+#    "law_school gain mixed_exp 1,2,3,4,5,6"
+#
+##    "folk gain exp1_mcar3 1"
+#    "folk gain exp1_mcar3 2,3,4,5,6"
+#    "folk gain exp1_mar3 1,2,3,4,5,6"
+#    "folk gain exp1_mnar3 1,2,3,4,5,6"
+#    "folk gain mixed_exp 1,2,3,4,5,6"
+#
+#    "bank gain exp1_mcar3 1"
+    "bank gain exp1_mcar3 2,3,4,5,6"
+    "bank gain exp1_mar3 1,2,3,4,5,6"
+    "bank gain exp1_mnar3 1,2,3,4,5,6"
+    "bank gain mixed_exp 1,2,3,4,5,6"
 
-#    "folk gain exp1_mcar3 1"
-    "folk gain exp1_mcar3 2,3,4,5,6"
-    "folk gain exp1_mar3 1,2,3,4,5,6"
-    "folk gain exp1_mnar3 1,2,3,4,5,6"
-    "folk gain mixed_exp 1,2,3,4,5,6"
-#
-##    "bank gain exp1_mcar3 1"
-#    "bank gain exp1_mcar3 2,3,4,5,6"
-#    "bank gain exp1_mar3 1,2,3,4,5,6"
-#    "bank gain exp1_mnar3 1,2,3,4,5,6"
-#    "bank gain mixed_exp 1,2,3,4,5,6"
-#
-##    "heart gain exp1_mcar3 1"
-#    "heart gain exp1_mcar3 2,3,4,5,6"
-#    "heart gain exp1_mar3 1,2,3,4,5,6"
-#    "heart gain exp1_mnar3 1,2,3,4,5,6"
-#    "heart gain mixed_exp 1,2,3,4,5,6"
+#    "heart gain exp1_mcar3 1"
+    "heart gain exp1_mcar3 2,3,4,5,6"
+    "heart gain exp1_mar3 1,2,3,4,5,6"
+    "heart gain exp1_mnar3 1,2,3,4,5,6"
+    "heart gain mixed_exp 1,2,3,4,5,6"
 #
 #
 #
