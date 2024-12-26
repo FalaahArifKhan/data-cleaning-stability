@@ -24,22 +24,22 @@ declare -a job_configs=(
 #    "folk tdm exp1_mnar3 1,2,3,4,5,6"
 #    "folk tdm mixed_exp 1,2,3,4,5,6"
 
-    "bank tdm exp1_mcar3 1,2,3,4,5,6"
-    "bank tdm exp1_mar3 1,2,3,4,5,6"
-    "bank tdm exp1_mnar3 1,2,3,4,5,6"
-    "bank tdm mixed_exp 1,2,3,4,5,6"
-
-    "heart tdm exp1_mcar3 1,2,3,4,5,6"
-    "heart tdm exp1_mar3 1,2,3,4,5,6"
-    "heart tdm exp1_mnar3 1,2,3,4,5,6"
-    "heart tdm mixed_exp 1,2,3,4,5,6"
+#    "bank tdm exp1_mcar3 1,2,3,4,5,6"
+#    "bank tdm exp1_mar3 1,2,3,4,5,6"
+#    "bank tdm exp1_mnar3 1,2,3,4,5,6"
+#    "bank tdm mixed_exp 1,2,3,4,5,6"
+#
+#    "heart tdm exp1_mcar3 1,2,3,4,5,6"
+#    "heart tdm exp1_mar3 1,2,3,4,5,6"
+#    "heart tdm exp1_mnar3 1,2,3,4,5,6"
+#    "heart tdm mixed_exp 1,2,3,4,5,6"
 #
 #
 #
-#    "folk_emp tdm exp1_mcar3 1,2,3,4,5,6"
-#    "folk_emp tdm exp1_mar3 1,2,3,4,5,6"
-#    "folk_emp tdm exp1_mnar3 1,2,3,4,5,6"
-#    "folk_emp tdm mixed_exp 1,2,3,4,5,6"
+    "folk_emp tdm exp1_mcar3 1,2,3,4,5,6"
+    "folk_emp tdm exp1_mar3 1,2,3,4,5,6"
+    "folk_emp tdm exp1_mnar3 1,2,3,4,5,6"
+    "folk_emp tdm mixed_exp 1,2,3,4,5,6"
 )
 
 TEMPLATE_FILE="../cluster/run_exp1/run-exp1-imputers-template.sbatch"
