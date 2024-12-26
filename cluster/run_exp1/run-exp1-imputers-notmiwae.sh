@@ -12,29 +12,29 @@ declare -a job_configs=(
 #    "german notmiwae exp1_mnar3 1,2,3,4,5,6"
 #    "german notmiwae mixed_exp 1,2,3,4,5,6"
 
-#    "law_school notmiwae exp1_mcar3 1,2"
-    "law_school notmiwae exp1_mcar3 3,4,5,6"
-    "law_school notmiwae exp1_mar3 1,2,3,4,5,6"
-    "law_school notmiwae exp1_mnar3 1,2,3,4,5,6"
-    "law_school notmiwae mixed_exp 1,2,3,4,5,6"
+##    "law_school notmiwae exp1_mcar3 1,2"
+#    "law_school notmiwae exp1_mcar3 3,4,5,6"
+#    "law_school notmiwae exp1_mar3 1,2,3,4,5,6"
+#    "law_school notmiwae exp1_mnar3 1,2,3,4,5,6"
+#    "law_school notmiwae mixed_exp 1,2,3,4,5,6"
+#
+##    "folk notmiwae exp1_mcar3 1,2"
+#    "folk notmiwae exp1_mcar3 3,4,5,6"
+#    "folk notmiwae exp1_mar3 1,2,3,4,5,6"
+#    "folk notmiwae exp1_mnar3 1,2,3,4,5,6"
+#    "folk notmiwae mixed_exp 1,2,3,4,5,6"
+#
+#    "bank notmiwae exp1_mcar3 1,2"
+    "bank notmiwae exp1_mcar3 3,4,5,6"
+    "bank notmiwae exp1_mar3 1,2,3,4,5,6"
+    "bank notmiwae exp1_mnar3 1,2,3,4,5,6"
+    "bank notmiwae mixed_exp 1,2,3,4,5,6"
 
-#    "folk notmiwae exp1_mcar3 1,2"
-    "folk notmiwae exp1_mcar3 3,4,5,6"
-    "folk notmiwae exp1_mar3 1,2,3,4,5,6"
-    "folk notmiwae exp1_mnar3 1,2,3,4,5,6"
-    "folk notmiwae mixed_exp 1,2,3,4,5,6"
-#
-##    "bank notmiwae exp1_mcar3 1,2"
-#    "bank notmiwae exp1_mcar3 3,4,5,6"
-#    "bank notmiwae exp1_mar3 1,2,3,4,5,6"
-#    "bank notmiwae exp1_mnar3 1,2,3,4,5,6"
-#    "bank notmiwae mixed_exp 1,2,3,4,5,6"
-#
-##    "heart notmiwae exp1_mcar3 1,2"
-#    "heart notmiwae exp1_mcar3 3,4,5,6"
-#    "heart notmiwae exp1_mar3 1,2,3,4,5,6"
-#    "heart notmiwae exp1_mnar3 1,2,3,4,5,6"
-#    "heart notmiwae mixed_exp 1,2,3,4,5,6"
+#    "heart notmiwae exp1_mcar3 1,2"
+    "heart notmiwae exp1_mcar3 3,4,5,6"
+    "heart notmiwae exp1_mar3 1,2,3,4,5,6"
+    "heart notmiwae exp1_mnar3 1,2,3,4,5,6"
+    "heart notmiwae mixed_exp 1,2,3,4,5,6"
 #
 #
 #
