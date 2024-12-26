@@ -6,11 +6,11 @@ import tensorflow_probability as tfp
 tfb = tfp.bijectors
 import keras
 import numpy as np
+import pandas as pd
 import datetime
 
 
 def train(model, batch_size, max_iter=10000, name=None):
-
     if name is not None:
         model.save(name)
 
@@ -21,7 +21,7 @@ def train(model, batch_size, max_iter=10000, name=None):
         loss = model.train_batch(batch_size=batch_size)
 
         # Stop training if the loss is None
-        if loss is None:
+        if loss is None or pd.isna(loss) or np.isnan(loss):
             print(f"Training stopped at iteration {i} due to None loss.")
             break
 
@@ -37,6 +37,10 @@ def train(model, batch_size, max_iter=10000, name=None):
             print("{0}/{1} updates, {2:.2f} s, {3:.2f} train_loss, {4:.2f} val_loss"
                   .format(i, max_iter, took, loss, val_loss))
             sys.stdout.flush()
+
+    if name is not None:
+        print("Restoring the last best version of the model...")
+        model.load(name)  # Restore the last best model
 
 
 def reverse_normalization(normalized_data, original_mean, original_std):
