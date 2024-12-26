@@ -272,7 +272,6 @@ def impute_with_tdm(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: li
         "batchsize": imputer.batchsize,
         "n_pairs": imputer.n_pairs,
         "noise": imputer.noise,
-        "early_stopping_patience": imputer.early_stopping_patience,
     }
     null_imputer_params_dct = {col: hyperparams for col in X_train_with_nulls.columns}
 
