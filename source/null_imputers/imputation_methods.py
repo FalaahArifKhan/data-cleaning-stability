@@ -209,10 +209,6 @@ def impute_with_tdm(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: li
                     numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
                     hyperparams: dict, **kwargs):
     dataset_name = kwargs['dataset_name']
-    seed = kwargs['experiment_seed']
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
 
     X_train_encoded, cat_encoders, _ = encode_dataset_for_missforest(df=X_train_with_nulls,
                                                                      dataset_name=dataset_name,

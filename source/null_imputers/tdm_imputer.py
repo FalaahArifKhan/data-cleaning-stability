@@ -43,6 +43,11 @@ class TDMImputer:
         X_train = X_train.clone()
         n, d = X_train.shape
 
+        batch_size = self.batchsize
+        if batch_size > n // 2:
+            e = int(np.log2(n // 2))
+            batch_size = 2 ** e
+
         mask = torch.isnan(X_train).double()
         torch.autograd.set_detect_anomaly(True)
 
@@ -60,8 +65,8 @@ class TDMImputer:
             proj_loss = 0
 
             for _ in range(self.n_pairs):
-                idx1 = np.random.choice(n, self.batchsize, replace=False)
-                idx2 = np.random.choice(n, self.batchsize, replace=False)
+                idx1 = np.random.choice(n, batch_size, replace=False)
+                idx2 = np.random.choice(n, batch_size, replace=False)
 
                 X1 = X_filled[idx1]
                 X2 = X_filled[idx2]
