@@ -14,25 +14,25 @@ declare -a job_configs=(
 #    "german tdm exp1_mnar3 1,2,3,4,5,6"
 #    "german tdm mixed_exp 1,2,3,4,5,6"
 
-    "law_school tdm exp1_mcar3 1,2,3,4,5,6"
-    "law_school tdm exp1_mar3 1,2,3,4,5,6"
-    "law_school tdm exp1_mnar3 1,2,3,4,5,6"
-    "law_school tdm mixed_exp 1,2,3,4,5,6"
-
-    "folk tdm exp1_mcar3 1,2,3,4,5,6"
-    "folk tdm exp1_mar3 1,2,3,4,5,6"
-    "folk tdm exp1_mnar3 1,2,3,4,5,6"
-    "folk tdm mixed_exp 1,2,3,4,5,6"
-
-#    "bank tdm exp1_mcar3 1,2,3,4,5,6"
-#    "bank tdm exp1_mar3 1,2,3,4,5,6"
-#    "bank tdm exp1_mnar3 1,2,3,4,5,6"
-#    "bank tdm mixed_exp 1,2,3,4,5,6"
+#    "law_school tdm exp1_mcar3 1,2,3,4,5,6"
+#    "law_school tdm exp1_mar3 1,2,3,4,5,6"
+#    "law_school tdm exp1_mnar3 1,2,3,4,5,6"
+#    "law_school tdm mixed_exp 1,2,3,4,5,6"
 #
-#    "heart tdm exp1_mcar3 1,2,3,4,5,6"
-#    "heart tdm exp1_mar3 1,2,3,4,5,6"
-#    "heart tdm exp1_mnar3 1,2,3,4,5,6"
-#    "heart tdm mixed_exp 1,2,3,4,5,6"
+#    "folk tdm exp1_mcar3 1,2,3,4,5,6"
+#    "folk tdm exp1_mar3 1,2,3,4,5,6"
+#    "folk tdm exp1_mnar3 1,2,3,4,5,6"
+#    "folk tdm mixed_exp 1,2,3,4,5,6"
+
+    "bank tdm exp1_mcar3 1,2,3,4,5,6"
+    "bank tdm exp1_mar3 1,2,3,4,5,6"
+    "bank tdm exp1_mnar3 1,2,3,4,5,6"
+    "bank tdm mixed_exp 1,2,3,4,5,6"
+
+    "heart tdm exp1_mcar3 1,2,3,4,5,6"
+    "heart tdm exp1_mar3 1,2,3,4,5,6"
+    "heart tdm exp1_mnar3 1,2,3,4,5,6"
+    "heart tdm mixed_exp 1,2,3,4,5,6"
 #
 #
 #
