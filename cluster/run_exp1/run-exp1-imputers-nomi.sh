@@ -1,9 +1,9 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "diabetes nomi exp1_mcar3 1,2,3"
-    "german nomi exp1_mcar3 1,2,3"
-#    "law_school nomi exp1_mcar3 1,2"
-#    "folk nomi exp1_mcar3 1"
+#    "diabetes nomi exp1_mcar3 1,2,3"
+#    "german nomi exp1_mcar3 1,2,3"
+    "law_school nomi exp1_mcar3 1,2"
+    "folk nomi exp1_mcar3 1,2"
 #    "bank nomi exp1_mcar3 1"
 #    "heart nomi exp1_mcar3 1"
 #    "folk_emp nomi exp1_mcar3 1"
