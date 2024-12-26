@@ -20,6 +20,11 @@ def train(model, batch_size, max_iter=10000, name=None):
     for i in range(max_iter):
         loss = model.train_batch(batch_size=batch_size)
 
+        # Stop training if the loss is None
+        if loss is None:
+            print(f"Training stopped at iteration {i} due to None loss.")
+            break
+
         if i % 100 == 0:
             took = time.time() - start
             start = time.time()
