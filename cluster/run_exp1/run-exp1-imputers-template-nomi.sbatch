@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --nodes=1
-#SBATCH --mem=56GB
+#SBATCH --mem=64GB
 #SBATCH --cpus-per-task=24
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=END
