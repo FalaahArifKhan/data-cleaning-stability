@@ -4,8 +4,8 @@ declare -a job_configs=(
 #    "german gain exp1_mcar3 1,2,3"
 #    "law_school gain exp1_mcar3 1,2"
 #    "folk gain exp1_mcar3 1"
-    "bank gain exp1_mcar3 1"
-#    "heart gain exp1_mcar3 1"
+#    "bank gain exp1_mcar3 1"
+    "heart gain exp1_mcar3 1"
 #    "folk_emp gain exp1_mcar3 1"
 )
 
