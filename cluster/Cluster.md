@@ -48,6 +48,11 @@ Find location of a python package to change source files:
 python -c "import datawig; print(datawig.__file__)"
 ```
 
+Zip files on the cluster (`zip` provides a better compression rate than `gzip`):
+```shell
+ml_life_cycle_project]$ ../virny_flow_project/zip30/zip vldb_env.ext3.zip ./vldb_env.ext3
+```
+
 SSH to a bash SLURM job:
 ```shell
 # Pattern: ssh username@hostname
