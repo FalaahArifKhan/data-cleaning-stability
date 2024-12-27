@@ -36,6 +36,7 @@ def get_imputers_metric_df(db_client, dataset_name: str, evaluation_scenario: st
 
     # Check uniqueness
     duplicates_mask = metric_df.duplicated(subset=['Imputation_Guid'], keep=False)
+    print('metric_df[duplicates_mask]:\n', metric_df[duplicates_mask])
     assert len(metric_df[duplicates_mask]) == 0, 'Metric df contains duplicates'
 
     return metric_df
@@ -1184,7 +1185,7 @@ def create_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_injectio
             symbolStrokeWidth=10,
             labelLimit=400,
             titleLimit=300,
-            columns=4,
+            columns=5,
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
