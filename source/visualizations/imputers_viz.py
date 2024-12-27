@@ -29,14 +29,14 @@ def get_imputers_metric_df(db_client, dataset_name: str, evaluation_scenario: st
     }
     metric_df = db_client.read_metric_df_from_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                                  query=query)
-    if db_client.db_name == 'data_cleaning_stability_2':
+    # if db_client.db_name == 'data_cleaning_stability_2':
+    if db_client.db_name == 'data_cleaning_stability_3':
         metric_df2 = DB_CLIENT_2.read_metric_df_from_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                                         query=query)
         metric_df = pd.concat([metric_df, metric_df2])
 
     # Check uniqueness
     duplicates_mask = metric_df.duplicated(subset=['Imputation_Guid'], keep=False)
-    print('metric_df[duplicates_mask]:\n', metric_df[duplicates_mask])
     assert len(metric_df[duplicates_mask]) == 0, 'Metric df contains duplicates'
 
     return metric_df
@@ -1113,7 +1113,7 @@ def create_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_injectio
 
     sns.set_style("whitegrid")
     imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-                      'k_means_clustering', 'datawig', 'automl']
+                      'k_means_clustering', 'datawig', 'automl', 'nomi', 'tdm', 'gain', 'notmiwae']
     if without_dummy:
         imputers_order = [t for t in imputers_order if t != ErrorRepairMethod.median_dummy.value]
 
@@ -1174,7 +1174,7 @@ def create_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_injectio
                               sort=alt.SortField(field='Dataset_Sequence_Number', order='ascending'))
         ).properties(
             # height=200,
-            width=130 if metric_name.lower() == 'kl_divergence_pred' else 120,
+            width=190 if metric_name.lower() == 'kl_divergence_pred' else 180,
         )
     )
 
