@@ -1116,18 +1116,18 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
     if metric_name in ('Label_Stability', 'Std'):
         spacing = 10
         plot_height = 300
-        plot_width = 140
+        plot_width = 200
         symbol_offset = 50
         resolve_scale_mode = 'shared'
     else:
         spacing = 15
         plot_height = 200
-        plot_width = 120
+        plot_width = 180
         symbol_offset = 140
         resolve_scale_mode = 'independent'
 
     imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-                      'k_means_clustering', 'datawig', 'automl', 'boost_clean']
+                      'k_means_clustering', 'datawig', 'automl', 'nomi', 'tdm', 'gain', 'notmiwae']
     dataset_to_sequence_num = {
         DIABETES_DATASET: 1,
         GERMAN_CREDIT_DATASET: 2,
@@ -1225,7 +1225,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
             symbolStrokeWidth=10,
             labelLimit=400,
             titleLimit=300,
-            columns=4,
+            columns=5,
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
