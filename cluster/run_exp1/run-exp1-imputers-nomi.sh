@@ -1,20 +1,17 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-##    "diabetes nomi exp1_mcar3 1,2,3"
-#    "diabetes nomi exp1_mcar3 4,5,6"
-#    "diabetes nomi exp1_mar3 1,2,3,4,5,6"
-#    "diabetes nomi exp1_mnar3 1,2,3,4,5,6"
-#    "diabetes nomi mixed_exp 1,2,3,4,5,6"
-#
-##    "german nomi exp1_mcar3 1,2,3"
-#    "german nomi exp1_mcar3 4,5,6"
-#    "german nomi exp1_mar3 1,2,3,4,5,6"
-#    "german nomi exp1_mnar3 1,2,3,4,5,6"
-#    "german nomi mixed_exp 1,2,3,4,5,6"
+    "diabetes nomi exp1_mcar3 1,2,3,4,5,6"
+    "diabetes nomi exp1_mar3 1,2,3,4,5,6"
+    "diabetes nomi exp1_mnar3 1,2,3,4,5,6"
+    "diabetes nomi mixed_exp 1,2,3,4,5,6"
 
-##    "law_school nomi exp1_mcar3 1,2"
-#    "law_school nomi exp1_mcar3 3,4"
-#    "law_school nomi exp1_mcar3 5,6"
+    "german nomi exp1_mcar3 1,2,3,4,5,6"
+    "german nomi exp1_mar3 1,2,3,4,5,6"
+    "german nomi exp1_mnar3 1,2,3,4,5,6"
+    "german nomi mixed_exp 1,2,3,4,5,6"
+
+#    "law_school nomi exp1_mcar3 1,2,3"
+#    "law_school nomi exp1_mcar3 4,5,6"
 #    "law_school nomi exp1_mar3 1,2,3"
 #    "law_school nomi exp1_mar3 4,5,6"
 #    "law_school nomi exp1_mnar3 1,2,3"
@@ -22,7 +19,7 @@ declare -a job_configs=(
 #    "law_school nomi mixed_exp 1,2,3"
 #    "law_school nomi mixed_exp 4,5,6"
 #
-##    "folk nomi exp1_mcar3 1,2"
+#    "folk nomi exp1_mcar3 1,2"
 #    "folk nomi exp1_mcar3 3,4"
 #    "folk nomi exp1_mcar3 5,6"
 #    "folk nomi exp1_mar3 1,2,3"
@@ -32,8 +29,7 @@ declare -a job_configs=(
 #    "folk nomi mixed_exp 1,2,3"
 #    "folk nomi mixed_exp 4,5,6"
 
-##    "bank nomi exp1_mcar3 1"
-#    "bank nomi exp1_mcar3 2,3"
+#    "bank nomi exp1_mcar3 1,2,3"
 #    "bank nomi exp1_mcar3 4,5,6"
 #    "bank nomi exp1_mar3 1,2,3"
 #    "bank nomi exp1_mar3 4,5,6"
@@ -42,8 +38,7 @@ declare -a job_configs=(
 #    "bank nomi mixed_exp 1,2,3"
 #    "bank nomi mixed_exp 4,5,6"
 #
-##    "heart nomi exp1_mcar3 1"
-#    "heart nomi exp1_mcar3 2"
+#    "heart nomi exp1_mcar3 1,2"
 #    "heart nomi exp1_mcar3 3,4"
 #    "heart nomi exp1_mcar3 5,6"
 #    "heart nomi exp1_mar3 1,2"
@@ -58,16 +53,14 @@ declare -a job_configs=(
 
 
 
-#    "folk_emp nomi exp1_mcar3 1"
-#    "folk_emp nomi exp1_mcar3 2"
-    "folk_emp nomi exp1_mcar3 3,4"
-    "folk_emp nomi exp1_mcar3 5,6"
-    "folk_emp nomi exp1_mar3 1,2,3"
-    "folk_emp nomi exp1_mar3 4,5,6"
-    "folk_emp nomi exp1_mnar3 1,2,3"
-    "folk_emp nomi exp1_mnar3 4,5,6"
-    "folk_emp nomi mixed_exp 1,2,3"
-    "folk_emp nomi mixed_exp 4,5,6"
+#    "folk_emp nomi exp1_mcar3 1,2,3"
+#    "folk_emp nomi exp1_mcar3 4,5,6"
+#    "folk_emp nomi exp1_mar3 1,2,3"
+#    "folk_emp nomi exp1_mar3 4,5,6"
+#    "folk_emp nomi exp1_mnar3 1,2,3"
+#    "folk_emp nomi exp1_mnar3 4,5,6"
+#    "folk_emp nomi mixed_exp 1,2,3"
+#    "folk_emp nomi mixed_exp 4,5,6"
 )
 
 TEMPLATE_FILE="../cluster/run_exp1/run-exp1-imputers-template-nomi.sbatch"
