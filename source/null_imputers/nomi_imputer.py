@@ -174,6 +174,7 @@ class NOMIImputer:
         self.predict_fn_dct = dict()
         self.Y_train_dct = dict()
         self.is_fitted = False
+        self.norm_parameters = None
 
     def fit_transform(self, X, num_indices_with_nulls, cat_indices_with_nulls):
         """
@@ -191,7 +192,7 @@ class NOMIImputer:
         """
         data_x = X
         data_m = 1 - np.isnan(data_x) # Reverse mask to comply with the NOMI API
-        norm_data, norm_parameters = normalization(data_x)
+        norm_data, self.norm_parameters = normalization(data_x)
         norm_data_x = np.nan_to_num(norm_data, 0)
 
         num, dims = norm_data_x.shape
@@ -302,7 +303,7 @@ class NOMIImputer:
             print(f'Finished iteration {iteration + 1}', flush=True)
 
         # Step 3: Post-Processing
-        imputed_data = renormalization(imputed_X, norm_parameters) # Re-normalize the imputed data
+        imputed_data = renormalization(imputed_X, self.norm_parameters) # Re-normalize the imputed data
         imputed_data = rounding(imputed_data, cat_indices_with_nulls) # Round values to match the original format
         self.is_fitted = True
 
@@ -326,8 +327,8 @@ class NOMIImputer:
             raise RuntimeError("The NOMIImputer must be fitted before calling transform.")
 
         data_x = X
-        data_m = np.isnan(data_x)
-        norm_data, norm_parameters = normalization(data_x)
+        data_m = 1 - np.isnan(data_x) # Reverse mask to comply with the NOMI API
+        norm_data, norm_parameters = normalization(data_x, self.norm_parameters)
         norm_data_x = np.nan_to_num(norm_data, 0)
 
         num, dims = norm_data_x.shape
@@ -349,13 +350,13 @@ class NOMIImputer:
                 print(f"No observed values for dimension {dim}, skipping.")
                 continue
 
-            index = self.index_dct[dim]
-            predict_fn = self.predict_fn_dct[dim]
-            Y_train = self.Y_train_dct[dim]
-
             X_test = X_wo_dim[~i_not_nan_index]
             if X_test.shape[0] == 0:
                 continue
+
+            index = self.index_dct[dim]
+            predict_fn = self.predict_fn_dct[dim]
+            Y_train = self.Y_train_dct[dim]
 
             neigh_ind_test, neigh_dist_test = index.knn_query(X_test, k=self.k_neighbors, filter=None)
             neigh_dist_test = np.sqrt(neigh_dist_test)
