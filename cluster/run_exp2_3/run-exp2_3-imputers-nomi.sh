@@ -84,7 +84,7 @@ declare -a job_configs=(
 #    "folk_emp nomi exp2_3_mnar5 4,5,6"
 )
 
-TEMPLATE_FILE="../cluster/run_exp2_3/run-exp2_3-imputers-template.sbatch"
+TEMPLATE_FILE="../cluster/run_exp2_3/run-exp2_3-imputers-template-nomi.sbatch"
 
 # Initialize a counter
 index=0
