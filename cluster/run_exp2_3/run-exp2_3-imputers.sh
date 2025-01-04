@@ -10,16 +10,6 @@ declare -a job_configs=(
     "diabetes nomi exp2_3_mnar3 1,2,3,4,5,6"
     "diabetes nomi exp2_3_mnar5 1,2,3,4,5,6"
 
-    "german nomi exp2_3_mcar1 1,2,3,4,5,6"
-    "german nomi exp2_3_mcar3 1,2,3,4,5,6"
-    "german nomi exp2_3_mcar5 1,2,3,4,5,6"
-    "german nomi exp2_3_mar1 1,2,3,4,5,6"
-    "german nomi exp2_3_mar3 1,2,3,4,5,6"
-    "german nomi exp2_3_mar5 1,2,3,4,5,6"
-    "german nomi exp2_3_mnar1 1,2,3,4,5,6"
-    "german nomi exp2_3_mnar3 1,2,3,4,5,6"
-    "german nomi exp2_3_mnar5 1,2,3,4,5,6"
-
 #    "law_school nomi exp2_3_mcar1 1,2,3,4,5,6"
 #    "law_school nomi exp2_3_mcar3 1,2,3,4,5,6"
 #    "law_school nomi exp2_3_mcar5 1,2,3,4,5,6"
@@ -30,16 +20,6 @@ declare -a job_configs=(
 #    "law_school nomi exp2_3_mnar3 1,2,3,4,5,6"
 #    "law_school nomi exp2_3_mnar5 1,2,3,4,5,6"
 #
-#    "bank nomi exp2_3_mcar1 1,2,3,4,5,6"
-#    "bank nomi exp2_3_mcar3 1,2,3,4,5,6"
-#    "bank nomi exp2_3_mcar5 1,2,3,4,5,6"
-#    "bank nomi exp2_3_mar1 1,2,3,4,5,6"
-#    "bank nomi exp2_3_mar3 1,2,3,4,5,6"
-#    "bank nomi exp2_3_mar5 1,2,3,4,5,6"
-#    "bank nomi exp2_3_mnar1 1,2,3,4,5,6"
-#    "bank nomi exp2_3_mnar3 1,2,3,4,5,6"
-#    "bank nomi exp2_3_mnar5 1,2,3,4,5,6"
-#
 #    "folk nomi exp2_3_mcar1 1,2,3,4,5,6"
 #    "folk nomi exp2_3_mcar3 1,2,3,4,5,6"
 #    "folk nomi exp2_3_mcar5 1,2,3,4,5,6"
@@ -49,39 +29,6 @@ declare -a job_configs=(
 #    "folk nomi exp2_3_mnar1 1,2,3,4,5,6"
 #    "folk nomi exp2_3_mnar3 1,2,3,4,5,6"
 #    "folk nomi exp2_3_mnar5 1,2,3,4,5,6"
-#
-#    "heart nomi exp2_3_mcar1 1,2,3,4,5,6"
-#    "heart nomi exp2_3_mcar3 1,2,3,4,5,6"
-#    "heart nomi exp2_3_mcar5 1,2,3,4,5,6"
-#    "heart nomi exp2_3_mar1 1,2,3,4,5,6"
-#    "heart nomi exp2_3_mar3 1,2,3,4,5,6"
-#    "heart nomi exp2_3_mar5 1,2,3,4,5,6"
-#    "heart nomi exp2_3_mnar1 1,2,3,4,5,6"
-#    "heart nomi exp2_3_mnar3 1,2,3,4,5,6"
-#    "heart nomi exp2_3_mnar5 1,2,3,4,5,6"
-
-
-
-
-
-#    "folk_emp nomi exp2_3_mcar1 1,2,3"
-#    "folk_emp nomi exp2_3_mcar1 4,5,6"
-#    "folk_emp nomi exp2_3_mcar3 1,2,3"
-#    "folk_emp nomi exp2_3_mcar3 4,5,6"
-#    "folk_emp nomi exp2_3_mcar5 1,2,3"
-#    "folk_emp nomi exp2_3_mcar5 4,5,6"
-#    "folk_emp nomi exp2_3_mar1 1,2,3"
-#    "folk_emp nomi exp2_3_mar1 4,5,6"
-#    "folk_emp nomi exp2_3_mar3 1,2,3"
-#    "folk_emp nomi exp2_3_mar3 4,5,6"
-#    "folk_emp nomi exp2_3_mar5 1,2,3"
-#    "folk_emp nomi exp2_3_mar5 4,5,6"
-#    "folk_emp nomi exp2_3_mnar1 1,2,3"
-#    "folk_emp nomi exp2_3_mnar1 4,5,6"
-#    "folk_emp nomi exp2_3_mnar3 1,2,3"
-#    "folk_emp nomi exp2_3_mnar3 4,5,6"
-#    "folk_emp nomi exp2_3_mnar5 1,2,3"
-#    "folk_emp nomi exp2_3_mnar5 4,5,6"
 )
 
 TEMPLATE_FILE="../cluster/run_exp2_3/run-exp2_3-imputers-template.sbatch"
