@@ -273,8 +273,8 @@ def get_models_metric_df(db_client, dataset_name: str, evaluation_scenario: str,
     }
     metric_df = db_client.read_metric_df_from_db(collection_name=EXP_COLLECTION_NAME,
                                                  query=query)
-    # if db_client.db_name == 'data_cleaning_stability_2':
-    if db_client.db_name == 'data_cleaning_stability_3':
+    # if db_client.db_name == 'data_cleaning_stability_3':
+    if db_client.db_name == 'data_cleaning_stability_2':
         metric_df2 = DB_CLIENT_2.read_metric_df_from_db(collection_name=EXP_COLLECTION_NAME,
                                                         query=query)
         metric_df = pd.concat([metric_df, metric_df2])
