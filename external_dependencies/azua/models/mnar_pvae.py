@@ -13,6 +13,39 @@ from .decoder import Decoder
 from .encoder import Encoder
 from .mask_net import MaskNet
 from .partial_vae import PartialVAE
+from ..datasets.dataset import Dataset
+from ..datasets.dataset_loader import DatasetLoader
+
+
+def _make_dataset(data, mask, test_frac, val_frac, random_state):
+    num_rows, _ = data.shape
+    rows = list(range(num_rows))
+    train_rows, val_rows, test_rows, data_split = DatasetLoader._generate_data_split(rows, test_frac, val_frac, random_state)
+
+    train_data = data[train_rows, :]
+    train_mask = mask[train_rows, :]
+    test_data = data[test_rows, :]
+    test_mask = mask[test_rows, :]
+
+    if len(val_rows) == 0:
+        val_data, val_mask = None, None
+    else:
+        val_data = data[val_rows, :]
+        val_mask = mask[val_rows, :]
+
+    variables_dict = dict()
+    variables = Variables.create_from_data_and_dict(train_data, train_mask, variables_dict)
+
+    return Dataset(
+        train_data=train_data,
+        train_mask=train_mask,
+        val_data=val_data,
+        val_mask=val_mask,
+        test_data=test_data,
+        test_mask=test_mask,
+        variables=variables,
+        data_split=data_split,
+    )
 
 
 class MNARPartialVAE(PartialVAE, TorchModel):

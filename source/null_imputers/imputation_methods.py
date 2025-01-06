@@ -1,4 +1,6 @@
+import os
 import copy
+import logging
 import random
 import numpy as np
 import pandas as pd
@@ -7,6 +9,10 @@ import torch.nn as nn
 from sklearn.impute import SimpleImputer
 import FrEIA.framework as Ff
 import FrEIA.modules as Fm
+from external_dependencies.azua.experiment.steps.train_step import run_train_main as azua_run_train_main
+from external_dependencies.azua.datasets.dataset import Dataset
+from external_dependencies.azua.datasets.variables import Variables
+from external_dependencies.azua.datasets.csv_dataset_loader import CSVDatasetLoader
 
 from source.null_imputers.automl_imputer import AutoMLImputer
 from source.null_imputers.gain_imputer import GAINImputer
@@ -438,4 +444,64 @@ def impute_with_notmiwae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_ls
     }
     null_imputer_params_dct = {col: hyperparams for col in X_train_with_nulls.columns}
 
+    return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct
+
+
+def impute_with_mnar_pvae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: list,
+                          numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
+                          hyperparams: dict, **kwargs):
+    directory = str(kwargs['directory'])
+    seed = kwargs['experiment_seed']
+
+    X_train_imputed = copy.deepcopy(X_train_with_nulls)
+    X_tests_imputed_lst = list(map(lambda X_test_with_nulls: copy.deepcopy(X_test_with_nulls), X_tests_with_nulls_lst))
+
+    # Prepare arguments for MNAR-PVAE
+    model_type = "mnar_pvae"
+    logger = logging.getLogger(model_type)
+    model_config, train_hypers, impute_config = (
+        kwargs["model_hyperparams"], kwargs["training_hyperparams"], kwargs["impute_config"])
+    model_config["random_seed"] = seed
+
+    # Prepare data for imputation
+    train_data, train_mask = CSVDatasetLoader._process_data(X_train_imputed.to_numpy())
+    X_tests_imputed_lst = list(map(
+        lambda X_test_with_nulls: CSVDatasetLoader._process_data(X_test_with_nulls.to_numpy()), X_tests_imputed_lst)
+    )
+    variables = Variables.create_from_data_and_dict(train_data, train_mask, variables_dict=dict())
+    dataset = Dataset(
+        train_data=train_data,
+        train_mask=train_mask,
+        val_data=None,
+        val_mask=None,
+        test_data=None,
+        test_mask=None,
+        variables=variables,
+        data_split=None,
+    )
+
+    # Perform imputation
+    imputer = azua_run_train_main(
+        logger=logger,
+        model_type=model_type,
+        output_dir=directory,
+        variables=dataset.variables,
+        dataset=dataset,
+        device="cpu",
+        model_config=model_config,
+        train_hypers=train_hypers,
+    )
+    X_train_imputed_np = imputer.impute(train_data, train_mask, impute_config, vamp_prior_data=None)
+    X_tests_imputed_np_lst = list(map(
+        lambda test_data_tpl: imputer.impute(test_data_tpl[0], test_data_tpl[1], impute_config, vamp_prior_data=None), X_tests_imputed_lst)
+    )
+
+    # Convert numpy arrays to pandas dataframes
+    X_train_imputed = pd.DataFrame(X_train_imputed_np, columns=X_train_with_nulls.columns, index=X_train_with_nulls.index)
+    X_tests_imputed_lst = [
+        pd.DataFrame(X_test, columns=X_test_with_nulls.columns, index=X_test_with_nulls.index)
+        for X_test, X_test_with_nulls in zip(X_tests_imputed_np_lst, X_tests_with_nulls_lst)
+    ]
+
+    null_imputer_params_dct = model_config
     return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct

@@ -27,8 +27,7 @@ def run_train_main(
     if metrics_logger is not None and isinstance(model, TorchModel):
         num_trainable_parameters = sum(p.numel() for p in model.parameters())
         metrics_logger.set_tags({"num_trainable_parameters": num_trainable_parameters}, True)
-    dataset.save_data_split(save_dir=model.save_dir)
-
+    # dataset.save_data_split(save_dir=model.save_dir)
     logger.info("Created model with ID %s." % model.model_id)
 
     # Train model

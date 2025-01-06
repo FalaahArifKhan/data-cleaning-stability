@@ -48,6 +48,7 @@ class ErrorRepairMethod(Enum):
     tdm = 'tdm'
     nomi = 'nomi'
     notmiwae = 'notmiwae'
+    mnar_pvae = 'mnar_pvae'
     boost_clean = 'boost_clean'
     cp_clean = 'cp_clean'
 
