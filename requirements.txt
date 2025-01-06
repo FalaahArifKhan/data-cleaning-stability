@@ -3,6 +3,8 @@ pytorch-tabular~=1.1.0
 tensorflow~=2.8.0
 tensorflow-probability==0.16.0
 autokeras==1.0.20
+dependency-injector~=4.45.0
+gitpython==3.1.11
 kmodes==0.12.2
 numpy==1.23.5
 lightgbm==4.3.0
