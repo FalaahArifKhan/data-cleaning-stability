@@ -9,7 +9,7 @@ from .point_net import PointNet, SparsePointNet
 from .set_encoder_base_model import SetEncoderBaseModel
 from .transformer_set_encoder import TransformerSetEncoder
 
-MODEL_BASELINE_DIRS = ["azua/models", "azua/baselines"]
+MODEL_BASELINE_DIRS = ["external_dependencies/azua/models", "external_dependencies/azua/baselines"]
 
 
 def create_model(
@@ -42,7 +42,11 @@ def create_model(
     save_dir = os.path.join(models_dir, model_id)
     os.makedirs(save_dir)
 
-    model_class = get_named_subclass(MODEL_BASELINE_DIRS, Model, model_name)
+    if model_name == "mnar_pvae":
+        from ..models.mnar_pvae import MNARPartialVAE
+        model_class = MNARPartialVAE
+    else:
+        model_class = get_named_subclass(MODEL_BASELINE_DIRS, Model, model_name)
 
     return model_class.create(model_id, save_dir, variables, model_config_dict, device=device)
 

@@ -21,7 +21,8 @@ from source.null_imputers.kmeans_imputer import KMeansImputer
 from source.null_imputers.nomi_imputer import NOMIImputer
 from source.null_imputers.tdm_imputer import TDMImputer
 from source.utils.pipeline_utils import (encode_dataset_for_missforest, decode_dataset_for_missforest,
-                                         encode_dataset_for_gain, decode_dataset_for_gain, encode_dataset_for_nomi)
+                                         encode_dataset_for_gain, decode_dataset_for_gain, encode_dataset_for_nomi,
+                                         onehot_encode_dataset, onehot_decode_dataset)
 from source.utils.dataframe_utils import get_numerical_columns_indexes
 
 
@@ -451,10 +452,20 @@ def impute_with_mnar_pvae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
                           numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
                           hyperparams: dict, **kwargs):
     directory = str(kwargs['directory'])
+    dataset_name = kwargs['dataset_name']
     seed = kwargs['experiment_seed']
 
-    X_train_imputed = copy.deepcopy(X_train_with_nulls)
-    X_tests_imputed_lst = list(map(lambda X_test_with_nulls: copy.deepcopy(X_test_with_nulls), X_tests_with_nulls_lst))
+    print("X_train_with_nulls.head():\n", X_train_with_nulls.head())
+    print("X_tests_with_nulls_lst[0].head():\n", X_tests_with_nulls_lst[0].head())
+
+    # Encode categorical columns
+    X_train_encoded, encoder, init_cat_columns = onehot_encode_dataset(df=X_train_with_nulls)
+    print("X_train_encoded.head():\n", X_train_encoded.head())
+    X_tests_encoded_lst = [
+        onehot_encode_dataset(df=X_test_with_nulls, encoder=encoder)[0]
+        for X_test_with_nulls in X_tests_with_nulls_lst
+    ]
+    print("X_tests_encoded_lst[0].head():\n", X_tests_encoded_lst[0].head())
 
     # Prepare arguments for MNAR-PVAE
     model_type = "mnar_pvae"
@@ -464,11 +475,28 @@ def impute_with_mnar_pvae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
     model_config["random_seed"] = seed
 
     # Prepare data for imputation
-    train_data, train_mask = CSVDatasetLoader._process_data(X_train_imputed.to_numpy())
+    train_data, train_mask = CSVDatasetLoader._process_data(X_train_encoded.to_numpy())
     X_tests_imputed_lst = list(map(
-        lambda X_test_with_nulls: CSVDatasetLoader._process_data(X_test_with_nulls.to_numpy()), X_tests_imputed_lst)
+        lambda X_test_with_nulls: CSVDatasetLoader._process_data(X_test_with_nulls.to_numpy()), X_tests_encoded_lst)
     )
-    variables = Variables.create_from_data_and_dict(train_data, train_mask, variables_dict=dict())
+
+    variable_info = []
+    onehot_cat_columns = encoder.get_feature_names_out(init_cat_columns)
+    for idx, col in enumerate(X_train_encoded.columns):
+        lower_val, upper_val = X_train_encoded[col].min(), X_train_encoded[col].max()
+        var = {
+            "id": idx,  # Feature index, 0 to pixel count - 1
+            "query": True,  # All features are query features.
+            "type": "categorical" if col in onehot_cat_columns else "continuous",
+            "name": col,  # Short variable description
+            "lower": lower_val,  # Min feature value
+            "upper": upper_val,  # Max feature value
+        }
+        variable_info.append(var)
+
+    variables = Variables.create_from_dict({"variables": variable_info, "metadata_variables": []})
+    print("\n\nvariables:", variables)
+    # variables = Variables.create_from_data_and_dict(train_data, train_mask, variables_dict=dict())
     dataset = Dataset(
         train_data=train_data,
         train_mask=train_mask,
@@ -497,11 +525,35 @@ def impute_with_mnar_pvae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
     )
 
     # Convert numpy arrays to pandas dataframes
-    X_train_imputed = pd.DataFrame(X_train_imputed_np, columns=X_train_with_nulls.columns, index=X_train_with_nulls.index)
+    X_train_imputed = pd.DataFrame(X_train_imputed_np, columns=X_train_encoded.columns)
     X_tests_imputed_lst = [
-        pd.DataFrame(X_test, columns=X_test_with_nulls.columns, index=X_test_with_nulls.index)
-        for X_test, X_test_with_nulls in zip(X_tests_imputed_np_lst, X_tests_with_nulls_lst)
+        pd.DataFrame(X_test_np, columns=X_test_encoded.columns)
+        for X_test_np, X_test_encoded in zip(X_tests_imputed_np_lst, X_tests_encoded_lst)
     ]
 
+    # Decode categories back
+    print("X_train_imputed.head()1:\n", X_train_imputed.head())
+    X_train_imputed = onehot_decode_dataset(df=X_train_imputed, encoder=encoder, init_cat_columns=init_cat_columns)
+    X_tests_imputed_lst = [
+        onehot_decode_dataset(df=X_test_imputed, encoder=encoder, init_cat_columns=init_cat_columns)
+        for X_test_imputed in X_tests_imputed_lst
+    ]
+
+    # Set initial indices
+    X_train_imputed = pd.DataFrame(X_train_imputed, index=X_train_with_nulls.index)
+    X_tests_imputed_lst = [
+        pd.DataFrame(X_test_np, index=X_test_with_nulls.index)
+        for X_test_np, X_test_with_nulls in zip(X_tests_imputed_lst, X_tests_with_nulls_lst)
+    ]
+
+    # Replace null values in df1 with values from df2
+    X_train_imputed_final = copy.deepcopy(X_train_with_nulls)
+    X_train_imputed_final = X_train_imputed_final.combine_first(X_train_imputed)
+    print("X_train_imputed_final.head()2:\n", X_train_imputed_final.head())
+    X_tests_imputed_final_lst = [
+        copy.deepcopy(X_test_with_nulls).combine_first(X_test_imputed) for X_test_with_nulls, X_test_imputed in zip(X_tests_with_nulls_lst, X_tests_imputed_lst)
+    ]
+    print("X_tests_imputed_final_lst[0].head()2:\n", X_tests_imputed_final_lst[0].head())
+
     null_imputer_params_dct = model_config
-    return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct
+    return X_train_imputed_final, X_tests_imputed_final_lst, null_imputer_params_dct

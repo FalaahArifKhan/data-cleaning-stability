@@ -101,7 +101,7 @@ def train_model(
     model.train()
 
     writer = SummaryWriter(os.path.join(train_output_dir, "summary"), flush_secs=1)
-    metrics_logger = azua_context.metrics_logger()
+    # metrics_logger = azua_context.metrics_logger()
     logger = logging.getLogger()
     results_dict: Dict[str, List] = {"epoch_time": []}
 
@@ -121,6 +121,7 @@ def train_model(
     best_delta_epoch = 0
     is_quiet = logger.level > logging.INFO
     for epoch in trange(epochs, desc="Epochs", disable=is_quiet):
+        print("epoch:", epoch)
         epoch_start_time = time.time()
         train_metrics = _one_epoch(
             model=model, dataloader=train_dataloader, is_quiet=is_quiet, optimizer=optimizer, loss_config=loss_config
@@ -156,7 +157,8 @@ def train_model(
             for k, value in asdict(metrics).items():
                 name = f"train/{k}-{train_or_val}"
                 writer.add_scalar(name, value, epoch)  # tensorboard
-                metrics_logger.log_dict({name: value})  # AzureML
+                # metrics_logger.log_dict({name: value})  # AzureML
+                logger.info(f"{name}: {value}")
                 if name not in results_dict:
                     results_dict[name] = []
                 results_dict[name].append(value)  # for JSON file
@@ -168,7 +170,8 @@ def train_model(
         results_dict["epoch_time"].append(epoch_time)
 
         lr = optimizer.param_groups[0]["lr"]
-        metrics_logger.log_dict({"train/epoch": epoch, "train/epoch_time": epoch_time, "train/lr": lr})
+        # metrics_logger.log_dict({"train/epoch": epoch, "train/epoch_time": epoch_time, "train/lr": lr})
+        logger.info(f"train/epoch: {epoch}, train/epoch_time: {epoch_time}, train/lr: {lr}")
 
         if report_progress_callback:
             report_progress_callback(model.model_id, epoch + 1, epochs)

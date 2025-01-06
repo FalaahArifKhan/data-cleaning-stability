@@ -1,6 +1,6 @@
 import copy
-
 import pandas as pd
+from sklearn.preprocessing import OneHotEncoder
 
 from configs.constants import ACS_INCOME_DATASET
 from source.utils.dataframe_utils import encode_cat, decode_cat, encode_cat_with_existing_encoder
@@ -95,4 +95,31 @@ def decode_dataset_for_missforest(df_enc, cat_encoders, dataset_name: str = None
         else:
             df_dec[c] = decode_cat(df_dec[c], cat_encoders[c])
 
+    return df_dec
+
+
+def onehot_encode_dataset(df, encoder=None):
+    df_enc = copy.deepcopy(df)
+    cat_columns = df.select_dtypes(include=['object']).columns
+    num_columns = [col for col in df.columns if col not in cat_columns]
+
+    if encoder:
+        encoded_array = encoder.transform(df_enc[cat_columns])
+    else:
+        encoder = OneHotEncoder(sparse=False, handle_unknown='ignore')
+        encoded_array = encoder.fit_transform(df_enc[cat_columns])
+
+    df_enc_cat = pd.DataFrame(encoded_array, columns=encoder.get_feature_names_out(cat_columns))
+    df_enc = pd.concat([df_enc[num_columns], df_enc_cat], axis=1)
+    return df_enc, encoder, cat_columns
+
+
+def onehot_decode_dataset(df, encoder, init_cat_columns):
+    df_dec = copy.deepcopy(df)
+    onehot_cat_columns = encoder.get_feature_names_out(init_cat_columns)
+    num_columns = [col for col in df.columns if col not in onehot_cat_columns]
+
+    reversed_array = encoder.inverse_transform(df_dec[onehot_cat_columns].to_numpy())
+    df_dec_cat = pd.DataFrame(reversed_array, columns=init_cat_columns)
+    df_dec = pd.concat([df_dec[num_columns], df_dec_cat], axis=1)
     return df_dec

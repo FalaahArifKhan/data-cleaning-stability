@@ -204,10 +204,13 @@ def negative_log_likelihood(
         mask = torch.ones_like(data)
 
     # Call unprocessed columns vars, processed columns idxs
+    # print("variables1:", variables)
     vars_by_type, idxs_by_type = (
         variables.unprocessed_cols_by_type,
         variables.processed_cols_by_type,
     )
+    # print("vars_by_type:", vars_by_type)
+    # print("idxs_by_type:", idxs_by_type)
 
     if sum_type is None:
         nlls = torch.zeros(batch_size, num_vars, device=data.device, dtype=data.dtype)

@@ -216,7 +216,7 @@ class MLLifecycle:
             # Remove all files created by datawig to save storage space
             shutil.rmtree(output_path)
 
-        elif null_imputer_name == ErrorRepairMethod.automl.value:
+        elif null_imputer_name in (ErrorRepairMethod.automl.value, ErrorRepairMethod.mnar_pvae.value):
             output_path = (pathlib.Path(__file__).parent.parent.parent
                            .joinpath('results')
                            .joinpath('intermediate_state')

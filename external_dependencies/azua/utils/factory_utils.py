@@ -51,6 +51,8 @@ def get_named_subclass(
     if isinstance(directories, str):
         directories = [directories]
 
+    print("max_depth:", max_depth)
+    print("directories:", directories)
     for directory in directories:
         subclass_list = get_subclasses(directory, parent_class)
 
@@ -63,6 +65,7 @@ def get_named_subclass(
             else:
                 subclass_list.extend(children)
 
+        print("subclass_list:", subclass_list)
         while subclass_list:
             subclass = subclass_list.pop()
 
