@@ -456,9 +456,6 @@ def impute_with_mnar_pvae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
     dataset_name = kwargs['dataset_name']
     seed = kwargs['experiment_seed']
 
-    print("X_train_with_nulls.head():", X_train_with_nulls.head())
-    print("X_tests_with_nulls_lst[0].head():", X_tests_with_nulls_lst[0].head())
-
     # Encode categorical columns
     X_train_encoded, cat_encoders, scaler = encode_dataset_for_mnar_pvae(df=X_train_with_nulls, dataset_name=dataset_name)
     X_tests_encoded_lst = [
@@ -483,13 +480,11 @@ def impute_with_mnar_pvae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
     )
 
     variable_info = []
-    # cat_columns = X_train_with_nulls.select_dtypes(include=['object']).columns
     for idx, col in enumerate(X_train_with_nulls.columns):
         lower_val, upper_val = X_train_encoded[col].min(), X_train_encoded[col].max()
         var = {
             "id": idx,  # Feature index, 0 to pixel count - 1
             "query": True,  # All features are query features.
-            # "type": "categorical" if col in cat_columns else "continuous",
             "type": "continuous",
             "name": col,  # Short variable description
             "lower": lower_val,  # Min feature value
@@ -497,10 +492,7 @@ def impute_with_mnar_pvae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
         }
         variable_info.append(var)
 
-    print("variable_info:", variable_info)
     variables = Variables.create_from_dict({"variables": variable_info, "metadata_variables": []})
-    # variables = Variables.create_from_data_and_dict(train_data, train_mask, variables_dict=dict())
-    print("\n\nvariables:", variables)
     dataset = Dataset(
         train_data=train_data,
         train_mask=train_mask,
@@ -548,8 +540,6 @@ def impute_with_mnar_pvae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
     X_tests_imputed_final_lst = [
         copy.deepcopy(X_test_with_nulls).combine_first(X_test_imputed) for X_test_with_nulls, X_test_imputed in zip(X_tests_with_nulls_lst, X_tests_imputed_lst)
     ]
-    print("X_train_imputed_final.head():", X_train_imputed_final.head())
-    print("X_tests_imputed_final_lst[0].head():", X_tests_imputed_final_lst[0].head())
 
     null_imputer_params_dct = {col: model_config for col in X_train_with_nulls.columns}
     return X_train_imputed_final, X_tests_imputed_final_lst, null_imputer_params_dct
