@@ -1,11 +1,11 @@
 #!/bin/bash
 
 #SBATCH --nodes=1
-#SBATCH --mem=96GB
+#SBATCH --mem=48GB
 #SBATCH --cpus-per-task=24
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=END
-#SBATCH --mail-user=dh3553@nyu.edu
+#SBATCH --mail-user=np2969@nyu.edu
 #SBATCH --account=pr_152_general
 #SBATCH --job-name=<DATASET>_<NULL_IMPUTER>_<EVALUATION_SCENARIO>_<MODEL>
 #SBATCH --output=%j_<DATASET>_<NULL_IMPUTER>_<EVALUATION_SCENARIO>_<MODEL>.out
@@ -25,6 +25,6 @@ python ../scripts/evaluate_models.py \
 "
 
 singularity exec \
-	    --overlay /scratch/dh3553/ml_life_cycle_project/vldb_env.ext3:ro \
+	    --overlay /scratch/np2969/data-cleaning-stability/vldb_env.ext3:ro \
 	    /scratch/work/public/singularity/ubuntu-20.04.1.sif \
 	    /bin/bash -c "source /ext3/env.sh; ${EXECUTION_COMMAND}"
