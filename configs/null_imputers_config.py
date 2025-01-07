@@ -5,7 +5,7 @@ from configs.constants import (GERMAN_CREDIT_DATASET, BANK_MARKETING_DATASET, CA
 from source.null_imputers.imputation_methods import (impute_with_deletion, impute_with_simple_imputer,
                                                      impute_with_automl, impute_with_gain, impute_with_missforest,
                                                      impute_with_kmeans, impute_with_tdm, impute_with_nomi,
-                                                     impute_with_notmiwae, impute_with_mnar_pvae)
+                                                     impute_with_notmiwae, impute_with_mnar_pvae, impute_with_hivae)
 from source.null_imputers.joint_cleaning_and_training_methods import prepare_cpclean, prepare_boostclean
 
 
@@ -130,6 +130,17 @@ NULL_IMPUTERS_CONFIG = {
             }
         },
     },
+    ErrorRepairMethod.hivae.value: {
+        "method": impute_with_hivae,
+        "kwargs": {
+            "dim_latent_z": 10,
+            "dim_latent_y": 5,
+            "dim_latent_s": 10,
+            "batch_size": 1000,
+            "epochs": 2000,
+            "learning_rate": 1e-3
+        }
+    }
 }
 
 NULL_IMPUTERS_HYPERPARAMS = {

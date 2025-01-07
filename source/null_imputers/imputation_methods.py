@@ -20,10 +20,11 @@ from source.null_imputers.missforest_imputer import MissForestImputer
 from source.null_imputers.kmeans_imputer import KMeansImputer
 from source.null_imputers.nomi_imputer import NOMIImputer
 from source.null_imputers.tdm_imputer import TDMImputer
+from source.null_imputers.hivae_imputer import HIVAEImputer
 from source.utils.pipeline_utils import (encode_dataset_for_missforest, decode_dataset_for_missforest,
                                          encode_dataset_for_gain, decode_dataset_for_gain, encode_dataset_for_nomi,
                                          onehot_encode_dataset, onehot_decode_dataset, decode_dataset_for_mnar_pvae,
-                                         encode_dataset_for_mnar_pvae)
+                                         encode_dataset_for_mnar_pvae, generate_types_csv)
 from source.utils.dataframe_utils import get_numerical_columns_indexes
 
 
@@ -543,3 +544,93 @@ def impute_with_mnar_pvae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
 
     null_imputer_params_dct = {col: model_config for col in X_train_with_nulls.columns}
     return X_train_imputed_final, X_tests_imputed_final_lst, null_imputer_params_dct
+
+def impute_with_hivae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: list,
+                     numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
+                     hyperparams: dict, **kwargs):
+    """
+    Impute missing values in the dataset using the HI-VAE model.
+
+    Args:
+        X_train_with_nulls (pd.DataFrame): Training data with missing values.
+        X_tests_with_nulls_lst (list): List of test datasets with missing values.
+        numeric_columns_with_nulls (list): List of numeric columns with missing values.
+        categorical_columns_with_nulls (list): List of categorical columns with missing values.
+        hyperparams (dict): Hyperparameters for the HI-VAE model.
+        **kwargs: Additional arguments, including 'directory' for saving models and 'experiment_seed'.
+
+    Returns:
+        tuple: Imputed training dataset, list of imputed test datasets, and null imputer parameters.
+    """
+    # Extract additional arguments
+    types_file = kwargs.get('types_file', 'types.csv')
+    # Generate types.csv if not provided
+    if not os.path.exists(types_file):
+        generate_types_csv(X_train_with_nulls, types_file)
+
+    # Split numeric and categorical columns in the training data
+    numerical_columns = [c for c in X_train_with_nulls.columns if pd.api.types.is_numeric_dtype(X_train_with_nulls[c])]
+    categorical_columns = [c for c in X_train_with_nulls.columns if c not in numerical_columns]
+
+    # Deep copy datasets for processing
+    X_train_imputed = X_train_with_nulls.copy()
+    X_tests_imputed_lst = [X_test.copy() for X_test in X_tests_with_nulls_lst]
+
+    # Encode categorical data for HI-VAE
+    X_train_imputed, X_tests_imputed_lst = encode_dataset_for_gain(
+        X_train=X_train_imputed,
+        X_tests_lst=X_tests_imputed_lst,
+        categorical_columns=categorical_columns
+    )
+
+    # Convert datasets to numpy arrays and create missing masks
+    X_train_array = X_train_imputed.to_numpy()
+    X_tests_array_lst = [X_test.to_numpy() for X_test in X_tests_imputed_lst]
+
+    # Generate missing masks
+    mask_train = ~np.isnan(X_train_array)
+    masks_tests_lst = [~np.isnan(X_test_array) for X_test_array in X_tests_array_lst]
+
+    # Initialize the HIVAE imputer
+    imputer = HIVAEImputer(
+        dim_latent_z=hyperparams.get('dim_latent_z', 2),
+        dim_latent_y=hyperparams.get('dim_latent_y', 3),
+        dim_latent_s=hyperparams.get('dim_latent_s', 4),
+        batch_size=hyperparams.get('batch_size', 128),
+        epochs=hyperparams.get('epochs', 100),
+        learning_rate=hyperparams.get('learning_rate', 1e-3)
+    )
+
+    # Build the HI-VAE model
+    imputer.build_model(types_file)
+
+    # Train the model
+    imputer.fit(X_train=X_train_array, mask_train=mask_train)
+
+    # Impute the training data
+    X_train_imputed_array = imputer.transform(X_test=X_train_array, mask_test=mask_train)
+
+    # Impute the test datasets
+    X_tests_imputed_array_lst = [
+        imputer.transform(X_test=X_test_array, mask_test=mask_test)
+        for X_test_array, mask_test in zip(X_tests_array_lst, masks_tests_lst)
+    ]
+
+    # Convert numpy arrays back to dataframes
+    X_train_imputed = pd.DataFrame(X_train_imputed_array, columns=X_train_with_nulls.columns)
+    X_tests_imputed_lst = [
+        pd.DataFrame(X_test_imputed_array, columns=X_test.columns)
+        for X_test_imputed_array, X_test in zip(X_tests_imputed_array_lst, X_tests_with_nulls_lst)
+    ]
+
+    # Decode categorical columns back to original format
+    X_train_imputed, X_tests_imputed_lst = decode_dataset_for_gain(
+        X_train=X_train_imputed,
+        X_tests_lst=X_tests_imputed_lst,
+        categorical_columns=categorical_columns
+    )
+
+    # Prepare null imputer parameters
+    null_imputer_params_dct = {col: hyperparams for col in X_train_with_nulls.columns}
+
+    return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct

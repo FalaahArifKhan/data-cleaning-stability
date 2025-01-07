@@ -1,5 +1,6 @@
 import copy
 import pandas as pd
+import csv
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from configs.constants import ACS_INCOME_DATASET
@@ -166,3 +167,43 @@ def onehot_decode_dataset(df, encoder, init_cat_columns):
     df_dec_cat = pd.DataFrame(reversed_array, columns=init_cat_columns)
     df_dec = pd.concat([df_dec[num_columns], df_dec_cat], axis=1)
     return df_dec
+
+def generate_types_csv(data: pd.DataFrame, types_file: str):
+    """
+    Generate a types.csv file based on the dataset's structure.
+
+    Args:
+        data (pd.DataFrame): The input dataset.
+        types_file (str): Path to save the generated `types.csv`.
+    """
+    types_data = []
+
+    for col in data.columns:
+        if pd.api.types.is_numeric_dtype(data[col]):
+            if data[col].min() >= 0 and data[col].apply(float.is_integer).all():
+                if len(data[col].unique()) == 2:
+                    # Binary categorical column
+                    types_data.append({"type": "cat", "dim": 2, "nclass": 2})
+                else:
+                    # Count column
+                    types_data.append({"type": "count", "dim": 1, "nclass": None})
+            else:
+                # Real-valued column
+                types_data.append({"type": "real", "dim": 1, "nclass": None})
+        elif pd.api.types.is_categorical_dtype(data[col]) or pd.api.types.is_object_dtype(data[col]):
+            unique_classes = data[col].nunique()
+            types_data.append({"type": "cat", "dim": unique_classes, "nclass": unique_classes})
+        elif pd.api.types.is_integer_dtype(data[col]):
+            # Ordinal column
+            unique_classes = data[col].nunique()
+            types_data.append({"type": "ordinal", "dim": unique_classes, "nclass": unique_classes})
+        else:
+            raise ValueError(f"Unsupported column type for column '{col}'.")
+
+    # Write to CSV
+    with open(types_file, mode='w', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=["type", "dim", "nclass"])
+        writer.writeheader()
+        writer.writerows(types_data)
+
+    print(f"`types.csv` generated and saved to {types_file}.")
