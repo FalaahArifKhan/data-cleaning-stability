@@ -588,8 +588,8 @@ def impute_with_hivae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: 
     X_tests_array_lst = [X_test.to_numpy() for X_test in X_tests_imputed_lst]
 
     # Generate missing masks
-    mask_train = ~np.isnan(X_train_array)
-    masks_tests_lst = [~np.isnan(X_test_array) for X_test_array in X_tests_array_lst]
+    mask_train = ~pd.isna(X_train_array)
+    masks_tests_lst = [~pd.isna(X_test_array) for X_test_array in X_tests_array_lst]
 
     # Initialize the HIVAE imputer
     imputer = HIVAEImputer(
