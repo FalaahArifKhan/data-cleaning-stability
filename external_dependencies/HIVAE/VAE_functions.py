@@ -8,7 +8,7 @@ Created on Mon Apr 16 10:59:14 2018
 
 import csv
 import tensorflow as tf
-import loglik_models_missing_normalize
+import external_dependencies.HIVAE.loglik_models_missing_normalize as loglik_models_missing_normalize
 import numpy as np
 
 def place_holder_types(types_file, batch_size):
