@@ -85,6 +85,8 @@ def get_scatter_plot_data(missingness_types: list, dataset_to_column_name: dict,
     merged_df_2 = pd.merge(merged_df_1, min_max_df,
                            on=['Missingness_Type'],
                            how='left')
+    # merged_df_2 = merged_df_2[merged_df_2['Null_Imputer_Name'].isin(['deletion', 'median-mode', 'median-dummy', 'miss_forest',
+    #                                                                  'k_means_clustering', 'datawig', 'automl'])]
 
     return merged_df_2, new_imputation_quality_metric
 
@@ -133,13 +135,13 @@ def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
 
     # y_min, y_max = -2.0, 4.0 # for KL Divergence Pred Difference'
     scatter_plot = (
-        alt.Chart().mark_point(size=100).encode(
+        alt.Chart().mark_point(size=200).encode(
             x=alt.X(f'{model_performance_metric_name}:Q',
                     axis=alt.Axis(title=model_performance_metric_title)),
             y=alt.Y(f'{extended_imputation_quality_metric_name}:Q',
                     axis=alt.Axis(title=imputation_metric_title),
                     scale=alt.Scale(domain=[y_min, y_max])),
-            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order),
+            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order, scale=alt.Scale(scheme='category20')),
             shape=alt.Shape(f"{shape_by}:N", title=None),
             # column=alt.Column('Missingness_Type:N', title=None, sort=columns_order)
         )
@@ -193,10 +195,10 @@ def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
             labelOrient='top',
             labelPadding=5,
             labelFontWeight='bold',
-            labelFontSize=base_font_size + 6,
-            titleFontSize=base_font_size + 6,
+            labelFontSize=base_font_size + 1,
+            titleFontSize=base_font_size + 1,
         ).configure_axis(
-            labelFontSize=base_font_size + 4,
+            labelFontSize=base_font_size,
             titleFontSize=base_font_size + 6,
             labelFontWeight='normal',
             titleFontWeight='normal',
