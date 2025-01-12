@@ -7,7 +7,8 @@ Created on Mon Apr 16 10:59:14 2018
 """
 
 import csv
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import external_dependencies.HIVAE.loglik_models_missing_normalize as loglik_models_missing_normalize
 import numpy as np
 
@@ -17,17 +18,19 @@ def place_holder_types(types_file, batch_size):
     with open(types_file) as f:
         types_list = [{k: v for k, v in row.items()}
         for row in csv.DictReader(f, skipinitialspace=True)]
-        
+    
+    for i in range(len(types_list)):
+        types_list[i]['dim'] = int(types_list[i]['dim'])
     #Create placeholders for every data type, with appropriate dimensions
     batch_data_list = []
     for i in range(len(types_list)):
-        batch_data_list.append(tf.placeholder(tf.float32, shape=(batch_size,types_list[i]['dim'])))
+        batch_data_list.append(tf.placeholder(tf.float32, shape=(batch_size,int(types_list[i]['dim']))))
     tf.concat(batch_data_list, axis=1)
     
     #Create placeholders for every missing data type, with appropriate dimensions
     batch_data_list_observed = []
     for i in range(len(types_list)):
-        batch_data_list_observed.append(tf.placeholder(tf.float32, shape=(batch_size,types_list[i]['dim'])))
+        batch_data_list_observed.append(tf.placeholder(tf.float32, shape=(batch_size,int(types_list[i]['dim']))))
     tf.concat(batch_data_list_observed, axis=1)
         
     #Create placeholders for the missing data indicator variable

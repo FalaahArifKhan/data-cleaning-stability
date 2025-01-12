@@ -11,8 +11,9 @@ Created on Tue Jan 23 16:23:35 2018
 ## 2 fully connected layers at both encoding and decoding
 # hidden_dim is the number of neurons of the first hidden layer
 
-import tensorflow as tf
-import VAE_functions
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+import external_dependencies.HIVAE.VAE_functions as VAE_functions
         
 def encoder(X_list, miss_list, batch_size, z_dim, s_dim, tau):
     
