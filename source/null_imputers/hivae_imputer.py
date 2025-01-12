@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+import pandas as pd
 import time
 import os
 
@@ -67,21 +68,37 @@ class HIVAEImputer:
     # -------------------------------------------------------------------------
     def _encode_data(self, X, types_dict):
         """
-        Encodes raw data X (shape [N, D]) into expanded form (shape [N, sum_of_dims])
+        Encodes raw data X (shape [N, D]) into an expanded form (shape [N, sum_of_dims])
         depending on each variable's type in types_dict.
 
         For example:
-          - 'cat': one-hot
-          - 'ordinal': "thermometer" encoding
-          - 'count': direct pass, but if min=0 => we might do +1 if needed
-          - 'pos' or 'real': direct pass
+        - 'cat' => one-hot encoding
+        - 'ordinal' => "thermometer" encoding
+        - 'count' => direct pass (adding +1 if minimum=0)
+        - 'real' or 'pos' => direct pass as a single column
+
+        Assumes X can contain numeric or string-like entries for categorical columns.
+        Uses pd.Categorical(...) to map unique category strings to integer codes.
+
+        Args:
+            X: np.array of shape [N, D] (the raw data).
+            types_dict: list of length D, each element is a dict like:
+                {
+                'name': <column name>,
+                'type': <'cat'|'ordinal'|'count'|'real'|'pos'|...>,
+                'dim': <integer dimension of this variable in encoded form>
+                }
 
         Returns:
-            X_enc: np.array, shape [N, total_expanded_dim]
+            X_enc: np.array, shape [N, total_expanded_dim],
+                the concatenation of each encoded column.
         """
         N, D = X.shape
+
         if D != len(types_dict):
-            raise ValueError(f"X has {D} columns but types_dict has {len(types_dict)} entries.")
+            raise ValueError(
+                f"X has {D} columns but types_dict has {len(types_dict)} entries."
+            )
 
         encoded_cols = []
 
@@ -89,66 +106,66 @@ class HIVAEImputer:
             col_type = col_info['type']
             col_dim = int(col_info['dim'])
 
-            # Extract this column from X
+            # Extract this column's raw data from X
             col_data = X[:, col_idx]
 
             if col_type == 'cat':
-                # Convert to int, then one-hot
-                # If col_data has categories like {0,1,2} we do one-hot of length col_dim
-                # (Assumes col_dim matches #unique categories).
-                col_data_int = col_data.astype(int)
-                # Guard: if values exceed col_dim-1, or negative, fix or raise error
-                one_hot = np.zeros((N, col_dim))
+                # 1) Convert column to strings (in case it's numeric or mixed).
+                # 2) Convert to pd.Categorical => integer codes in [0..n_categories-1].
+                col_data_str = col_data.astype(str)  
+                cat_series = pd.Categorical(col_data_str)
+                col_data_int = cat_series.codes  # -1 if unknown/unseen category
+
+                # 3) Create a one-hot encoding of size col_dim.
+                #    We assume 'dim' matches the number of known categories.
+                one_hot = np.zeros((N, col_dim), dtype=float)
                 for i in range(N):
                     cat_val = col_data_int[i]
-                    if 0 <= cat_val < col_dim:
-                        one_hot[i, cat_val] = 1.0
-                    else:
-                        # If there's out-of-bound category => clamp or raise an error
-                        pass
+                    # If cat_val = -1 or >= col_dim => clamp to 0 (or handle otherwise).
+                    if cat_val < 0 or cat_val >= col_dim:
+                        cat_val = 0
+                    one_hot[i, cat_val] = 1.0
+
                 encoded_cols.append(one_hot)
 
             elif col_type == 'ordinal':
-                # "Thermometer" encoding for ordinal in {0,1,...,col_dim-1}
-                # If col_dim=5, then possible categories are [0..4].
-                # We expand to shape (N, col_dim). Each row i has 1's up to the category index, else 0.
-                # But the original HVAE code uses a cumsum approach with an extra column.
-                # We'll replicate the same logic used in read_functions:
-                #    we create array (N, 1 + col_dim), fill the first col with 1,
-                #    fill index (1 + cat_val) with -1, then cumsum along axis=1, drop the last col.
-                col_data_int = col_data.astype(int)
-                # Construct an array of shape (N, 1 + col_dim)
+                # Ordinal => "thermometer" encoding, as in the original code.
+                # 1) Convert strings to categorical codes
+                col_data_str = col_data.astype(str)
+                cat_series = pd.Categorical(col_data_str)
+                col_data_int = cat_series.codes  # -1 if unknown
+
+                # 2) Build array of shape (N, 1 + col_dim)
+                #    The original approach sets arr[:,0] = 1, then sets arr[i, 1+cat_val] = -1,
+                #    then takes a cumsum along axis=1, and finally drops the last column.
                 arr = np.zeros((N, 1 + col_dim))
-                arr[:, 0] = 1.0  # first col = 1
+                arr[:, 0] = 1.0
                 for i in range(N):
                     cat_val = col_data_int[i]
-                    # clamp cat_val to [0..col_dim-1] if needed
-                    if cat_val < 0: 
+                    if cat_val < 0:
                         cat_val = 0
                     elif cat_val >= col_dim:
                         cat_val = col_dim - 1
                     arr[i, 1 + cat_val] = -1.0
+
                 arr = np.cumsum(arr, axis=1)
-                # Drop last column => shape (N, col_dim)
-                thermometer = arr[:, :-1]
+                thermometer = arr[:, :-1]  # shape (N, col_dim)
+
                 encoded_cols.append(thermometer)
 
             elif col_type == 'count':
-                # read_functions suggests if min(data[:,i]) == 0 => add +1
-                # We'll replicate that logic if needed. 
+                # If min=0 => add +1 (as in original read_functions code)
                 if np.min(col_data) == 0:
                     col_data_adj = col_data + 1.0
                 else:
                     col_data_adj = col_data
-                # shape (N,1)
                 encoded_cols.append(col_data_adj.reshape(-1, 1))
 
             else:
-                # 'real', 'pos', or anything else => direct pass as (N,1) or (N,col_dim)
-                # E.g., 'pos' might do log transform, but in original code we just store as (N,1).
+                # 'real', 'pos', etc. => direct pass as (N, 1) or (N, col_dim).
                 encoded_cols.append(col_data.reshape(-1, 1))
 
-        # Concatenate all expansions
+        # Concatenate all expansions into a single 2D array
         X_enc = np.concatenate(encoded_cols, axis=1)
         return X_enc
 
