@@ -17,12 +17,13 @@ print(sys.path)
 import tensorflow as tf
 import numpy as np
 import external_dependencies.HIVAE.VAE_functions as VAE_functions
+import external_dependencies.HIVAE.model_HIVAE_inputDropout as model
 
 def HVAE_graph(model_name, types_file, batch_size, learning_rate=1e-3, z_dim=2, y_dim=1, s_dim=2, y_dim_partition=[]):
     
     #We select the model for the VAE
     print('[*] Importing model: ' + model_name)
-    model = __import__(model_name)
+    # model = __import__(model_name)
     
     #Load placeholders
     print('[*] Defining placeholders')
