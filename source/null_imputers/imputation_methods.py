@@ -593,11 +593,11 @@ def impute_with_hivae(
     X_tests_imputed_lst = [df.copy() for df in X_tests_with_nulls_lst]
 
     # 5) (Optional) Align categories across train & test sets
-    X_train_imputed, X_tests_imputed_lst = encode_dataset_for_gain(
-        X_train=X_train_imputed,
-        X_tests_lst=X_tests_imputed_lst,
-        categorical_columns=categorical_columns
-    )
+    # X_train_imputed, X_tests_imputed_lst = encode_dataset_for_gain(
+    #     X_train=X_train_imputed,
+    #     X_tests_lst=X_tests_imputed_lst,
+    #     categorical_columns=categorical_columns
+    # )
 
     # 6) Convert to NumPy and build "mask" arrays (True = observed, False = missing)
     #    But note that HIVAEImputer expects 1=observed, 0=missing (bool or int).
@@ -655,11 +655,11 @@ def impute_with_hivae(
         X_tests_imputed_lst.append(df_imp)
 
     # 13) Decode the categorical columns (optional). Here, we just restore them as strings:
-    X_train_imputed, X_tests_imputed_lst = decode_dataset_for_gain(
-        X_train=X_train_imputed,
-        X_tests_lst=X_tests_imputed_lst,
-        categorical_columns=categorical_columns
-    )
+    # X_train_imputed, X_tests_imputed_lst = decode_dataset_for_gain(
+    #     X_train=X_train_imputed,
+    #     X_tests_lst=X_tests_imputed_lst,
+    #     categorical_columns=categorical_columns
+    # )
 
     # 14) Prepare the dictionary of hyperparams (null imputer parameters)
     null_imputer_params_dct = {col: hyperparams for col in X_train_with_nulls.columns}
