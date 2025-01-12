@@ -36,7 +36,7 @@ class HIVAEImputer:
             dict: Dictionary containing TensorFlow nodes for input, output, loss, etc.
         """
         graph_nodes = graph_new.HVAE_graph(
-            model_name='HIVAE',
+            model_name='model_HIVAE_inputDropout',
             types_file=types_file,
             batch_size=self.batch_size,
             learning_rate=self.learning_rate,

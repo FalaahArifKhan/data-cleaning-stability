@@ -7,8 +7,11 @@ Graph definition for all models
 
 @author: anazabal, olmosUC3M, ivaleraM
 """
+import os
 import sys
+
 print(sys.path)
+
 import tensorflow as tf
 import numpy as np
 import external_dependencies.HIVAE.VAE_functions as VAE_functions
