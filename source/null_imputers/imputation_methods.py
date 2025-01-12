@@ -593,12 +593,12 @@ def impute_with_hivae(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: 
 
     # Initialize the HIVAE imputer
     imputer = HIVAEImputer(
-        dim_latent_z=hyperparams.get('dim_latent_z', 2),
-        dim_latent_y=hyperparams.get('dim_latent_y', 3),
-        dim_latent_s=hyperparams.get('dim_latent_s', 4),
-        batch_size=hyperparams.get('batch_size', 128),
-        epochs=hyperparams.get('epochs', 100),
-        learning_rate=hyperparams.get('learning_rate', 1e-3)
+        dim_latent_z=kwargs["hyperparams"].get('dim_latent_z', 2),
+        dim_latent_y=kwargs["hyperparams"].get('dim_latent_y', 3),
+        dim_latent_s=kwargs["hyperparams"].get('dim_latent_s', 4),
+        batch_size=kwargs["hyperparams"].get('batch_size', 128),
+        epochs=kwargs["hyperparams"].get('epochs', 100),
+        learning_rate=kwargs["hyperparams"].get('learning_rate', 1e-3)
     )
 
     # Build the HI-VAE model
