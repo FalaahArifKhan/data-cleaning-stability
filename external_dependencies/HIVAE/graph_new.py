@@ -14,7 +14,8 @@ print(f"os.getcwd(): {os.getcwd()}")
 sys.path.append(os.getcwd())
 print(sys.path)
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import numpy as np
 import external_dependencies.HIVAE.VAE_functions as VAE_functions
 import external_dependencies.HIVAE.model_HIVAE_inputDropout as model
