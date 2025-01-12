@@ -1,5 +1,6 @@
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import pandas as pd
 import time
 import os
@@ -367,12 +368,13 @@ class HIVAEImputer:
                     elbo = avg_loss - avg_kl_z - avg_kl_s
                     print(
                         f"Epoch: [{epoch+1}/{self.epochs}]  "
-                        f"time: {elapsed:.1f}, "
-                        f"train_loglik: {avg_loss:.6f}, "
-                        f"KL_z: {avg_kl_z:.6f}, "
-                        f"KL_s: {avg_kl_s:.6f}, "
-                        f"ELBO: {elbo:.6f}"
-                    )
+                        f"time: {elapsed:.1f}, ")
+                    #    f"train_loglik: {avg_loss.item():.6f}, "
+                    #    f"KL_z: {avg_kl_z.item():.6f}, "
+                    #    f"KL_s: {avg_kl_s.item():.6f}, "
+                    #    f"ELBO: {elbo.item():.6f}"
+                    #)
+
 
             # Save model
             saver.save(sess, self.checkpoint_path)
