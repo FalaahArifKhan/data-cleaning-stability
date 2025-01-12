@@ -1,25 +1,25 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "diabetes edit_gain exp1_mcar3 1,2,3,4,5,6"
-    "diabetes edit_gain exp1_mar3 1,2,3,4,5,6"
-    "diabetes edit_gain exp1_mnar3 1,2,3,4,5,6"
-    "diabetes edit_gain mixed_exp 1,2,3,4,5,6"
-
-    "german edit_gain exp1_mcar3 1,2,3,4,5,6"
-    "german edit_gain exp1_mar3 1,2,3,4,5,6"
-    "german edit_gain exp1_mnar3 1,2,3,4,5,6"
-    "german edit_gain mixed_exp 1,2,3,4,5,6"
-
-#    "law_school edit_gain exp1_mcar3 1,2,3,4,5,6"
-#    "law_school edit_gain exp1_mar3 1,2,3,4,5,6"
-#    "law_school edit_gain exp1_mnar3 1,2,3,4,5,6"
-#    "law_school edit_gain mixed_exp 1,2,3,4,5,6"
+#    "diabetes edit_gain exp1_mcar3 1,2,3,4,5,6"
+#    "diabetes edit_gain exp1_mar3 1,2,3,4,5,6"
+#    "diabetes edit_gain exp1_mnar3 1,2,3,4,5,6"
+#    "diabetes edit_gain mixed_exp 1,2,3,4,5,6"
 #
-#    "folk edit_gain exp1_mcar3 1,2,3,4,5,6"
-#    "folk edit_gain exp1_mar3 1,2,3,4,5,6"
-#    "folk edit_gain exp1_mnar3 1,2,3,4,5,6"
-#    "folk edit_gain mixed_exp 1,2,3,4,5,6"
-#
+#    "german edit_gain exp1_mcar3 1,2,3,4,5,6"
+#    "german edit_gain exp1_mar3 1,2,3,4,5,6"
+#    "german edit_gain exp1_mnar3 1,2,3,4,5,6"
+#    "german edit_gain mixed_exp 1,2,3,4,5,6"
+
+    "law_school edit_gain exp1_mcar3 1,2,3,4,5,6"
+    "law_school edit_gain exp1_mar3 1,2,3,4,5,6"
+    "law_school edit_gain exp1_mnar3 1,2,3,4,5,6"
+    "law_school edit_gain mixed_exp 1,2,3,4,5,6"
+
+    "folk edit_gain exp1_mcar3 1,2,3,4,5,6"
+    "folk edit_gain exp1_mar3 1,2,3,4,5,6"
+    "folk edit_gain exp1_mnar3 1,2,3,4,5,6"
+    "folk edit_gain mixed_exp 1,2,3,4,5,6"
+
 #    "bank edit_gain exp1_mcar3 1,2,3"
 #    "bank edit_gain exp1_mcar3 4,5,6"
 #    "bank edit_gain exp1_mar3 1,2,3"
