@@ -10,6 +10,8 @@ Graph definition for all models
 import os
 import sys
 
+print(f"os.getcwd(): {os.getcwd()}")
+sys.path.append(os.getcwd())
 print(sys.path)
 
 import tensorflow as tf
