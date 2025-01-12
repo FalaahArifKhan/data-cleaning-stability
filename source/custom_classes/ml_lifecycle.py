@@ -187,6 +187,7 @@ class MLLifecycle:
         # Use a method, kwargs, and hyperparams from NULL_IMPUTERS_CONFIG
         imputation_method = NULL_IMPUTERS_CONFIG[null_imputer_name]["method"]
         imputation_kwargs = NULL_IMPUTERS_CONFIG[null_imputer_name]["kwargs"]
+        imputation_kwargs.update({'evaluation_scenario': evaluation_scenario})
         imputation_kwargs.update({'experiment_seed': experiment_seed})
         imputation_kwargs.update({'dataset_name': self.dataset_name})
 
