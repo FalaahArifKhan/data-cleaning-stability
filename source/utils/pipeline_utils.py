@@ -216,3 +216,22 @@ def generate_types_csv(data: pd.DataFrame, types_file: str):
 
     print(f"`types.csv` generated and saved to {types_file}.")
 
+   
+def parse_types_csv_file(types_file):
+    """
+    Utility to parse 'types.csv' into a Python list of dicts.
+    Each row in the CSV is typically:
+       name,type,dim
+    Example row:
+       col0,cat,3
+    This returns:
+       [{'name': 'col0', 'type': 'cat', 'dim': 3}, ...]
+    """
+    types_dict = []
+    with open(types_file, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            # Convert 'dim' to int
+            row['dim'] = int(row['dim'])
+            types_dict.append(row)
+    return types_dict
