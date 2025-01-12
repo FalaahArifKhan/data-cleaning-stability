@@ -573,6 +573,7 @@ def impute_with_hivae(
     types_file = kwargs.get('types_file', 'types.csv')
     if not os.path.exists(types_file):
         # Generate a minimal CSV describing each column's "type" and "dim"
+        delete_file = True
         generate_types_csv(X_train_with_nulls, types_file)
 
     # 2) Parse that CSV to get types_dict
@@ -663,6 +664,9 @@ def impute_with_hivae(
 
     # 14) Prepare the dictionary of hyperparams (null imputer parameters)
     null_imputer_params_dct = {col: hyperparams for col in X_train_with_nulls.columns}
+
+    if delete_file:
+        os.remove(types_file)
 
     # 15) Return final results
     return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct

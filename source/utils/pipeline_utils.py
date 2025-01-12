@@ -168,53 +168,34 @@ def onehot_decode_dataset(df, encoder, init_cat_columns):
     df_dec = pd.concat([df_dec[num_columns], df_dec_cat], axis=1)
     return df_dec
 
-def generate_types_csv(data: pd.DataFrame, types_file: str):
+def generate_types_csv(df: pd.DataFrame, output_path: str):
     """
-    Generate a types.csv file based on the dataset's structure.
+    Example stub that writes a minimal 'types.csv' given a DataFrame.
+    You must adapt it to match your columns, data types, and dimension counting.
+    E.g. for numeric columns => type='real', dim=1,
+         for categorical => type='cat', dim=#unique_categories, etc.
     """
-    types_data = []
+    import csv
 
-    for col in data.columns:
-        # 1. Check if it's a numeric dtype
-        if pd.api.types.is_numeric_dtype(data[col]):
-            # 2. Drop any NaNs before checking integer-ness
-            col_nonnull = data[col].dropna()
-            
-            # 3. Check if all non-NaN values are integer-like
-            all_values_are_integers = (col_nonnull == col_nonnull.astype(int)).all()
-            
-            # 4. Check if all values are >= 0 (for possible "count" type)
-            if data[col].min() >= 0 and all_values_are_integers:
-                if data[col].nunique() == 2:
-                    # Binary categorical column
-                    types_data.append({"type": "cat", "dim": 2, "nclass": 2})
-                else:
-                    # Count column
-                    types_data.append({"type": "count", "dim": 1, "nclass": None})
-            else:
-                # Real-valued column
-                types_data.append({"type": "real", "dim": 1, "nclass": None})
-        
-        # Check for categorical/object dtypes
-        elif pd.api.types.is_categorical_dtype(data[col]) or pd.api.types.is_object_dtype(data[col]):
-            unique_classes = data[col].nunique()
-            types_data.append({"type": "cat", "dim": unique_classes, "nclass": unique_classes})
-        
-        # Check for (strict) integer dtype (ordinal)
-        elif pd.api.types.is_integer_dtype(data[col]):
-            unique_classes = data[col].nunique()
-            types_data.append({"type": "ordinal", "dim": unique_classes, "nclass": unique_classes})
-        
+    # Simple guess: if it's numeric => 'real', dim=1;
+    # if it's object/category => 'cat', dim=number of unique non-null categories
+    rows = []
+    for col in df.columns:
+        if pd.api.types.is_numeric_dtype(df[col]):
+            # e.g., treat as real
+            rows.append({'name': col, 'type': 'real', 'dim': 1})
         else:
-            raise ValueError(f"Unsupported column type for column '{col}'.")
+            # treat as cat
+            unique_vals = df[col].dropna().unique()
+            cat_dim = len(unique_vals) if len(unique_vals) > 1 else 2
+            rows.append({'name': col, 'type': 'cat', 'dim': cat_dim})
 
-    # Write the CSV
-    with open(types_file, mode='w', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=["type", "dim", "nclass"])
+    with open(output_path, 'w', newline='', encoding='utf-8') as f:
+        fieldnames = ['name', 'type', 'dim']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerows(types_data)
-
-    print(f"`types.csv` generated and saved to {types_file}.")
+        for r in rows:
+            writer.writerow(r)
 
    
 def parse_types_csv_file(types_file):
