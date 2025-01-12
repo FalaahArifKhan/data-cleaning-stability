@@ -133,7 +133,7 @@ NULL_IMPUTERS_CONFIG = {
     ErrorRepairMethod.hivae.value: {
         "method": impute_with_hivae,
         "kwargs": {
-            "hyperparams": {
+            "training_hyperparams": {
                 "dim_latent_z": 10,
                 "dim_latent_y": 5,
                 "dim_latent_s": 10,
