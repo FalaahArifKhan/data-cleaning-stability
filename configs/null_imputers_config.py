@@ -77,8 +77,9 @@ NULL_IMPUTERS_CONFIG = {
     ErrorRepairMethod.edit_gain.value: {
         "method": impute_with_edit_gain,
         "kwargs": {
-            "batch_size": 8,
+            "batch_size": 128,
             "alpha": 1,
+            "epoch": 30,
             "initial_sample_size": 6000,
             "validation_size": 6000,
         }

@@ -1,6 +1,8 @@
 import os
 import copy
 import random
+import time
+
 import numpy as np
 import pandas as pd
 import torch
@@ -333,13 +335,11 @@ def impute_with_nomi(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: l
 def impute_with_edit_gain(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_lst: list,
                           numeric_columns_with_nulls: list, categorical_columns_with_nulls: list,
                           hyperparams: dict, **kwargs):
-    from source.null_imputers.edit_gain_imputer import EditGainImputer
+    from source.null_imputers.edit_gain_imputer import tune_edit_gain
     os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
-    print("X_train_with_nulls.head()\n:", X_train_with_nulls.head())
-    print("X_tests_with_nulls_lst[0].head()\n:", X_tests_with_nulls_lst[0].head())
-
     dataset_name = kwargs['dataset_name']
+    evaluation_scenario = kwargs['evaluation_scenario']
     seed = kwargs['experiment_seed']
     random.seed(seed)
 
@@ -355,16 +355,19 @@ def impute_with_edit_gain(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
     ]
 
     # Apply an imputer
-    imputer = EditGainImputer(batch_size=kwargs['batch_size'],
-                              alpha=kwargs['alpha'],
-                              initial_sample_size=kwargs['initial_sample_size'],
-                              validation_size=kwargs['validation_size'])
-    imputer.fit(X_train_encoded.to_numpy())
-    X_train_imputed_np = imputer.transform(X_train_encoded.to_numpy(), cat_indices_with_nulls)
+    imputer, X_train_imputed_np = tune_edit_gain(X=X_train_encoded.to_numpy(),
+                                                 cat_indices_with_nulls=cat_indices_with_nulls,
+                                                 epochs=kwargs['epoch'],
+                                                 initial_sample_size=kwargs['initial_sample_size'],
+                                                 validation_size=kwargs['validation_size'],
+                                                 dataset_name=dataset_name,
+                                                 evaluation_scenario=evaluation_scenario,
+                                                 seed=seed)
+    start_inference = time.time()
     X_tests_imputed_np_lst = list(map(lambda X_test_encoded:
                                       imputer.transform(X_test_encoded.to_numpy(), cat_indices_with_nulls),
-                                      X_tests_encoded_lst)
-                                  )
+                                      X_tests_encoded_lst))
+    print(f"Inference time: {time.time() - start_inference}")
 
     # Convert numpy arrays back to DataFrames
     X_train_imputed = pd.DataFrame(X_train_imputed_np, columns=X_train_with_nulls.columns, index=X_train_with_nulls.index)
@@ -374,6 +377,8 @@ def impute_with_edit_gain(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
     ]
 
     # Decode categories back
+    print("X_train_imputed.head():\n", X_train_imputed.head())
+
     X_train_imputed = decode_dataset_for_missforest(X_train_imputed, cat_encoders, dataset_name=dataset_name)
     X_tests_imputed_lst = [
         decode_dataset_for_missforest(X_test_imputed, cat_encoders, dataset_name=dataset_name)
@@ -386,9 +391,6 @@ def impute_with_edit_gain(X_train_with_nulls: pd.DataFrame, X_tests_with_nulls_l
     X_tests_imputed_final_lst = [
         copy.deepcopy(X_test_with_nulls).combine_first(X_test_imputed) for X_test_with_nulls, X_test_imputed in zip(X_tests_with_nulls_lst, X_tests_imputed_lst)
     ]
-
-    print("X_train_imputed_final.head()\n:", X_train_imputed_final.head())
-    print("X_tests_imputed_final_lst[0].head()\n:", X_tests_imputed_final_lst[0].head())
 
     hyperparams = {
         "batch_size": imputer.mb_size,
