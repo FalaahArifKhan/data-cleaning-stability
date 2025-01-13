@@ -568,6 +568,7 @@ def impute_with_hivae(
     Returns:
         tuple: (X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct)
     """
+    print("X_train_with_nulls.head():\n", X_train_with_nulls.head())
 
     # 1) Grab or create the types_file
     types_file = kwargs.get('types_file', 'types.csv')
@@ -635,6 +636,7 @@ def impute_with_hivae(
         mask=mask_train,
         types_dict=types_dict
     )
+    print("X_train_imputed_array.head():\n", X_train_imputed_array[:10])
 
     # 11) Impute each test set
     X_tests_imputed_array_lst = []
@@ -678,4 +680,5 @@ def impute_with_hivae(
     ]
 
     # 15) Return final results
+    print("X_train_imputed_final.head():\n", X_train_imputed_final.head())
     return X_train_imputed_final, X_tests_imputed_final_lst, null_imputer_params_dct
