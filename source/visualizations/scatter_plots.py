@@ -85,8 +85,8 @@ def get_scatter_plot_data(missingness_types: list, dataset_to_column_name: dict,
     merged_df_2 = pd.merge(merged_df_1, min_max_df,
                            on=['Missingness_Type'],
                            how='left')
-    # merged_df_2 = merged_df_2[merged_df_2['Null_Imputer_Name'].isin(['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-    #                                                                  'k_means_clustering', 'datawig', 'automl'])]
+    merged_df_2 = merged_df_2[merged_df_2['Null_Imputer_Name'].isin(['deletion', 'median-mode', 'median-dummy', 'miss_forest',
+                                                                     'k_means_clustering', 'datawig', 'automl', 'nomi', 'mnar_pvae'])]
 
     return merged_df_2, new_imputation_quality_metric
 
@@ -141,7 +141,7 @@ def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
             y=alt.Y(f'{extended_imputation_quality_metric_name}:Q',
                     axis=alt.Axis(title=imputation_metric_title),
                     scale=alt.Scale(domain=[y_min, y_max])),
-            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order, scale=alt.Scale(scheme='category20')),
+            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order, scale=alt.Scale(scheme='category10')),
             shape=alt.Shape(f"{shape_by}:N", title=None),
             # column=alt.Column('Missingness_Type:N', title=None, sort=columns_order)
         )
