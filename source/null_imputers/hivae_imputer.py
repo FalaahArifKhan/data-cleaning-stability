@@ -427,11 +427,15 @@ class HIVAEImputer:
                 feed_dict[self.tf_nodes['tau_GS']] = tau
 
                 # Run the "samples_test" node to get the imputed data in encoded space
-                batch_imputed_enc = sess.run(
-                    self.tf_nodes['samples_test'],
+                samples_test, log_p_x_test, log_p_x_missing_test, test_params = sess.run(
+                    [
+                        self.tf_nodes['samples_test'], self.tf_nodes['log_p_x_test'], 
+                        self.tf_nodes['log_p_x_missing_test'], self.tf_nodes['test_params']
+                    ],
                     feed_dict=feed_dict
                 )
-                imputed_enc_list.append(batch_imputed_enc)
+                
+                imputed_enc_list.append(samples_test)
 
         # Concatenate batch results
         imputed_enc = np.concatenate(imputed_enc_list, axis=0)
