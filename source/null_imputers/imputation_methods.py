@@ -571,6 +571,7 @@ def impute_with_hivae(
 
     # 1) Grab or create the types_file
     types_file = kwargs.get('types_file', 'types.csv')
+    delete_file = False
     if not os.path.exists(types_file):
         # Generate a minimal CSV describing each column's "type" and "dim"
         delete_file = True
@@ -648,11 +649,12 @@ def impute_with_hivae(
     # 12) Convert the imputed arrays back to DataFrames
     X_train_imputed = pd.DataFrame(
         X_train_imputed_array,
-        columns=X_train_with_nulls.columns
+        columns=X_train_with_nulls.columns,
+        index=X_train_with_nulls.index,
     )
     X_tests_imputed_lst = []
     for X_test_imputed_arr, X_test_orig_df in zip(X_tests_imputed_array_lst, X_tests_with_nulls_lst):
-        df_imp = pd.DataFrame(X_test_imputed_arr, columns=X_test_orig_df.columns)
+        df_imp = pd.DataFrame(X_test_imputed_arr, columns=X_test_orig_df.columns, index=X_test_orig_df.index)
         X_tests_imputed_lst.append(df_imp)
 
     # 13) Decode the categorical columns (optional). Here, we just restore them as strings:
