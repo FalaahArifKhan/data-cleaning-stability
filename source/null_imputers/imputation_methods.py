@@ -669,6 +669,13 @@ def impute_with_hivae(
 
     if delete_file:
         os.remove(types_file)
+        
+    # Replace null values in df1 with values from df2
+    X_train_imputed_final = copy.deepcopy(X_train_with_nulls)
+    X_train_imputed_final = X_train_imputed_final.combine_first(X_train_imputed)
+    X_tests_imputed_final_lst = [
+        copy.deepcopy(X_test_with_nulls).combine_first(X_test_imputed) for X_test_with_nulls, X_test_imputed in zip(X_tests_with_nulls_lst, X_tests_imputed_lst)
+    ]
 
     # 15) Return final results
-    return X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct
+    return X_train_imputed_final, X_tests_imputed_final_lst, null_imputer_params_dct
