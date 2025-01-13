@@ -381,6 +381,21 @@ class HIVAEImputer:
             self.trained = True
             print("Training finished. Model saved at:", self.checkpoint_path)
 
+    def _samples_concatenation(samples):
+        for i,batch in enumerate(samples):
+            if i == 0:
+                samples_x = np.concatenate(batch['x'],1)
+                samples_y = batch['y']
+                samples_z = batch['z']
+                samples_s = batch['s']
+            else:
+                samples_x = np.concatenate([samples_x,np.concatenate(batch['x'],1)],0)
+                samples_y = np.concatenate([samples_y,batch['y']],0)
+                samples_z = np.concatenate([samples_z,batch['z']],0)
+                samples_s = np.concatenate([samples_s,batch['s']],0)
+            
+        return samples_s, samples_z, samples_y, samples_x    
+    
     def transform(self, X, mask, types_dict):
         """
         Impute/transform on test data. Restores the trained model, encodes X, 
@@ -436,11 +451,13 @@ class HIVAEImputer:
                 )
                 
                 imputed_enc_list.append(samples_test)
+                
+        samples_s, samples_z, samples_y, samples_x = self._samples_concatenation(imputed_enc_list)
 
         # Concatenate batch results
-        imputed_enc = np.concatenate(imputed_enc_list, axis=0)
+        # imputed_enc = np.concatenate(imputed_enc_list, axis=0)
         # Trim to original N if there's any leftover
-        imputed_enc = imputed_enc[:N]
+        imputed_enc = samples_x[:N]
 
         # Decode back to original dimension
         X_imputed = self._decode_data(imputed_enc, types_dict)
