@@ -1,9 +1,8 @@
+import time
+import pandas as pd
 import numpy as np
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
-import pandas as pd
-import time
-import os
 
 import external_dependencies.HIVAE.graph_new as graph_new
 
@@ -381,7 +380,7 @@ class HIVAEImputer:
             self.trained = True
             print("Training finished. Model saved at:", self.checkpoint_path)
 
-    def _samples_concatenation(samples):
+    def _samples_concatenation(self, samples):
         for i,batch in enumerate(samples):
             if i == 0:
                 samples_x = np.concatenate(batch['x'],1)
