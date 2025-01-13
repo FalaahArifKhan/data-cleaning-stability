@@ -575,6 +575,8 @@ def impute_with_hivae(
         # Generate a minimal CSV describing each column's "type" and "dim"
         delete_file = True
         generate_types_csv(X_train_with_nulls, types_file)
+    else:
+        delete_file = False
 
     # 2) Parse that CSV to get types_dict
     types_dict = parse_types_csv_file(types_file)  # e.g. [{'name':..., 'type':..., 'dim':...}, ...]
