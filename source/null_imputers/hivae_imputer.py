@@ -321,10 +321,6 @@ class HIVAEImputer:
                 tau = max(1.0 - 0.01 * epoch, 1e-3)  # example schedule
                 tau2 = min(0.001 * epoch, 1.0)
 
-                avg_loss = 0.0
-                avg_kl_s = 0.0
-                avg_kl_z = 0.0
-
                 # Mini-batch training
                 batch_count = 0
                 for batch_data_list, batch_mask in self._batch_iterator(X_enc_epoch, mask_epoch, types_dict):
@@ -342,32 +338,19 @@ class HIVAEImputer:
                         feed_dict[self.tf_nodes['tau_var']] = tau2
 
                     # Run optimizer and get losses
-                    _, loss_re, kl_z, kl_s = sess.run(
-                        [
-                            self.tf_nodes['optim'],
-                            self.tf_nodes['loss_re'],
-                            self.tf_nodes['KL_z'],
-                            self.tf_nodes['KL_s']
-                        ],
+                    _,loss,KL_z,KL_s,samples,log_p_x,log_p_x_missing,p_params,q_params  = sess.run([
+                        self.tf_nodes['optim'], self.tf_nodes['loss_re'], self.tf_nodes['KL_z'], self.tf_nodes['KL_s'], self.tf_nodes['samples'],
+                        self.tf_nodes['log_p_x'], self.tf_nodes['log_p_x_missing'],self.tf_nodes['p_params'],self.tf_nodes['q_params']],
                         feed_dict=feed_dict
                     )
 
-                    avg_loss += loss_re
-                    avg_kl_z += kl_z
-                    avg_kl_s += kl_s
-                    batch_count += 1
-
-                # Average stats
-                avg_loss /= batch_count
-                avg_kl_z /= batch_count
-                avg_kl_s /= batch_count
-
                 if (epoch + 1) % display_epoch == 0:
                     elapsed = time.time() - start_time
-                    elbo = avg_loss - avg_kl_z - avg_kl_s
                     print(
                         f"Epoch: [{epoch+1}/{self.epochs}]  "
-                        f"time: {elapsed:.1f}, ")
+                        f"time: {elapsed:.1f}, "
+                        f"loss: {loss:.6f}, "
+                    )
                     #    f"train_loglik: {avg_loss.item():.6f}, "
                     #    f"KL_z: {avg_kl_z.item():.6f}, "
                     #    f"KL_s: {avg_kl_s.item():.6f}, "
@@ -441,10 +424,10 @@ class HIVAEImputer:
                 feed_dict[self.tf_nodes['tau_GS']] = tau
 
                 # Run the "samples_test" node to get the imputed data in encoded space
-                samples_test, log_p_x_test, log_p_x_missing_test, test_params = sess.run(
+                samples_test,log_p_x_test,log_p_x_missing_test,test_params = sess.run(
                     [
-                        self.tf_nodes['samples_test'], self.tf_nodes['log_p_x_test'], 
-                        self.tf_nodes['log_p_x_missing_test'], self.tf_nodes['test_params']
+                        self.tf_nodes['samples_test'],self.tf_nodes['log_p_x_test'],
+                        self.tf_nodes['log_p_x_missing_test'],self.tf_nodes['test_params']
                     ],
                     feed_dict=feed_dict
                 )
