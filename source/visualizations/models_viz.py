@@ -810,8 +810,8 @@ def create_line_bands_for_no_shift(dataset_name: str, model_name: str, metric_na
 def get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_set: str, metric_name: str,
                                                               baseline_metrics_mean_df: pd.DataFrame, train_set: str,
                                                               base_font_size: int = 18, ylim=Undefined, with_band=True):
-    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-                      'k_means_clustering', 'datawig', 'automl', 'boost_clean']
+    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest', 'k_means_clustering',
+                      'datawig', 'automl', 'nomi', 'mnar_pvae', 'boost_clean']
 
     title = f'{train_set} train & {test_set} test'
     models_metric_df_for_test_set = models_metric_df[models_metric_df['Test_Injection_Strategy'] == test_set]
@@ -1017,11 +1017,11 @@ def create_exp2_line_bands_for_diff_imputers(dataset_name: str, model_name: str,
             symbolStrokeWidth=10,
             labelLimit=400,
             titleLimit=300,
-            columns=3,
+            columns=4,
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
-            symbolOffset=80,
+            symbolOffset=20,
         )
     )
 
@@ -1270,14 +1270,14 @@ def create_bar_charts_for_diff_imputers_and_datasets(train_injection_scenario: s
         symbol_offset = 50
         resolve_scale_mode = 'shared'
     else:
-        spacing = 15
+        spacing = 10
         plot_height = 200
         plot_width = 180
         symbol_offset = 140
         resolve_scale_mode = 'independent'
 
-    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-                      'k_means_clustering', 'datawig', 'automl', 'nomi', 'tdm', 'gain', 'notmiwae']
+    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest', 'k_means_clustering', 'datawig',
+                      'automl', 'nomi', 'tdm', 'gain', 'edit_gain', 'notmiwae', 'mnar_pvae', 'boost_clean']
     dataset_to_sequence_num = {
         DIABETES_DATASET: 1,
         GERMAN_CREDIT_DATASET: 2,
@@ -1296,19 +1296,20 @@ def create_bar_charts_for_diff_imputers_and_datasets(train_injection_scenario: s
     to_plot['Dataset_Sequence_Number'] = to_plot['Dataset_Name'].apply(lambda x: dataset_to_sequence_num[x])
     to_plot['Dataset_Name'] = to_plot['Dataset_Name'].replace({ACS_INCOME_DATASET: 'folk_inc'})
 
-    if metric_name in ('Label_Stability', 'Std'):
-        to_plot['Dataset_Name_With_Model_Name'] = (
-            to_plot.apply(lambda row: '  ' + row['Dataset_Name'] + '  (' + row['Source_Model_Name'] + ')' if row['Source_Model_Name'] == 'gandalf_clf'
-            else row['Dataset_Name'] + ' (' + row['Source_Model_Name'] + ')', axis=1)
-        )
-    else:
-        to_plot['Dataset_Name_With_Model_Name'] = to_plot['Dataset_Name'] + ' (' + to_plot['Source_Model_Name'] + ')'
+    # if metric_name in ('Label_Stability', 'Std'):
+    to_plot['Dataset_Name_With_Model_Name'] = (
+        to_plot.apply(lambda row: '  ' + row['Dataset_Name'] + '  (' + row['Source_Model_Name'] + ')' if row['Source_Model_Name'] == 'gandalf_clf'
+        else row['Dataset_Name'] + ' (' + row['Source_Model_Name'] + ')', axis=1)
+    )
+    # else:
+    #     to_plot['Dataset_Name_With_Model_Name'] = to_plot['Dataset_Name'] + ' (' + to_plot['Source_Model_Name'] + ')'
 
-    if metric_name in ('Label_Stability', 'Std'):
-        to_plot['Dataset_Name_With_Model_Name'] = to_plot['Dataset_Name_With_Model_Name'].apply(wrap, args=[13]) # Wrap on whitespace with a max line length of 18 chars
+    # if metric_name in ('Label_Stability', 'Std'):
+    to_plot['Dataset_Name_With_Model_Name'] = to_plot['Dataset_Name_With_Model_Name'].apply(wrap, args=[13]) # Wrap on whitespace with a max line length of 18 chars
 
     chart = (
         alt.Chart().mark_boxplot(
+            # size=20,
             ticks=True,
             median={'stroke': 'black', 'strokeWidth': 0.7},
         ).encode(
@@ -1317,9 +1318,11 @@ def create_bar_charts_for_diff_imputers_and_datasets(train_injection_scenario: s
                     sort=imputers_order,
                     axis=alt.Axis(labels=False)),
             y=alt.Y("Metric_Value:Q",
-                    title=metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' '),
+                    title=None,
+                    # title=metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' '),
                     scale=alt.Scale(zero=False, domain=ylim)),
-            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order, scale=alt.Scale(scheme='tableau20')),
+            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order, scale=alt.Scale(scheme='category20c')),
+            # color=alt.Color("Null_Imputer_Name:N", legend=None, title=None, sort=imputers_order, scale=alt.Scale(scheme='category20c')),
         )
     )
 
@@ -1370,12 +1373,12 @@ def create_bar_charts_for_diff_imputers_and_datasets(train_injection_scenario: s
 
     final_chart = (
         final_chart.configure_legend(
-            titleFontSize=base_font_size + 4,
-            labelFontSize=base_font_size + 2,
+            titleFontSize=base_font_size + 12,
+            labelFontSize=base_font_size + 10,
             symbolStrokeWidth=10,
             labelLimit=400,
             titleLimit=300,
-            columns=5,
+            columns=4,
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
