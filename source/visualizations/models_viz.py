@@ -1321,8 +1321,8 @@ def create_bar_charts_for_diff_imputers_and_datasets(train_injection_scenario: s
                     title=None,
                     # title=metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' '),
                     scale=alt.Scale(zero=False, domain=ylim)),
-            # color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order, scale=alt.Scale(scheme='category20c')),
-            color=alt.Color("Null_Imputer_Name:N", legend=None, title=None, sort=imputers_order, scale=alt.Scale(scheme='category20c')),
+            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order, scale=alt.Scale(scheme='category20c')),
+            # color=alt.Color("Null_Imputer_Name:N", legend=None, title=None, sort=imputers_order, scale=alt.Scale(scheme='category20c')),
         )
     )
 
