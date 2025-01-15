@@ -498,8 +498,8 @@ class HIVAEImputer:
         loglik_mean, loglik_mode = read_functions.statistics(p_params_complete['x'], types_dict)
 
         # Compute the data reconstruction
-        X_imputed = X * mask + np.round(loglik_mode,3) * (1 - mask)
+        imputed_enc = X_enc * mask + np.round(loglik_mode,3) * (1 - mask)
 
-        # # # Decode back to original dimension
-        # X_imputed = self._decode_data(imputed_enc, types_dict)
+        # # Decode back to original dimension
+        X_imputed = self._decode_data(imputed_enc, types_dict)
         return X_imputed
