@@ -611,6 +611,7 @@ def impute_with_hivae(
         batch_size=kwargs["training_hyperparams"]['batch_size'],
         epochs=kwargs["training_hyperparams"]['epochs'],
         learning_rate=kwargs["training_hyperparams"]['learning_rate'],
+        checkpoint_path=os.path.join(directory, 'hvae_model.ckpt'),
     )
 
     # 5) Build the graph
