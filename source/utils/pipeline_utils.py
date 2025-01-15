@@ -197,6 +197,29 @@ def generate_types_csv(df: pd.DataFrame, output_path: str):
         for r in rows:
             writer.writerow(r)
 
+
+def generate_types_dict(df: pd.DataFrame):
+    """
+    Example stub that writes a minimal 'types.csv' given a DataFrame.
+    You must adapt it to match your columns, data types, and dimension counting.
+    E.g. for numeric columns => type='real', dim=1,
+         for categorical => type='cat', dim=#unique_categories, etc.
+    """
+    # Simple guess: if it's numeric => 'real', dim=1;
+    # if it's object/category => 'cat', dim=number of unique non-null categories
+    rows = []
+    for col in df.columns:
+        if pd.api.types.is_numeric_dtype(df[col]):
+            # e.g., treat as real
+            rows.append({'name': col, 'type': 'real', 'dim': 1})
+        else:
+            # treat as cat
+            unique_vals = df[col].dropna().unique()
+            cat_dim = len(unique_vals) if len(unique_vals) > 1 else 2
+            rows.append({'name': col, 'type': 'cat', 'dim': cat_dim})
+
+    return rows
+
    
 def parse_types_csv_file(types_file):
     """

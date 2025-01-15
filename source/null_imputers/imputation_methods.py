@@ -24,7 +24,8 @@ from source.null_imputers.hivae_imputer import HIVAEImputer
 from source.utils.pipeline_utils import (encode_dataset_for_missforest, decode_dataset_for_missforest,
                                          encode_dataset_for_gain, decode_dataset_for_gain, encode_dataset_for_nomi,
                                          onehot_encode_dataset, onehot_decode_dataset, decode_dataset_for_mnar_pvae,
-                                         encode_dataset_for_mnar_pvae, generate_types_csv, parse_types_csv_file)
+                                         encode_dataset_for_mnar_pvae, generate_types_csv, parse_types_csv_file,
+                                         generate_types_dict)
 from source.utils.dataframe_utils import get_numerical_columns_indexes
 
 
@@ -572,7 +573,7 @@ def impute_with_hivae(
 
     # 1) Grab or create the types_file
     types_file = kwargs.get('types_file', 'types.csv')
-    delete_file = False
+    delete_file = True
     if not os.path.exists(types_file):
         # Generate a minimal CSV describing each column's "type" and "dim"
         delete_file = True
@@ -580,6 +581,8 @@ def impute_with_hivae(
 
     # 2) Parse that CSV to get types_dict
     types_dict = parse_types_csv_file(types_file)  # e.g. [{'name':..., 'type':..., 'dim':...}, ...]
+    print("types_dict -- ", types_dict)
+    # types_dict = generate_types_dict(X_train_with_nulls)
 
     # 3) Separate numeric & categorical columns in the training DataFrame
     #    (You already have numeric_columns_with_nulls, etc., but let's keep a simple approach)
@@ -611,12 +614,12 @@ def impute_with_hivae(
     masks_tests_lst = [~pd.isna(arr) for arr in X_tests_array_lst]
 
     imputer = HIVAEImputer(
-        dim_latent_z=kwargs["training_hyperparams"].get('dim_latent_z', 2),
-        dim_latent_y=kwargs["training_hyperparams"].get('dim_latent_y', 3),
-        dim_latent_s=kwargs["training_hyperparams"].get('dim_latent_s', 4),
-        batch_size=kwargs["training_hyperparams"].get('batch_size', 128),
-        epochs=kwargs["training_hyperparams"].get('epochs', 100),
-        learning_rate=kwargs["training_hyperparams"].get('learning_rate', 1e-3)
+        dim_latent_z=kwargs["training_hyperparams"]['dim_latent_z'],
+        dim_latent_y=kwargs["training_hyperparams"]['dim_latent_y'],
+        dim_latent_s=kwargs["training_hyperparams"]['dim_latent_s'],
+        batch_size=kwargs["training_hyperparams"]['batch_size'],
+        epochs=kwargs["training_hyperparams"]['epochs'],
+        learning_rate=kwargs["training_hyperparams"]['learning_rate'],
     )
 
     # 8) Build the graph
