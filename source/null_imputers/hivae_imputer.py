@@ -467,8 +467,6 @@ class HIVAEImputer:
         # Compute mean and mode of our loglik models
         p_params_complete = read_functions.p_distribution_params_concatenation(p_params_list, types_dict, self.dim_latent_z, self.dim_latent_s)
         loglik_mean, loglik_mode = read_functions.statistics(p_params_complete['x'], types_dict, df_size=X_enc.shape[0])
-        print("len(loglik_mode):", len(loglik_mode))
-        print("loglik_mode[:10]:", loglik_mode[:10])
 
         # Compute the data reconstruction
         # imputed_enc = X_enc * mask + np.round(loglik_mode,3) * (1 - mask)

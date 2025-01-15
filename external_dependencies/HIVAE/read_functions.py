@@ -233,6 +233,8 @@ def statistics(loglik_params, types_dict, df_size):
     loglik_mode = []
     
     for d, attrib in enumerate(loglik_params):
+        print("type(attrib):", type(attrib))
+        print("len(attrib):", len(attrib))
         attrib = attrib[:df_size]
 
         if types_dict[d]['type'] == 'real':
