@@ -138,9 +138,9 @@ NULL_IMPUTERS_CONFIG = {
                 "dim_latent_y": 5,
                 "dim_latent_s": 10,
                 "batch_size": 128,
-                # "batch_size": 1,
-                # "epochs": 5,
-                "epochs": 1000,
+                # "batch_size": 1000,
+                "epochs": 5,
+                # "epochs": 2000,
                 "learning_rate": 1e-3
             }
         }

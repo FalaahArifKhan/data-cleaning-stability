@@ -1,6 +1,5 @@
 import time
 import math
-import pandas as pd
 import numpy as np
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
@@ -46,7 +45,6 @@ class HIVAEImputer:
         dim_latent_z=2,
         dim_latent_y=3,
         dim_latent_s=4,
-        # batch_size=128,
         batch_size=1000,
         epochs=100,
         learning_rate=1e-3,
@@ -123,49 +121,6 @@ class HIVAEImputer:
 
         data = np.concatenate(data_complete,1)
         return data
-
-    def _decode_data(self, X_enc, types_dict):
-        """
-        Inverse of _encode_data. For cat => argmax. For ordinal => sum(...) - 1. 
-        For 'real', 'pos', 'count' => pass through.
-
-        X_enc is shape [N, sum_of_dims]. We split it according to types_dict, then decode.
-        Returns a shape [N, D] array in the *original* column arrangement.
-
-        This replicates discrete_variables_transformation(...) from read_functions.
-        """
-        N = X_enc.shape[0]
-        idx_start = 0
-        out_cols = []
-
-        for col_info in types_dict:
-            col_type = col_info['type']
-            col_dim = int(col_info['dim'])
-
-            if col_type == 'cat':
-                # slice out col_dim columns, do argmax => shape [N,1]
-                slice_ = X_enc[:, idx_start : idx_start + col_dim]
-                col_decoded = np.argmax(slice_, axis=1).reshape(-1, 1)
-                idx_start += col_dim
-
-            elif col_type == 'ordinal':
-                # slice out col_dim columns, sum(...) => range 0..(col_dim-1).
-                slice_ = X_enc[:, idx_start : idx_start + col_dim]
-                # original code: output = sum(slice_, axis=1) - 1
-                # but we must ensure it doesn't go below 0
-                col_decoded = (np.sum(slice_, axis=1) - 1).reshape(-1, 1)
-                idx_start += col_dim
-
-            else:
-                # 'count', 'real', 'pos', etc. => just pass the slice
-                slice_ = X_enc[:, idx_start : idx_start + col_dim]
-                col_decoded = slice_
-                idx_start += col_dim
-
-            out_cols.append(col_decoded)
-
-        X_dec = np.concatenate(out_cols, axis=1)
-        return X_dec
 
     def _split_data_by_variable(self, X_enc, types_dict):
         """
@@ -330,34 +285,15 @@ class HIVAEImputer:
                     avg_kl_z += np.mean(kl_z)
                     avg_kl_s += np.mean(kl_s)
 
-                    # if print_first_batch:
-                    #     print("batch_data_list[:20]:\n", batch_data_list[:20])
-                    #     print("batch_mask[:20]:\n", batch_mask[:20])
-                    #     print("batch_data_list_observed[:20]:\n", batch_data_list_observed[:20])
-                    #     print("samples:\n", samples)
-                    #     print("samples_test:\n", samples_test)
-                    #     print("loss_re:", loss_re)
-                    #     print("log_p_x:", log_p_x)
-                    #     print("p_params:", p_params)
-                    #     print("q_params:", q_params)
-                    #
-                    #     print_first_batch = False
-
                 if (epoch + 1) % display_epoch == 0:
                     elapsed = time.time() - start_time
-                    elbo = avg_loss - avg_kl_z - avg_kl_s
                     print(
                         f"Epoch: [{epoch+1}/{self.epochs}]  "
                         f"time: {elapsed:.1f}, "
                         f"avg_loss: {avg_loss:.6f}, "
                         f"avg_kl_z: {avg_kl_z:.6f}, "
                         f"avg_kl_s: {avg_kl_s:.6f}, "
-                    #    f"train_loglik: {avg_loss.item():.6f}, "
-                    #    f"KL_z: {avg_kl_z.item():.6f}, "
-                    #    f"KL_s: {avg_kl_s.item():.6f}, "
-                    #    f"ELBO: {elbo.item():.6f}"
                     )
-
 
             # Save model
             saver.save(sess, self.checkpoint_path)
@@ -443,13 +379,6 @@ class HIVAEImputer:
                 p_params_list.append(test_params)
                 imputed_enc_list.append(samples_test)
 
-        # samples_s, samples_z, samples_y, samples_x = self._samples_concatenation(imputed_enc_list)
-
-        # # Concatenate batch results
-        # # imputed_enc = np.concatenate(imputed_enc_list, axis=0)
-        # # Trim to original N if there's any leftover
-        # imputed_enc = samples_x[:N]
-
         # Transform discrete variables to original values
         data_transformed = read_functions.discrete_variables_transformation(X_enc, types_dict)
 
@@ -458,10 +387,6 @@ class HIVAEImputer:
         loglik_mean, loglik_mode = read_functions.statistics(p_params_complete['x'], types_dict, df_size=X_enc.shape[0])
 
         # Compute the data reconstruction
-        # imputed_enc = X_enc * mask + np.round(loglik_mode,3) * (1 - mask)
         X_imputed = data_transformed * mask + np.round(loglik_mode,3) * (1 - mask)
-        # X_imputed = X * mask + np.round(loglik_mode,3) * (1 - mask)
 
-        # # Decode back to original dimension
-        # X_imputed = self._decode_data(imputed_enc, types_dict)
         return X_imputed

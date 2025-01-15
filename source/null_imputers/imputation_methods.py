@@ -571,12 +571,12 @@ def impute_with_hivae(
     """
     print("X_train_with_nulls.head():\n", X_train_with_nulls.head())
 
-    # directory = str(kwargs['directory'])
+    directory = str(kwargs['directory'])
     dataset_name = kwargs['dataset_name']
     seed = kwargs['experiment_seed']
 
     # 1) Grab or create the types_file
-    types_file = kwargs.get('types_file', 'types.csv')
+    types_file = os.path.join(directory, 'types.csv')
     delete_file = True
     if not os.path.exists(types_file):
         # Generate a minimal CSV describing each column's "type" and "dim"
@@ -585,19 +585,8 @@ def impute_with_hivae(
 
     # 2) Parse that CSV to get types_dict
     types_dict = parse_types_csv_file(types_file)  # e.g. [{'name':..., 'type':..., 'dim':...}, ...]
-    print("types_dict -- ", types_dict)
-    # types_dict = generate_types_dict(X_train_with_nulls)
 
-    # # 3) Separate numeric & categorical columns in the training DataFrame
-    # #    (You already have numeric_columns_with_nulls, etc., but let's keep a simple approach)
-    # numerical_columns = [c for c in X_train_with_nulls.columns if pd.api.types.is_numeric_dtype(X_train_with_nulls[c])]
-    # categorical_columns = [c for c in X_train_with_nulls.columns if c not in numerical_columns]
-
-    # # 4) Copy the data, so we don't overwrite original
-    # X_train_imputed = X_train_with_nulls.copy()
-    # X_tests_imputed_lst = [df.copy() for df in X_tests_with_nulls_lst]
-
-    # 5) (Optional) Align categories across train & test sets
+    # 3) (Optional) Align categories across train & test sets
     X_train_imputed, cat_encoders, _ = encode_dataset_for_nomi(df=X_train_with_nulls, dataset_name=dataset_name)
     X_tests_imputed_lst = [
         encode_dataset_for_nomi(df=X_test_with_nulls,
@@ -606,7 +595,7 @@ def impute_with_hivae(
         for X_test_with_nulls in X_tests_with_nulls_lst
     ]
 
-    # 6) Convert to NumPy and build "mask" arrays (True = observed, False = missing)
+    # 4) Convert to NumPy and build "mask" arrays (True = observed, False = missing)
     #    But note that HIVAEImputer expects 1=observed, 0=missing (bool or int).
     X_train_array = X_train_imputed.to_numpy()
     X_tests_array_lst = [X_test_df.to_numpy() for X_test_df in X_tests_imputed_lst]
@@ -623,10 +612,10 @@ def impute_with_hivae(
         learning_rate=kwargs["training_hyperparams"]['learning_rate'],
     )
 
-    # 8) Build the graph
+    # 5) Build the graph
     imputer.build_model(types_file=types_file)
 
-    # 9) Train the HI-VAE on the training set
+    # 6) Train the HI-VAE on the training set
     imputer.fit(
         X=X_train_array,
         mask=mask_train,
@@ -634,15 +623,14 @@ def impute_with_hivae(
         # optional: display_epoch=5, etc.
     )
 
-    # 10) Impute the training data
+    # 7) Impute the training data
     X_train_imputed_array = imputer.transform(
         X=X_train_array,
         mask=mask_train,
         types_dict=types_dict
     )
-    print("X_train_imputed_array.head():\n", X_train_imputed_array[:10])
 
-    # 11) Impute each test set
+    # 8) Impute each test set
     X_tests_imputed_array_lst = []
     for X_test_array, mask_test in zip(X_tests_array_lst, masks_tests_lst):
         imp = imputer.transform(
@@ -652,7 +640,7 @@ def impute_with_hivae(
         )
         X_tests_imputed_array_lst.append(imp)
 
-    # 12) Convert the imputed arrays back to DataFrames
+    # 9) Convert the imputed arrays back to DataFrames
     X_train_imputed = pd.DataFrame(
         X_train_imputed_array,
         columns=X_train_with_nulls.columns,
@@ -663,14 +651,14 @@ def impute_with_hivae(
         df_imp = pd.DataFrame(X_test_imputed_arr, columns=X_test_orig_df.columns, index=X_test_orig_df.index)
         X_tests_imputed_lst.append(df_imp)
 
-    # 13) Decode the categorical columns (optional). Here, we just restore them as strings:
+    # 10) Decode the categorical columns (optional). Here, we just restore them as strings:
     X_train_imputed = decode_dataset_for_missforest(X_train_imputed, cat_encoders, dataset_name=dataset_name)
     X_tests_imputed_lst = [
         decode_dataset_for_missforest(X_test_imputed, cat_encoders, dataset_name=dataset_name)
         for X_test_imputed in X_tests_imputed_lst
     ]
 
-    # 14) Prepare the dictionary of hyperparams (null imputer parameters)
+    # 11) Prepare the dictionary of hyperparams (null imputer parameters)
     null_imputer_params_dct = {col: hyperparams for col in X_train_with_nulls.columns}
 
     if delete_file:
@@ -683,15 +671,6 @@ def impute_with_hivae(
         copy.deepcopy(X_test_with_nulls).combine_first(X_test_imputed) for X_test_with_nulls, X_test_imputed in zip(X_tests_with_nulls_lst, X_tests_imputed_lst)
     ]
 
-    # 15) Return final results
-    print("X_train_imputed_final.head(20):\n", X_train_imputed_final.head(20))
-    print("X_tests_imputed_final_lst[0].head(20):\n", X_tests_imputed_final_lst[0].head(20))
-
-    # Count nulls in each column
-    print("null_counts in X_train_imputed_final")
-    print(X_train_imputed_final.isnull().sum())
-
-    print("null_counts in X_tests_imputed_final_lst[0]")
-    print(X_tests_imputed_final_lst[0].isnull().sum())
-
+    # 12) Return final results
+    print("X_train_imputed_final.head():\n", X_train_imputed_final.head())
     return X_train_imputed_final, X_tests_imputed_final_lst, null_imputer_params_dct
