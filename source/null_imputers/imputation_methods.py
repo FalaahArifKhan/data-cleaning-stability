@@ -569,8 +569,6 @@ def impute_with_hivae(
     Returns:
         tuple: (X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct)
     """
-    print("X_train_with_nulls.head():\n", X_train_with_nulls.head())
-
     directory = str(kwargs['directory'])
     os.makedirs(directory, exist_ok=True)
     dataset_name = kwargs['dataset_name']
@@ -674,5 +672,4 @@ def impute_with_hivae(
     ]
 
     # 12) Return final results
-    print("X_train_imputed_final.head():\n", X_train_imputed_final.head())
     return X_train_imputed_final, X_tests_imputed_final_lst, null_imputer_params_dct
