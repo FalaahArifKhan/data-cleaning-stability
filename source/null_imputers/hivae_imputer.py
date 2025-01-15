@@ -330,28 +330,18 @@ class HIVAEImputer:
                     avg_kl_z += np.mean(kl_z)
                     avg_kl_s += np.mean(kl_s)
 
-                    if print_first_batch:
-                        print("batch_data_list[:20]:\n", batch_data_list[:20])
-                        print("batch_mask[:20]:\n", batch_mask[:20])
-                        print("batch_data_list_observed[:20]:\n", batch_data_list_observed[:20])
-                        print("samples:\n", samples)
-                        print("samples_test:\n", samples_test)
-                        print("loss_re:", loss_re)
-                        print("log_p_x:", log_p_x)
-                        print("p_params:", p_params)
-                        print("q_params:", q_params)
-
-                        print_first_batch = False
-
-                    # avg_loss += loss_re
-                    # avg_kl_z += kl_z
-                    # avg_kl_s += kl_s
-                    # batch_count += 1
-
-                # # Average stats
-                # avg_loss /= batch_count
-                # avg_kl_z /= batch_count
-                # avg_kl_s /= batch_count
+                    # if print_first_batch:
+                    #     print("batch_data_list[:20]:\n", batch_data_list[:20])
+                    #     print("batch_mask[:20]:\n", batch_mask[:20])
+                    #     print("batch_data_list_observed[:20]:\n", batch_data_list_observed[:20])
+                    #     print("samples:\n", samples)
+                    #     print("samples_test:\n", samples_test)
+                    #     print("loss_re:", loss_re)
+                    #     print("log_p_x:", log_p_x)
+                    #     print("p_params:", p_params)
+                    #     print("q_params:", q_params)
+                    #
+                    #     print_first_batch = False
 
                 if (epoch + 1) % display_epoch == 0:
                     elapsed = time.time() - start_time
@@ -408,7 +398,6 @@ class HIVAEImputer:
             raise RuntimeError("Graph not built. Call `build_model(...)` first.")
 
         X_enc = self._encode_data(X, types_dict)
-        print("X_enc[:10]:\n", X_enc[:10])
 
         imputed_enc_list = []
         p_params_list = []
@@ -470,13 +459,6 @@ class HIVAEImputer:
 
         # Compute the data reconstruction
         # imputed_enc = X_enc * mask + np.round(loglik_mode,3) * (1 - mask)
-        print("type(data_transformed):", type(data_transformed))
-        print("len(data_transformed):", len(data_transformed))
-        print("type(mask):", type(mask))
-        print("len(mask):", len(mask))
-        print("type(loglik_mode):", type(loglik_mode))
-        print("len(loglik_mode):", len(loglik_mode))
-
         X_imputed = data_transformed * mask + np.round(loglik_mode,3) * (1 - mask)
         # X_imputed = X * mask + np.round(loglik_mode,3) * (1 - mask)
 
