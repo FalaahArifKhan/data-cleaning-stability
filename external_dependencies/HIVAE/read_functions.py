@@ -227,12 +227,14 @@ def q_distribution_params_concatenation(params,z_dim,s_dim):
         
     return out_dict
 
-def statistics(loglik_params,types_dict):
+def statistics(loglik_params, types_dict, df_size):
     
     loglik_mean = []
     loglik_mode = []
     
-    for d,attrib in enumerate(loglik_params):
+    for d, attrib in enumerate(loglik_params):
+        attrib = attrib[:df_size]
+
         if types_dict[d]['type'] == 'real':
             #Normal distribution (mean, sigma)
             loglik_mean.append(attrib[0])
