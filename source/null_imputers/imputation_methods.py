@@ -684,4 +684,13 @@ def impute_with_hivae(
 
     # 15) Return final results
     print("X_train_imputed_final.head(20):\n", X_train_imputed_final.head(20))
+    print("X_tests_imputed_final_lst[0].head(20):\n", X_tests_imputed_final_lst[0].head(20))
+
+    # Count nulls in each column
+    print("null_counts in X_train_imputed_final")
+    print(X_train_imputed_final.isnull().sum())
+
+    print("null_counts in X_tests_imputed_final_lst[0]")
+    print(X_tests_imputed_final_lst[0].isnull().sum())
+
     return X_train_imputed_final, X_tests_imputed_final_lst, null_imputer_params_dct
