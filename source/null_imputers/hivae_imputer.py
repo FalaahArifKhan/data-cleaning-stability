@@ -206,16 +206,22 @@ class HIVAEImputer:
         for i in range(n_batches):
             start = i * self.batch_size
             end = min(start + self.batch_size, N)
-
             batch_X_enc = X_enc[start:end]
             batch_mask = mask[start:end]
+
+            # If the size of X_enc is not equally divided by batch_size, add sample from the beginning of X_enc
+            # to have the complete batch
+            if end - start < self.batch_size:
+                remaining_samples = self.batch_size - (end - start)
+                batch_X_enc = np.concatenate((batch_X_enc, X_enc[:remaining_samples]), axis=0)
+                batch_mask = np.concatenate((batch_mask, mask[:remaining_samples]), axis=0)
 
             # Split the encoded data into a list
             batch_data_list = self._split_data_by_variable(batch_X_enc, types_dict)
 
             # Delete not known data (input zeros)
             batch_data_list_observed = [
-                batch_data_list[i] * np.reshape(batch_mask[:, i],[end - start, 1])
+                batch_data_list[i] * np.reshape(batch_mask[:, i],[self.batch_size, 1])
                 for i in range(len(batch_data_list))
             ]
 
@@ -402,7 +408,9 @@ class HIVAEImputer:
             raise RuntimeError("Graph not built. Call `build_model(...)` first.")
 
         X_enc = self._encode_data(X, types_dict)
+        n_batches = math.ceil(X_enc.shape[0] / self.batch_size)
         print("X_enc[:10]:\n", X_enc[:10])
+
         imputed_enc_list = []
         p_params_list = []
         with tf.Session(graph=self.graph) as sess:
@@ -413,7 +421,7 @@ class HIVAEImputer:
             # For inference, we often fix tau=1e-3
             tau = 1e-3
 
-            for batch_data_list, batch_mask, batch_data_list_observed in self._batch_iterator(X_enc, mask, types_dict):
+            for batch_idx, (batch_data_list, batch_mask, batch_data_list_observed) in enumerate(self._batch_iterator(X_enc, mask, types_dict)):
                 # Create feed dictionary
                 feed_dict = {i: d for i, d in zip(self.tf_nodes['ground_batch'], batch_data_list)}
                 feed_dict.update({i: d for i, d in zip(self.tf_nodes['ground_batch_observed'], batch_data_list_observed)})
@@ -444,7 +452,12 @@ class HIVAEImputer:
                     feed_dict=feed_dict
                 )
 
-                # TODO: decode test params
+                if batch_idx + 1 == n_batches:
+                    remainder = divmod(X_enc.shape[0], self.batch_size)[1]
+                    print("remainder --", remainder)
+                    test_params = test_params[:remainder]
+                    samples_test = samples_test[:remainder]
+
                 p_params_list.append(test_params)
                 imputed_enc_list.append(samples_test)
 
@@ -460,6 +473,7 @@ class HIVAEImputer:
 
         # Compute mean and mode of our loglik models
         p_params_complete = read_functions.p_distribution_params_concatenation(p_params_list, types_dict, self.dim_latent_z, self.dim_latent_s)
+        print("len(p_params_complete):", len(p_params_complete))
         loglik_mean, loglik_mode = read_functions.statistics(p_params_complete['x'], types_dict)
 
         # Compute the data reconstruction

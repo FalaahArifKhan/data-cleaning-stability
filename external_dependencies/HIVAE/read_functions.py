@@ -185,7 +185,7 @@ def mean_imputation(train_data, miss_mask, types_dict):
     
     return np.concatenate(est_data,1)
 
-def p_distribution_params_concatenation(params,types_dict,z_dim,s_dim):
+def p_distribution_params_concatenation(params, types_dict, z_dim, s_dim):
     
     keys = params[0].keys()
     out_dict = {key: [] for key in keys}
