@@ -186,7 +186,7 @@ def generate_types_csv(df: pd.DataFrame, output_path: str, dataset_name: str):
             rows.append({'name': col, 'type': 'real', 'dim': 1})
         else:
             if dataset_name == ACS_INCOME_DATASET:
-                rows.append({'name': col, 'type': 'ord', 'dim': 1})
+                rows.append({'name': col, 'type': 'ordinal', 'dim': 1})
             else:
                 # treat as cat
                 unique_vals = df[col].dropna().unique()
