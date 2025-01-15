@@ -9,6 +9,8 @@ import torch.nn as nn
 from sklearn.impute import SimpleImputer
 import FrEIA.framework as Ff
 import FrEIA.modules as Fm
+
+from configs.constants import ACS_EMPLOYMENT_DATASET
 from external_dependencies.azua.experiment.steps.train_step import run_train_main as azua_run_train_main
 from external_dependencies.azua.datasets.dataset import Dataset
 from external_dependencies.azua.datasets.variables import Variables
@@ -606,7 +608,7 @@ def impute_with_hivae(
         dim_latent_z=kwargs["training_hyperparams"]['dim_latent_z'],
         dim_latent_y=kwargs["training_hyperparams"]['dim_latent_y'],
         dim_latent_s=kwargs["training_hyperparams"]['dim_latent_s'],
-        batch_size=kwargs["training_hyperparams"]['batch_size'],
+        batch_size=512 if dataset_name == ACS_EMPLOYMENT_DATASET else kwargs["training_hyperparams"]['batch_size'],
         epochs=kwargs["training_hyperparams"]['epochs'],
         learning_rate=kwargs["training_hyperparams"]['learning_rate'],
         checkpoint_path=os.path.join(directory, 'hvae_model.ckpt'),
