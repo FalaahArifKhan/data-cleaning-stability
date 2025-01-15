@@ -408,7 +408,6 @@ class HIVAEImputer:
             raise RuntimeError("Graph not built. Call `build_model(...)` first.")
 
         X_enc = self._encode_data(X, types_dict)
-        n_batches = math.ceil(X_enc.shape[0] / self.batch_size)
         print("X_enc[:10]:\n", X_enc[:10])
 
         imputed_enc_list = []
@@ -452,12 +451,6 @@ class HIVAEImputer:
                     feed_dict=feed_dict
                 )
 
-                if batch_idx + 1 == n_batches:
-                    remainder = divmod(X_enc.shape[0], self.batch_size)[1]
-                    print("remainder --", remainder)
-                    test_params = test_params[:remainder]
-                    samples_test = samples_test[:remainder]
-
                 p_params_list.append(test_params)
                 imputed_enc_list.append(samples_test)
 
@@ -473,8 +466,9 @@ class HIVAEImputer:
 
         # Compute mean and mode of our loglik models
         p_params_complete = read_functions.p_distribution_params_concatenation(p_params_list, types_dict, self.dim_latent_z, self.dim_latent_s)
-        print("len(p_params_complete):", len(p_params_complete))
-        loglik_mean, loglik_mode = read_functions.statistics(p_params_complete['x'], types_dict)
+        print("len(p_params_complete['x']):", len(p_params_complete['x']))
+        loglik_mean, loglik_mode = read_functions.statistics(p_params_complete['x'][:X_enc.shape[0]], types_dict)
+        print("loglik_mode[:10]:", loglik_mode[:10])
 
         # Compute the data reconstruction
         # imputed_enc = X_enc * mask + np.round(loglik_mode,3) * (1 - mask)
