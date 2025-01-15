@@ -572,6 +572,7 @@ def impute_with_hivae(
     print("X_train_with_nulls.head():\n", X_train_with_nulls.head())
 
     directory = str(kwargs['directory'])
+    os.makedirs(directory, exist_ok=True)
     dataset_name = kwargs['dataset_name']
     seed = kwargs['experiment_seed']
 
