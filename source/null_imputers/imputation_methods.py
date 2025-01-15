@@ -570,7 +570,7 @@ def impute_with_hivae(
         tuple: (X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct)
     """
     print("X_train_with_nulls.head():\n", X_train_with_nulls.head())
-    directory = str(kwargs['directory'])
+    # directory = str(kwargs['directory'])
     dataset_name = kwargs['dataset_name']
     seed = kwargs['experiment_seed']
 
