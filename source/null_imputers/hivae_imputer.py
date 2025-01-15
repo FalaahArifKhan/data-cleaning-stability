@@ -291,7 +291,7 @@ class HIVAEImputer:
                 y_dim_partition=y_dim_partition  # if needed
             )
 
-    def fit(self, X, mask, types_dict, display_epoch=1):
+    def fit(self, X_enc, mask, types_dict, display_epoch=1):
         """
         Train HI-VAE on X (shape [N, D]) with a given mask (shape [N, D]) and a types_dict
         describing each column. We encode X, then feed mini-batches to HVAE placeholders.
@@ -307,8 +307,8 @@ class HIVAEImputer:
                 "Graph not built. Call `build_model(...)` before calling `fit`."
             )
 
-        # Encode data to the expanded representation
-        X_enc = self._encode_data(X, types_dict)
+        # # Encode data to the expanded representation
+        # X_enc = self._encode_data(X, types_dict)
         N = X_enc.shape[0]
 
         with tf.Session(graph=self.graph) as sess:
@@ -417,7 +417,7 @@ class HIVAEImputer:
             
         return samples_s, samples_z, samples_y, samples_x    
     
-    def transform(self, X, mask, types_dict):
+    def transform(self, X_enc, mask, types_dict):
         """
         Impute/transform on test data. Restores the trained model, encodes X, 
         runs 'samples_test' from the graph, then decodes it back to original space.
@@ -435,7 +435,7 @@ class HIVAEImputer:
         if self.graph is None:
             raise RuntimeError("Graph not built. Call `build_model(...)` first.")
 
-        X_enc = self._encode_data(X, types_dict)
+        # X_enc = self._encode_data(X, types_dict)
         print("X_enc[:10]:\n", X_enc[:10])
         imputed_enc_list = []
         p_params_list = []

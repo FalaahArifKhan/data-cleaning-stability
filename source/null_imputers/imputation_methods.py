@@ -590,20 +590,20 @@ def impute_with_hivae(
         c for c in X_train_with_nulls.columns
         if pd.api.types.is_numeric_dtype(X_train_with_nulls[c])
     ]
-    categorical_columns = [
-        c for c in X_train_with_nulls.columns if c not in numerical_columns
-    ]
+    # categorical_columns = [
+    #     c for c in X_train_with_nulls.columns if c not in numerical_columns
+    # ]
 
     # 4) Copy the data, so we don't overwrite original
     X_train_imputed = X_train_with_nulls.copy()
     X_tests_imputed_lst = [df.copy() for df in X_tests_with_nulls_lst]
 
     # 5) (Optional) Align categories across train & test sets
-    # X_train_imputed, X_tests_imputed_lst = encode_dataset_for_gain(
-    #     X_train=X_train_imputed,
-    #     X_tests_lst=X_tests_imputed_lst,
-    #     categorical_columns=categorical_columns
-    # )
+    X_train_imputed, encoder, init_cat_columns = onehot_encode_dataset(df=X_train_imputed)
+    X_tests_imputed_lst = [
+        onehot_encode_dataset(df=X_test_imputed, encoder=encoder)[0]
+        for X_test_imputed in X_tests_imputed_lst
+    ]
 
     # 6) Convert to NumPy and build "mask" arrays (True = observed, False = missing)
     #    But note that HIVAEImputer expects 1=observed, 0=missing (bool or int).
@@ -663,11 +663,11 @@ def impute_with_hivae(
         X_tests_imputed_lst.append(df_imp)
 
     # 13) Decode the categorical columns (optional). Here, we just restore them as strings:
-    # X_train_imputed, X_tests_imputed_lst = decode_dataset_for_gain(
-    #     X_train=X_train_imputed,
-    #     X_tests_lst=X_tests_imputed_lst,
-    #     categorical_columns=categorical_columns
-    # )
+    X_train_imputed = onehot_decode_dataset(df=X_train_imputed, encoder=encoder, init_cat_columns=init_cat_columns)
+    X_tests_imputed_lst = [
+        onehot_decode_dataset(df=X_test_imputed, encoder=encoder, init_cat_columns=init_cat_columns)[0]
+        for X_test_imputed in X_tests_imputed_lst
+    ]
 
     # 14) Prepare the dictionary of hyperparams (null imputer parameters)
     null_imputer_params_dct = {col: hyperparams for col in X_train_with_nulls.columns}
