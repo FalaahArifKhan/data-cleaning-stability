@@ -20,6 +20,7 @@ import numpy as np
 import external_dependencies.HIVAE.VAE_functions as VAE_functions
 import external_dependencies.HIVAE.model_HIVAE_inputDropout as model
 
+
 def HVAE_graph(model_name, types_file, batch_size, learning_rate=1e-3, z_dim=2, y_dim=1, s_dim=2, y_dim_partition=[]):
     
     #We select the model for the VAE
@@ -28,9 +29,7 @@ def HVAE_graph(model_name, types_file, batch_size, learning_rate=1e-3, z_dim=2, 
     
     #Load placeholders
     print('[*] Defining placeholders')
-    batch_data_list, batch_data_list_observed, miss_list, tau, tau2, types_list = (
-        VAE_functions.place_holder_types(batch_size=None, # Set batch size to None to adapt to different batch sized
-                                         types_file=types_file))
+    batch_data_list, batch_data_list_observed, miss_list, tau, tau2, types_list = VAE_functions.place_holder_types(types_file, batch_size)
     
     #Batch normalization of the data
     X_list, normalization_params = VAE_functions.batch_normalization(batch_data_list_observed, types_list, miss_list)

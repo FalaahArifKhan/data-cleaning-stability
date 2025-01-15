@@ -283,7 +283,8 @@ class HIVAEImputer:
             self.tf_nodes = graph_new.HVAE_graph(
                 model_name=self.model_name,
                 types_file=types_file,
-                batch_size=self.batch_size,
+                # batch_size=self.batch_size,
+                batch_size=None, # Set batch size to None to adapt to different batch sized
                 learning_rate=self.learning_rate,
                 z_dim=self.dim_latent_z,
                 y_dim=self.dim_latent_y,
