@@ -318,6 +318,7 @@ class HIVAEImputer:
             print("Start HI-VAE training ...")
             start_time = time.time()
 
+            print_first_batch = True
             for epoch in range(self.epochs):
                 # Shuffle data each epoch
                 indices = np.random.permutation(N)
@@ -342,7 +343,7 @@ class HIVAEImputer:
                     feed_dict[self.tf_nodes['tau_var']] = tau2
 
                     # Run optimizer and get losses
-                    _, loss_re, kl_z, kl_s, _, _, _, _, _ = sess.run(
+                    _, loss_re, kl_z, kl_s, samples, log_p_x, _, p_params, q_params = sess.run(
                         [
                             self.tf_nodes['optim'],
                             self.tf_nodes['loss_re'],
@@ -370,6 +371,19 @@ class HIVAEImputer:
                     avg_loss += np.mean(loss_re)
                     avg_kl_z += np.mean(kl_z)
                     avg_kl_s += np.mean(kl_s)
+
+                    if print_first_batch:
+                        print("batch_data_list[:20]:\n", batch_data_list[:20])
+                        print("batch_mask[:20]:\n", batch_mask[:20])
+                        print("batch_data_list_observed[:20]:\n", batch_data_list_observed[:20])
+                        print("samples:\n", samples)
+                        print("samples_test:\n", samples_test)
+                        print("loss_re:", loss_re)
+                        print("log_p_x:", log_p_x)
+                        print("p_params:", p_params)
+                        print("q_params:", q_params)
+
+                        print_first_batch = False
 
                     # avg_loss += loss_re
                     # avg_kl_z += kl_z
