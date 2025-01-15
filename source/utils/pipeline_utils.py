@@ -168,7 +168,7 @@ def onehot_decode_dataset(df, encoder, init_cat_columns):
     df_dec = pd.concat([df_dec[num_columns], df_dec_cat], axis=1)
     return df_dec
 
-def generate_types_csv(df: pd.DataFrame, output_path: str):
+def generate_types_csv(df: pd.DataFrame, output_path: str, dataset_name: str):
     """
     Example stub that writes a minimal 'types.csv' given a DataFrame.
     You must adapt it to match your columns, data types, and dimension counting.
@@ -185,10 +185,13 @@ def generate_types_csv(df: pd.DataFrame, output_path: str):
             # e.g., treat as real
             rows.append({'name': col, 'type': 'real', 'dim': 1})
         else:
-            # treat as cat
-            unique_vals = df[col].dropna().unique()
-            cat_dim = len(unique_vals) if len(unique_vals) > 1 else 2
-            rows.append({'name': col, 'type': 'cat', 'dim': cat_dim})
+            if dataset_name == ACS_INCOME_DATASET:
+                rows.append({'name': col, 'type': 'ord', 'dim': 1})
+            else:
+                # treat as cat
+                unique_vals = df[col].dropna().unique()
+                cat_dim = len(unique_vals) if len(unique_vals) > 1 else 2
+                rows.append({'name': col, 'type': 'cat', 'dim': cat_dim})
 
     with open(output_path, 'w', newline='', encoding='utf-8') as f:
         fieldnames = ['name', 'type', 'dim']
