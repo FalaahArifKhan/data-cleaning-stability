@@ -683,5 +683,5 @@ def impute_with_hivae(
     ]
 
     # 15) Return final results
-    print("X_train_imputed_final.head():\n", X_train_imputed_final.head())
+    print("X_train_imputed_final.head(20):\n", X_train_imputed_final.head(20))
     return X_train_imputed_final, X_tests_imputed_final_lst, null_imputer_params_dct
