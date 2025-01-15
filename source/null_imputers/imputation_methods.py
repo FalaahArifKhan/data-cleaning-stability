@@ -627,7 +627,7 @@ def impute_with_hivae(
 
     # 9) Train the HI-VAE on the training set
     imputer.fit(
-        X=X_train_array,
+        X_enc=X_train_array,
         mask=mask_train,
         types_dict=types_dict
         # optional: display_epoch=5, etc.
@@ -635,7 +635,7 @@ def impute_with_hivae(
 
     # 10) Impute the training data
     X_train_imputed_array = imputer.transform(
-        X=X_train_array,
+        X_enc=X_train_array,
         mask=mask_train,
         types_dict=types_dict
     )
@@ -645,7 +645,7 @@ def impute_with_hivae(
     X_tests_imputed_array_lst = []
     for X_test_array, mask_test in zip(X_tests_array_lst, masks_tests_lst):
         imp = imputer.transform(
-            X=X_test_array,
+            X_enc=X_test_array,
             mask=mask_test,
             types_dict=types_dict
         )
