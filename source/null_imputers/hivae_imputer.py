@@ -291,7 +291,7 @@ class HIVAEImputer:
                 y_dim_partition=y_dim_partition  # if needed
             )
 
-    def fit(self, X_enc, mask, types_dict, display_epoch=1):
+    def fit(self, X, mask, types_dict, display_epoch=1):
         """
         Train HI-VAE on X (shape [N, D]) with a given mask (shape [N, D]) and a types_dict
         describing each column. We encode X, then feed mini-batches to HVAE placeholders.
@@ -307,8 +307,8 @@ class HIVAEImputer:
                 "Graph not built. Call `build_model(...)` before calling `fit`."
             )
 
-        # # Encode data to the expanded representation
-        # X_enc = self._encode_data(X, types_dict)
+        # Encode data to the expanded representation
+        X_enc = self._encode_data(X, types_dict)
         N = X_enc.shape[0]
 
         with tf.Session(graph=self.graph) as sess:
@@ -417,7 +417,7 @@ class HIVAEImputer:
             
         return samples_s, samples_z, samples_y, samples_x    
     
-    def transform(self, X_enc, mask, types_dict):
+    def transform(self, X, mask, types_dict):
         """
         Impute/transform on test data. Restores the trained model, encodes X, 
         runs 'samples_test' from the graph, then decodes it back to original space.
@@ -435,7 +435,7 @@ class HIVAEImputer:
         if self.graph is None:
             raise RuntimeError("Graph not built. Call `build_model(...)` first.")
 
-        # X_enc = self._encode_data(X, types_dict)
+        X_enc = self._encode_data(X, types_dict)
         print("X_enc[:10]:\n", X_enc[:10])
         imputed_enc_list = []
         p_params_list = []
@@ -489,17 +489,18 @@ class HIVAEImputer:
         # # Trim to original N if there's any leftover
         # imputed_enc = samples_x[:N]
 
-        # # Transform discrete variables to original values
-        # n_batches = X_enc.shape[0] // self.batch_size
-        # data_transformed = read_functions.discrete_variables_transformation(X_enc[:n_batches * self.batch_size,:], types_dict)
+        # Transform discrete variables to original values
+        data_transformed = read_functions.discrete_variables_transformation(X_enc, types_dict)
 
         # Compute mean and mode of our loglik models
         p_params_complete = read_functions.p_distribution_params_concatenation(p_params_list, types_dict, self.dim_latent_z, self.dim_latent_s)
         loglik_mean, loglik_mode = read_functions.statistics(p_params_complete['x'], types_dict)
 
         # Compute the data reconstruction
-        imputed_enc = X_enc * mask + np.round(loglik_mode,3) * (1 - mask)
+        # imputed_enc = X_enc * mask + np.round(loglik_mode,3) * (1 - mask)
+        X_imputed = data_transformed * mask + np.round(loglik_mode,3) * (1 - mask)
+        # X_imputed = X * mask + np.round(loglik_mode,3) * (1 - mask)
 
         # # Decode back to original dimension
-        X_imputed = self._decode_data(imputed_enc, types_dict)
+        # X_imputed = self._decode_data(imputed_enc, types_dict)
         return X_imputed
