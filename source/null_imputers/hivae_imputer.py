@@ -343,7 +343,6 @@ class HIVAEImputer:
                         feed_dict[self.tf_nodes['tau_var']] = tau2
 
                     # Run optimizer and get losses
-                    print("feed_dict -- ", feed_dict)
                     _, loss_re, kl_z, kl_s = sess.run(
                         [
                             self.tf_nodes['optim'],
