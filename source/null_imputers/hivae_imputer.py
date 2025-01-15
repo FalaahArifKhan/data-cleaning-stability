@@ -470,6 +470,13 @@ class HIVAEImputer:
 
         # Compute the data reconstruction
         # imputed_enc = X_enc * mask + np.round(loglik_mode,3) * (1 - mask)
+        print("type(data_transformed):", type(data_transformed))
+        print("len(data_transformed):", len(data_transformed))
+        print("type(mask):", type(mask))
+        print("len(mask):", len(mask))
+        print("type(loglik_mode):", type(loglik_mode))
+        print("len(loglik_mode):", len(loglik_mode))
+
         X_imputed = data_transformed * mask + np.round(loglik_mode,3) * (1 - mask)
         # X_imputed = X * mask + np.round(loglik_mode,3) * (1 - mask)
 

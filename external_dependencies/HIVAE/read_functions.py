@@ -233,28 +233,24 @@ def statistics(loglik_params, types_dict, df_size):
     loglik_mode = []
     
     for d, attrib in enumerate(loglik_params):
-        print("type(attrib):", type(attrib))
-        print("len(attrib):", len(attrib))
-        attrib = attrib[:df_size]
-
         if types_dict[d]['type'] == 'real':
             #Normal distribution (mean, sigma)
-            loglik_mean.append(attrib[0])
-            loglik_mode.append(attrib[0])
+            loglik_mean.append(attrib[0][:df_size])
+            loglik_mode.append(attrib[0][:df_size])
         #Only for log-normal
         elif types_dict[d]['type'] == 'pos':
             #Log-normal distribution (mean, sigma)
-            loglik_mean.append(np.maximum(np.exp(attrib[0] + 0.5*attrib[1]) - 1.0,0.0))
-            loglik_mode.append(np.maximum(np.exp(attrib[0] - attrib[1]) - 1.0,0.0))
+            loglik_mean.append(np.maximum(np.exp(attrib[0][:df_size] + 0.5 * attrib[1][:df_size]) - 1.0,0.0))
+            loglik_mode.append(np.maximum(np.exp(attrib[0][:df_size] - attrib[1][:df_size]) - 1.0,0.0))
         elif types_dict[d]['type'] == 'count':
             #Poisson distribution (lambda)
-            loglik_mean.append(attrib)
-            loglik_mode.append(np.floor(attrib))
+            loglik_mean.append(attrib[:df_size])
+            loglik_mode.append(np.floor(attrib[:df_size]))
         
         else:
             #Categorical and ordinal (mode imputation for both)
-            loglik_mean.append(np.reshape(np.argmax(attrib,1),[-1,1]))
-            loglik_mode.append(np.reshape(np.argmax(attrib,1),[-1,1]))
+            loglik_mean.append(np.reshape(np.argmax(attrib[:df_size],1),[-1,1]))
+            loglik_mode.append(np.reshape(np.argmax(attrib[:df_size],1),[-1,1]))
         
             
     return np.transpose(np.squeeze(loglik_mean)), np.transpose(np.squeeze(loglik_mode))
