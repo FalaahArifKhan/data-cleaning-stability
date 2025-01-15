@@ -1,10 +1,12 @@
 import time
+import math
 import pandas as pd
 import numpy as np
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 
 import external_dependencies.HIVAE.graph_new as graph_new
+import external_dependencies.HIVAE.read_functions as read_functions
 
 
 class HIVAEImputer:
@@ -247,7 +249,7 @@ class HIVAEImputer:
         We do random shuffling per epoch in fit(...).
         """
         N = X_enc.shape[0]
-        n_batches = (N + self.batch_size - 1) // self.batch_size
+        n_batches = math.ceil(N / self.batch_size)
 
         for i in range(n_batches):
             start = i * self.batch_size
@@ -259,13 +261,19 @@ class HIVAEImputer:
             # Split the encoded data into a list
             batch_data_list = self._split_data_by_variable(batch_X_enc, types_dict)
 
+            # Delete not known data (input zeros)
+            batch_data_list_observed = [
+                batch_data_list[i] * np.reshape(batch_mask[:, i],[end - start, 1])
+                for i in range(len(batch_data_list))
+            ]
+
             # miss_list is shape [batch_size, D], consistent with HVAE placeholders
-            yield batch_data_list, batch_mask
+            yield batch_data_list, batch_mask, batch_data_list_observed
 
     # -------------------------------------------------------------------------
     #                       Graph Construction & Training
     # -------------------------------------------------------------------------
-    def build_model(self, types_file, y_dim_partition=None):
+    def build_model(self, types_file, y_dim_partition=[]):
         """
         Build the TensorFlow computational graph by calling graph_new.HVAE_graph.
         'types_file' is a CSV describing variable types. Must be consistent with 'types_dict'.
@@ -302,9 +310,7 @@ class HIVAEImputer:
         # Encode data to the expanded representation
         X_enc = self._encode_data(X, types_dict)
         N = X_enc.shape[0]
-        n_batches = (N + self.batch_size - 1) // self.batch_size
 
-        saver = None
         with tf.Session(graph=self.graph) as sess:
             sess.run(tf.global_variables_initializer())
             saver = tf.train.Saver()
@@ -327,53 +333,68 @@ class HIVAEImputer:
                 avg_kl_z = 0.0
 
                 # Mini-batch training
-                batch_count = 0
-                for batch_data_list, batch_mask in self._batch_iterator(X_enc_epoch, mask_epoch, types_dict):
-                    feed_dict = {}
-                    # 'ground_batch' placeholders
-                    for j, ph in enumerate(self.tf_nodes['ground_batch']):
-                        feed_dict[ph] = batch_data_list[j]
-                    # 'ground_batch_observed' placeholders: multiply data by mask
-                    for j, ph in enumerate(self.tf_nodes['ground_batch_observed']):
-                        feed_dict[ph] = batch_data_list[j] * np.reshape(batch_mask[:, j], [-1, 1])
-
+                for batch_data_list, batch_mask, batch_data_list_observed in self._batch_iterator(X_enc_epoch, mask_epoch, types_dict):
+                    # Create feed dictionary
+                    feed_dict = {i: d for i, d in zip(self.tf_nodes['ground_batch'], batch_data_list)}
+                    feed_dict.update({i: d for i, d in zip(self.tf_nodes['ground_batch_observed'], batch_data_list_observed)})
                     feed_dict[self.tf_nodes['miss_list']] = batch_mask
                     feed_dict[self.tf_nodes['tau_GS']] = tau
-                    if 'tau_var' in self.tf_nodes:  # if present
-                        feed_dict[self.tf_nodes['tau_var']] = tau2
+                    feed_dict[self.tf_nodes['tau_var']] = tau2
 
                     # Run optimizer and get losses
-                    _, loss_re, kl_z, kl_s = sess.run(
+                    _, loss_re, kl_z, kl_s, _, _, _, _, _ = sess.run(
                         [
                             self.tf_nodes['optim'],
                             self.tf_nodes['loss_re'],
                             self.tf_nodes['KL_z'],
-                            self.tf_nodes['KL_s']
+                            self.tf_nodes['KL_s'],
+                            self.tf_nodes['samples'],
+                            self.tf_nodes['log_p_x'],
+                            self.tf_nodes['log_p_x_missing'],
+                            self.tf_nodes['p_params'],
+                            self.tf_nodes['q_params'],
+                        ],
+                        feed_dict=feed_dict
+                    )
+                    samples_test, log_p_x_test, log_p_x_missing_test, test_params = sess.run(
+                        [
+                            self.tf_nodes['samples_test'],
+                            self.tf_nodes['log_p_x_test'],
+                            self.tf_nodes['log_p_x_missing_test'],
+                            self.tf_nodes['test_params'],
                         ],
                         feed_dict=feed_dict
                     )
 
-                    avg_loss += loss_re
-                    avg_kl_z += kl_z
-                    avg_kl_s += kl_s
-                    batch_count += 1
+                    # Compute average loss
+                    avg_loss += np.mean(loss_re)
+                    avg_kl_z += np.mean(kl_z)
+                    avg_kl_s += np.mean(kl_s)
 
-                # Average stats
-                avg_loss /= batch_count
-                avg_kl_z /= batch_count
-                avg_kl_s /= batch_count
+                    # avg_loss += loss_re
+                    # avg_kl_z += kl_z
+                    # avg_kl_s += kl_s
+                    # batch_count += 1
+
+                # # Average stats
+                # avg_loss /= batch_count
+                # avg_kl_z /= batch_count
+                # avg_kl_s /= batch_count
 
                 if (epoch + 1) % display_epoch == 0:
                     elapsed = time.time() - start_time
                     elbo = avg_loss - avg_kl_z - avg_kl_s
                     print(
                         f"Epoch: [{epoch+1}/{self.epochs}]  "
-                        f"time: {elapsed:.1f}, ")
+                        f"time: {elapsed:.1f}, "
+                        f"avg_loss: {avg_loss:.6f}, "
+                        f"avg_kl_z: {avg_kl_z:.6f}, "
+                        f"avg_kl_s: {avg_kl_s:.6f}, "
                     #    f"train_loglik: {avg_loss.item():.6f}, "
                     #    f"KL_z: {avg_kl_z.item():.6f}, "
                     #    f"KL_s: {avg_kl_s.item():.6f}, "
                     #    f"ELBO: {elbo.item():.6f}"
-                    #)
+                    )
 
 
             # Save model
@@ -415,12 +436,9 @@ class HIVAEImputer:
             raise RuntimeError("Graph not built. Call `build_model(...)` first.")
 
         X_enc = self._encode_data(X, types_dict)
-        N = X_enc.shape[0]
-        n_batches = (N + self.batch_size - 1) // self.batch_size
-
+        print("X_enc[:10]:\n", X_enc[:10])
         imputed_enc_list = []
-        saver = None
-
+        p_params_list = []
         with tf.Session(graph=self.graph) as sess:
             saver = tf.train.Saver()
             saver.restore(sess, self.checkpoint_path)
@@ -429,17 +447,27 @@ class HIVAEImputer:
             # For inference, we often fix tau=1e-3
             tau = 1e-3
 
-            for batch_data_list, batch_mask in self._batch_iterator(X_enc, mask, types_dict):
-                feed_dict = {}
-                # 'ground_batch' placeholders
-                for j, ph in enumerate(self.tf_nodes['ground_batch']):
-                    feed_dict[ph] = batch_data_list[j]
-                # 'ground_batch_observed'
-                for j, ph in enumerate(self.tf_nodes['ground_batch_observed']):
-                    feed_dict[ph] = batch_data_list[j] * np.reshape(batch_mask[:, j], [-1, 1])
-
+            for batch_data_list, batch_mask, batch_data_list_observed in self._batch_iterator(X_enc, mask, types_dict):
+                # Create feed dictionary
+                feed_dict = {i: d for i, d in zip(self.tf_nodes['ground_batch'], batch_data_list)}
+                feed_dict.update({i: d for i, d in zip(self.tf_nodes['ground_batch_observed'], batch_data_list_observed)})
                 feed_dict[self.tf_nodes['miss_list']] = batch_mask
                 feed_dict[self.tf_nodes['tau_GS']] = tau
+
+                # Get samples from the model
+                loss_re, kl_z, kl_s, _, _, _, _, _ = sess.run(
+                    [
+                        self.tf_nodes['loss_re'],
+                        self.tf_nodes['KL_z'],
+                        self.tf_nodes['KL_s'],
+                        self.tf_nodes['samples'],
+                        self.tf_nodes['log_p_x'],
+                        self.tf_nodes['log_p_x_missing'],
+                        self.tf_nodes['p_params'],
+                        self.tf_nodes['q_params'],
+                    ],
+                    feed_dict=feed_dict
+                )
 
                 # Run the "samples_test" node to get the imputed data in encoded space
                 samples_test, log_p_x_test, log_p_x_missing_test, test_params = sess.run(
@@ -449,55 +477,29 @@ class HIVAEImputer:
                     ],
                     feed_dict=feed_dict
                 )
-                
+
+                # TODO: decode test params
+                p_params_list.append(test_params)
                 imputed_enc_list.append(samples_test)
-                
-        samples_s, samples_z, samples_y, samples_x = self._samples_concatenation(imputed_enc_list)
 
-        # Concatenate batch results
-        # imputed_enc = np.concatenate(imputed_enc_list, axis=0)
-        # Trim to original N if there's any leftover
-        imputed_enc = samples_x[:N]
+        # samples_s, samples_z, samples_y, samples_x = self._samples_concatenation(imputed_enc_list)
 
-        # Decode back to original dimension
-        X_imputed = self._decode_data(imputed_enc, types_dict)
+        # # Concatenate batch results
+        # # imputed_enc = np.concatenate(imputed_enc_list, axis=0)
+        # # Trim to original N if there's any leftover
+        # imputed_enc = samples_x[:N]
+
+        # # Transform discrete variables to original values
+        # n_batches = X_enc.shape[0] // self.batch_size
+        # data_transformed = read_functions.discrete_variables_transformation(X_enc[:n_batches * self.batch_size,:], types_dict)
+
+        # Compute mean and mode of our loglik models
+        p_params_complete = read_functions.p_distribution_params_concatenation(p_params_list, types_dict, self.dim_latent_z, self.dim_latent_s)
+        loglik_mean, loglik_mode = read_functions.statistics(p_params_complete['x'], types_dict)
+
+        # Compute the data reconstruction
+        X_imputed = X * mask + np.round(loglik_mode,3) * (1 - mask)
+
+        # # # Decode back to original dimension
+        # X_imputed = self._decode_data(imputed_enc, types_dict)
         return X_imputed
-
-    # -------------------------------------------------------------------------
-    #                  Optional: Basic Mean Imputation Baseline
-    # -------------------------------------------------------------------------
-    def mean_imputation(self, X, mask, types_dict):
-        """
-        Simple baseline: fill missing entries using the mean (numeric) or mode (cat/ordinal).
-        This replicates 'mean_imputation(...)' from read_functions, 
-        but directly on your arrays (X, mask).
-        """
-        N, D = X.shape
-        X_filled = X.copy()
-
-        for d, col_info in enumerate(types_dict):
-            col_type = col_info['type']
-            col_dim = int(col_info['dim'])
-            # Indices where the column is observed vs missing
-            obs_inds = np.where(mask[:, d] == 1)[0]
-            miss_inds = np.where(mask[:, d] == 0)[0]
-
-            if len(miss_inds) == 0:
-                continue  # No missing in this column, skip
-
-            if col_type in ['cat', 'ordinal']:
-                # Mode of observed
-                obs_vals = X_filled[obs_inds, d]
-                # convert to int
-                obs_vals = obs_vals.astype(int)
-                vals, counts = np.unique(obs_vals, return_counts=True)
-                mode_val = vals[np.argmax(counts)]
-                # fill
-                X_filled[miss_inds, d] = mode_val
-            else:
-                # numeric => mean
-                obs_vals = X_filled[obs_inds, d]
-                mean_val = np.mean(obs_vals)
-                X_filled[miss_inds, d] = mean_val
-
-        return X_filled
