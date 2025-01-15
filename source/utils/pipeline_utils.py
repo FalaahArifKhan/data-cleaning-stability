@@ -183,7 +183,7 @@ def generate_types_csv(df: pd.DataFrame, output_path: str):
     for col in df.columns:
         if pd.api.types.is_numeric_dtype(df[col]):
             # e.g., treat as real
-            rows.append({'name': col, 'type': 'real', 'dim': 1})
+            rows.append({'name': col, 'type': 'pos', 'dim': 1})
         else:
             # treat as cat
             unique_vals = df[col].dropna().unique()
