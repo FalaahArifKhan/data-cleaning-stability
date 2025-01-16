@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import altair as alt
 import seaborn as sns
@@ -47,7 +46,8 @@ def get_scatter_plot_data(missingness_types: list, dataset_to_column_name: dict,
 
     if new_imputation_quality_metric.lower() == 'rmse_difference':
         imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
-            ~((imputation_quality_metrics_df['Dataset_Name'] == GERMAN_CREDIT_DATASET) & (imputation_quality_metrics_df[new_imputation_quality_metric] > 100))
+            ~((imputation_quality_metrics_df['Dataset_Name'] == GERMAN_CREDIT_DATASET) &
+              (imputation_quality_metrics_df[new_imputation_quality_metric] > 100))
         ]
     elif new_imputation_quality_metric.lower() == 'kl_divergence_pred_difference':
         imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
@@ -61,6 +61,25 @@ def get_scatter_plot_data(missingness_types: list, dataset_to_column_name: dict,
               (imputation_quality_metrics_df['Null_Imputer_Name'] == ErrorRepairMethod.k_means_clustering.value) &
               (imputation_quality_metrics_df[new_imputation_quality_metric] > 20))
         ]
+
+    # if new_imputation_quality_metric.lower() == 'rmse_difference':
+    #     imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
+    #         ~((imputation_quality_metrics_df[new_imputation_quality_metric] > 0.5) |
+    #           (imputation_quality_metrics_df[new_imputation_quality_metric] < -0.3))
+    #     ]
+    # elif new_imputation_quality_metric.lower() == 'kl_divergence_pred_difference':
+    #     imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
+    #         ~((imputation_quality_metrics_df[new_imputation_quality_metric] > 4) |
+    #           (imputation_quality_metrics_df[new_imputation_quality_metric] < -4))
+    #     ]
+    # elif new_imputation_quality_metric.lower() == 'kl_divergence_pred':
+    #     imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
+    #         ~(imputation_quality_metrics_df[new_imputation_quality_metric] > 20)
+    #     ]
+    # elif new_imputation_quality_metric.lower() == 'rmse':
+    #     imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
+    #         ~(imputation_quality_metrics_df[new_imputation_quality_metric] > 2)
+    #     ]
 
     model_performance_metrics_df = model_performance_metrics_df.rename(columns={'Metric_Value': model_performance_metric_name})
     avg_imputation_quality_metrics_df = imputation_quality_metrics_df.groupby(['Dataset_Name', 'Null_Imputer_Name', 'Evaluation_Scenario', 'Missingness_Type']).mean(numeric_only=True).reset_index()
@@ -98,9 +117,9 @@ def get_scatter_plot_data(missingness_types: list, dataset_to_column_name: dict,
     merged_df_2 = pd.merge(merged_df_1, min_max_df,
                            on=['Missingness_Type'],
                            how='left')
-    # Top 10 MVI techniques
-    merged_df_2 = merged_df_2[merged_df_2['Null_Imputer_Name'].isin(['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-                                                                     'k_means_clustering', 'datawig', 'automl', 'nomi', 'mnar_pvae', 'hivae'])]
+    # # Top 10 MVI techniques
+    # merged_df_2 = merged_df_2[merged_df_2['Null_Imputer_Name'].isin(['deletion', 'median-mode', 'median-dummy', 'miss_forest',
+    #                                                                  'k_means_clustering', 'datawig', 'automl', 'nomi', 'mnar_pvae', 'hivae'])]
 
     return merged_df_2, new_imputation_quality_metric
 
@@ -156,8 +175,8 @@ def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
                     scale=alt.Scale(domain=[y_min, y_max])),
             color=alt.Color("Null_Imputer_Name:N",
                             title=None,
-                            # scale=alt.Scale(scheme='category20'),
-                            scale=alt.Scale(scheme='category10'),
+                            scale=alt.Scale(scheme='category20'),
+                            # scale=alt.Scale(scheme='category10'),
                             sort=imputers_order),
             shape=alt.Shape(f"{shape_by}:N", title=None),
             # column=alt.Column('Missingness_Type:N', title=None, sort=columns_order)
