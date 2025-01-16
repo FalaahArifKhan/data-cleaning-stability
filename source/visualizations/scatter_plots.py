@@ -45,9 +45,21 @@ def get_scatter_plot_data(missingness_types: list, dataset_to_column_name: dict,
 
         print(f'Extraction for {missingness_type} is completed\n\n')
 
-    if dataset_to_group is not None and new_imputation_quality_metric.lower() == 'rmse_difference':
+    if new_imputation_quality_metric.lower() == 'rmse_difference':
         imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
             ~((imputation_quality_metrics_df['Dataset_Name'] == GERMAN_CREDIT_DATASET) & (imputation_quality_metrics_df[new_imputation_quality_metric] > 100))
+        ]
+    elif new_imputation_quality_metric.lower() == 'kl_divergence_pred_difference':
+        imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
+            ~((imputation_quality_metrics_df['Dataset_Name'] == ACS_INCOME_DATASET) &
+              (imputation_quality_metrics_df['Null_Imputer_Name'] == ErrorRepairMethod.k_means_clustering.value) &
+              (imputation_quality_metrics_df[new_imputation_quality_metric] < -5))
+        ]
+    elif new_imputation_quality_metric.lower() == 'kl_divergence_pred':
+        imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
+            ~((imputation_quality_metrics_df['Dataset_Name'] == ACS_INCOME_DATASET) &
+              (imputation_quality_metrics_df['Null_Imputer_Name'] == ErrorRepairMethod.k_means_clustering.value) &
+              (imputation_quality_metrics_df[new_imputation_quality_metric] > 20))
         ]
 
     model_performance_metrics_df = model_performance_metrics_df.rename(columns={'Metric_Value': model_performance_metric_name})
