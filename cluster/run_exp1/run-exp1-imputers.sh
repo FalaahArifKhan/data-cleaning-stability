@@ -1,24 +1,24 @@
 # Define the list of tuples (dataset_name, model_name, run_nums)
 declare -a job_configs=(
-    "diabetes hivae exp1_mcar3 1,2,3,4,5,6"
-    "diabetes hivae exp1_mar3 1,2,3,4,5,6"
-    "diabetes hivae exp1_mnar3 1,2,3,4,5,6"
-    "diabetes hivae mixed_exp 1,2,3,4,5,6"
-
-    "german hivae exp1_mcar3 1,2,3,4,5,6"
-    "german hivae exp1_mar3 1,2,3,4,5,6"
-    "german hivae exp1_mnar3 1,2,3,4,5,6"
-    "german hivae mixed_exp 1,2,3,4,5,6"
-
-#    "law_school hivae exp1_mcar3 1,2,3,4,5,6"
-#    "law_school hivae exp1_mar3 1,2,3,4,5,6"
-#    "law_school hivae exp1_mnar3 1,2,3,4,5,6"
-#    "law_school hivae mixed_exp 1,2,3,4,5,6"
+#    "diabetes hivae exp1_mcar3 1,2,3,4,5,6"
+#    "diabetes hivae exp1_mar3 1,2,3,4,5,6"
+#    "diabetes hivae exp1_mnar3 1,2,3,4,5,6"
+#    "diabetes hivae mixed_exp 1,2,3,4,5,6"
 #
-#    "folk hivae exp1_mcar3 1,2,3,4,5,6"
-#    "folk hivae exp1_mar3 1,2,3,4,5,6"
-#    "folk hivae exp1_mnar3 1,2,3,4,5,6"
-#    "folk hivae mixed_exp 1,2,3,4,5,6"
+#    "german hivae exp1_mcar3 1,2,3,4,5,6"
+#    "german hivae exp1_mar3 1,2,3,4,5,6"
+#    "german hivae exp1_mnar3 1,2,3,4,5,6"
+#    "german hivae mixed_exp 1,2,3,4,5,6"
+
+    "law_school hivae exp1_mcar3 1,2,3,4,5,6"
+    "law_school hivae exp1_mar3 1,2,3,4,5,6"
+    "law_school hivae exp1_mnar3 1,2,3,4,5,6"
+    "law_school hivae mixed_exp 1,2,3,4,5,6"
+
+    "folk hivae exp1_mcar3 1,2,3,4,5,6"
+    "folk hivae exp1_mar3 1,2,3,4,5,6"
+    "folk hivae exp1_mnar3 1,2,3,4,5,6"
+    "folk hivae mixed_exp 1,2,3,4,5,6"
 #
 #    "bank hivae exp1_mcar3 1,2,3,4,5,6"
 #    "bank hivae exp1_mar3 1,2,3,4,5,6"
