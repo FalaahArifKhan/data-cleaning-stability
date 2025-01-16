@@ -29,8 +29,8 @@ def get_imputers_metric_df(db_client, dataset_name: str, evaluation_scenario: st
     }
     metric_df = db_client.read_metric_df_from_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                                  query=query)
-    # if db_client.db_name == 'data_cleaning_stability_2':
-    if db_client.db_name == 'data_cleaning_stability_3':
+    # if db_client.db_name == 'data_cleaning_stability_3':
+    if db_client.db_name == 'data_cleaning_stability_2':
         metric_df2 = DB_CLIENT_2.read_metric_df_from_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                                         query=query)
         metric_df = pd.concat([metric_df, metric_df2])
@@ -1112,8 +1112,8 @@ def create_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_injectio
     test_injection_scenario = test_injection_scenario.upper()
 
     sns.set_style("whitegrid")
-    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-                      'k_means_clustering', 'datawig', 'automl', 'nomi', 'tdm', 'gain', 'notmiwae']
+    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest', 'k_means_clustering',
+                      'datawig', 'automl', 'nomi', 'tdm', 'gain', 'edit_gain', 'notmiwae', 'mnar_pvae']
     if without_dummy:
         imputers_order = [t for t in imputers_order if t != ErrorRepairMethod.median_dummy.value]
 

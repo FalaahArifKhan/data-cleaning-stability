@@ -810,8 +810,8 @@ def create_line_bands_for_no_shift(dataset_name: str, model_name: str, metric_na
 def get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_set: str, metric_name: str,
                                                               baseline_metrics_mean_df: pd.DataFrame, train_set: str,
                                                               base_font_size: int = 18, ylim=Undefined, with_band=True):
-    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-                      'k_means_clustering', 'datawig', 'automl', 'boost_clean']
+    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest', 'k_means_clustering',
+                      'datawig', 'automl', 'nomi', 'mnar_pvae', 'boost_clean']
 
     title = f'{train_set} train & {test_set} test'
     models_metric_df_for_test_set = models_metric_df[models_metric_df['Test_Injection_Strategy'] == test_set]
@@ -1017,11 +1017,11 @@ def create_exp2_line_bands_for_diff_imputers(dataset_name: str, model_name: str,
             symbolStrokeWidth=10,
             labelLimit=400,
             titleLimit=300,
-            columns=3,
+            columns=4,
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
-            symbolOffset=80,
+            symbolOffset=20,
         )
     )
 
@@ -1169,7 +1169,7 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
             y=alt.Y("Metric_Value:Q",
                     title=metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' '),
                     scale=alt.Scale(zero=False, domain=ylim)),
-            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order),
+            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order, scale=alt.Scale(scheme='tableau20')),
         )
     )
 
@@ -1226,6 +1226,159 @@ def create_box_plots_for_diff_imputers_and_datasets(train_injection_scenario: st
             labelLimit=400,
             titleLimit=300,
             columns=5,
+            orient='top',
+            direction='horizontal',
+            titleAnchor='middle',
+            symbolOffset=symbol_offset,
+        ).configure_facet(
+            spacing=spacing,
+        ).configure_view(
+            stroke=None
+        ).configure_header(
+            labelOrient='bottom',
+            labelPadding=5,
+            labelFontSize=base_font_size + 2,
+            titleFontSize=base_font_size + 6,
+        ).configure_axis(
+            labelFontSize=base_font_size + 4,
+            titleFontSize=base_font_size + 6,
+            labelFontWeight='normal',
+            titleFontWeight='normal',
+        ).configure_title(
+            fontSize=base_font_size + 6,
+        )
+    )
+
+    # Set a shared scale for the y-axis
+    final_chart = final_chart.resolve_scale(y=resolve_scale_mode)
+
+    return final_chart
+
+
+def create_bar_charts_for_diff_imputers_and_datasets(train_injection_scenario: str, test_injection_scenario: str,
+                                                     metric_name: str, db_client, dataset_to_group: dict = None,
+                                                     base_font_size: int = 22, ylim=Undefined):
+    train_injection_scenario = train_injection_scenario.upper()
+    test_injection_scenario = test_injection_scenario.upper()
+    metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) if 'equalized_odds' not in metric_name.lower() else metric_name
+
+    sns.set_style("whitegrid")
+    if metric_name in ('Label_Stability', 'Std'):
+        spacing = 10
+        plot_height = 300
+        plot_width = 200
+        symbol_offset = 60
+        resolve_scale_mode = 'shared'
+    else:
+        spacing = 10
+        plot_height = 200
+        plot_width = 180
+        symbol_offset = 140
+        resolve_scale_mode = 'independent'
+
+    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest', 'k_means_clustering', 'datawig',
+                      'automl', 'nomi', 'tdm', 'gain', 'edit_gain', 'notmiwae', 'mnar_pvae', 'boost_clean']
+    dataset_to_sequence_num = {
+        DIABETES_DATASET: 1,
+        GERMAN_CREDIT_DATASET: 2,
+        ACS_INCOME_DATASET: 3,
+        LAW_SCHOOL_DATASET: 4,
+        BANK_MARKETING_DATASET: 5,
+        CARDIOVASCULAR_DISEASE_DATASET: 6,
+        ACS_EMPLOYMENT_DATASET: 7,
+    }
+
+    to_plot = get_data_for_box_plots_for_diff_imputers_and_datasets(train_injection_scenario=train_injection_scenario,
+                                                                    test_injection_scenario=test_injection_scenario,
+                                                                    metric_name=metric_name,
+                                                                    db_client=db_client,
+                                                                    dataset_to_group=dataset_to_group)
+    to_plot['Dataset_Sequence_Number'] = to_plot['Dataset_Name'].apply(lambda x: dataset_to_sequence_num[x])
+    to_plot['Dataset_Name'] = to_plot['Dataset_Name'].replace({ACS_INCOME_DATASET: 'folk_inc'})
+
+    # if metric_name in ('Label_Stability', 'Std'):
+    to_plot['Dataset_Name_With_Model_Name'] = (
+        to_plot.apply(lambda row: '  ' + row['Dataset_Name'] + '  (' + row['Source_Model_Name'] + ')' if row['Source_Model_Name'] == 'gandalf_clf'
+        else row['Dataset_Name'] + ' (' + row['Source_Model_Name'] + ')', axis=1)
+    )
+    # else:
+    #     to_plot['Dataset_Name_With_Model_Name'] = to_plot['Dataset_Name'] + ' (' + to_plot['Source_Model_Name'] + ')'
+
+    # if metric_name in ('Label_Stability', 'Std'):
+    to_plot['Dataset_Name_With_Model_Name'] = to_plot['Dataset_Name_With_Model_Name'].apply(wrap, args=[13]) # Wrap on whitespace with a max line length of 18 chars
+
+    chart = (
+        alt.Chart().mark_boxplot(
+            # size=20,
+            ticks=True,
+            median={'stroke': 'black', 'strokeWidth': 0.7},
+        ).encode(
+            x=alt.X("Null_Imputer_Name:N",
+                    title=None,
+                    sort=imputers_order,
+                    axis=alt.Axis(labels=False)),
+            y=alt.Y("Metric_Value:Q",
+                    title=None,
+                    # title=metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' '),
+                    scale=alt.Scale(zero=False, domain=ylim)),
+            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order, scale=alt.Scale(scheme='category20c')),
+            # color=alt.Color("Null_Imputer_Name:N", legend=None, title=None, sort=imputers_order, scale=alt.Scale(scheme='category20c')),
+        )
+    )
+
+    baseline_horizontal_line = (
+        alt.Chart().mark_rule().encode(
+            y="Baseline_Median:Q",
+            color=alt.value("blue"),
+            size=alt.value(2)
+        )
+    )
+
+    if metric_name == 'Accuracy2':
+        base_rate_horizontal_line = (
+            alt.Chart().mark_rule().encode(
+                y="Base_Rate:Q",
+                color=alt.value("red"),
+                size=alt.value(2)
+            )
+        )
+        final_chart = (
+            alt.layer(
+                chart, baseline_horizontal_line, base_rate_horizontal_line,
+                data=to_plot,
+            ).properties(
+                width=plot_width,
+                height=plot_height,
+            ).facet(
+                column=alt.Column('Dataset_Name_With_Model_Name:N',
+                                  title=None,
+                                  sort=alt.SortField(field='Dataset_Sequence_Number', order='ascending')),
+            )
+        )
+
+    else:
+        final_chart = (
+            alt.layer(
+                chart, baseline_horizontal_line,
+                data=to_plot,
+            ).properties(
+                width=plot_width,
+                height=plot_height,
+            ).facet(
+                column=alt.Column('Dataset_Name_With_Model_Name:N',
+                                  title=None,
+                                  sort=alt.SortField(field='Dataset_Sequence_Number', order='ascending')),
+            )
+        )
+
+    final_chart = (
+        final_chart.configure_legend(
+            titleFontSize=base_font_size + 12,
+            labelFontSize=base_font_size + 10,
+            symbolStrokeWidth=10,
+            labelLimit=400,
+            titleLimit=300,
+            columns=4,
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
