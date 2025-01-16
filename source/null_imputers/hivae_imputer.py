@@ -1,3 +1,18 @@
+"""
+The original paper for the code below:
+- GitHub: https://github.com/probabilistic-learning/HI-VAE
+
+- Citation:
+@article{nazabal2020handling,
+  title={Handling incomplete heterogeneous data using vaes},
+  author={Nazabal, Alfredo and Olmos, Pablo M and Ghahramani, Zoubin and Valera, Isabel},
+  journal={Pattern Recognition},
+  volume={107},
+  pages={107501},
+  year={2020},
+  publisher={Elsevier}
+}
+"""
 import time
 import math
 import numpy as np

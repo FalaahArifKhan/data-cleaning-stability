@@ -1,3 +1,15 @@
+"""
+The original paper for the code below:
+- GitHub: https://github.com/nbip/notMIWAE
+
+- Citation:
+@article{ipsen2020not,
+  title={not-MIWAE: Deep generative modelling with missing not at random data},
+  author={Ipsen, Niels Bruun and Mattei, Pierre-Alexandre and Frellsen, Jes},
+  journal={arXiv preprint arXiv:2006.12871},
+  year={2020}
+}
+"""
 import time
 import sys
 import tensorflow.compat.v1 as tf
