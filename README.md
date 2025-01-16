@@ -70,7 +70,7 @@ python ./scripts/impute_nulls_with_predictor.py \
     --evaluation_scenarios [\"exp1_mcar3\"]
 ```
 
-### Models evaluation
+### Model evaluation
 
 This console command evaluates single or multiple null imputation techniques along with ML models training on the selected dataset. Arguments `evaluation_scenarios`, `dataset`, `null_imputers`, `run_nums` are used for the same purpose as in `impute_nulls_with_predictor.py`. `models` defines which ML models to evaluate in the pipeline. `ml_impute` is a bool argument which decides whether to impute null dynamically or use precomputed saved datasets with imputed values (if they are available).
 ```shell
