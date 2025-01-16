@@ -30,10 +30,10 @@ declare -a job_configs=(
 #    "heart hivae exp1_mnar3 1,2,3,4,5,6"
 #    "heart hivae mixed_exp 1,2,3,4,5,6"
 #
-#    "folk_emp hivae exp1_mcar3 1,2,3,4,5,6"
-#    "folk_emp hivae exp1_mar3 1,2,3,4,5,6"
-#    "folk_emp hivae exp1_mnar3 1,2,3,4,5,6"
-#    "folk_emp hivae mixed_exp 1,2,3,4,5,6"
+    "folk_emp hivae exp1_mcar3 1,2,3,4,5,6"
+    "folk_emp hivae exp1_mar3 1,2,3,4,5,6"
+    "folk_emp hivae exp1_mnar3 1,2,3,4,5,6"
+    "folk_emp hivae mixed_exp 1,2,3,4,5,6"
 )
 
 TEMPLATE_FILE="../cluster/run_exp1/run-exp1-imputers-template.sbatch"
