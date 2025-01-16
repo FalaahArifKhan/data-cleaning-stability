@@ -1,5 +1,9 @@
 # Still More Shades of Null: An Evaluation Suite for Responsible Missing Value Imputation
 
+<div style="text-align: center;">
+    <img src="./Benchmark_Architecture.png" alt="Benchmark Architecture" width="50%">
+</div>
+
 This repository contains the source code, scripts, and datasets for the Shades-of-Null evaluation suit ([arxiv preprint](https://arxiv.org/abs/2409.07510)). The evaluation suit uses SOTA missing value imputation (MVI) techniques on a suite of novel evaluation settings on popular fairness benchmark datasets, including multi-mechanism missingness (when several different missingness patterns co-exist in the data) and missingness shift (when the missingness mechanism changes between development/training and deployment/testing), and using a large set of holistic evaluation metrics, including fairness and stability. The evaluation suit includes functionality for storing experiment results in a database, with MongoDB chosen for our purposes. Additionally, the evaluation suit is designed to be extensible, allowing researchers to incorporate custom datasets and apply new MVI techniques.
 
 
@@ -22,6 +26,8 @@ pip3 install datawig --no-deps
 # https://stackoverflow.com/questions/54249577/importerror-libcuda-so-1-cannot-open-shared-object-file
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-11.0/compat
 ```
+
+Please note that the [NOMI imputer](./source/null_imputers/nomi_imputer.py) requires `tensorflow~=2.16.1` and `neural-tangents~=0.6.5`, which conflicts with our `requirements.txt`. Therefore, you may need to create a separate virtual environment for NOMI with the same library versions as in the requirements.txt, but include aforementioned versions of `tensorflow` and `neural-tangents`.
 
 Add MongoDB secrets (optional)
 ```dotenv
