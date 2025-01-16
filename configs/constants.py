@@ -48,9 +48,11 @@ class ErrorRepairMethod(Enum):
     tdm = 'tdm'
     nomi = 'nomi'
     notmiwae = 'notmiwae'
+    mnar_pvae = 'mnar_pvae'
     edit_gain = 'edit_gain'
     boost_clean = 'boost_clean'
     cp_clean = 'cp_clean'
+    hivae = 'hivae'
 
     def __str__(self):
         return self.value

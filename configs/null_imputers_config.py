@@ -5,7 +5,8 @@ from configs.constants import (GERMAN_CREDIT_DATASET, BANK_MARKETING_DATASET, CA
 from source.null_imputers.imputation_methods import (impute_with_deletion, impute_with_simple_imputer,
                                                      impute_with_automl, impute_with_gain, impute_with_missforest,
                                                      impute_with_kmeans, impute_with_tdm, impute_with_nomi,
-                                                     impute_with_notmiwae, impute_with_edit_gain)
+                                                     impute_with_notmiwae, impute_with_mnar_pvae, impute_with_hivae,
+                                                     impute_with_edit_gain)
 from source.null_imputers.joint_cleaning_and_training_methods import prepare_cpclean, prepare_boostclean
 
 
@@ -72,6 +73,77 @@ NULL_IMPUTERS_CONFIG = {
             "batch_size": 16,
             "L": 10_000,
             "mprocess": 'selfmasking_known',
+        }
+    },
+    ErrorRepairMethod.mnar_pvae.value: {
+        "method": impute_with_mnar_pvae,
+        "kwargs": {
+            "impute_config": {
+                "sample_count": 100,
+                "batch_size": 100,
+                "preserve_data_when_impute": True,
+            },
+            "model_hyperparams": {
+                "embedding_dim": 20,
+                "set_embedding_dim": 20,
+                "set_embedding_multiply_weights": True,
+                "latent_dim": 20,
+                "encoder_layers": [10],
+                "decoder_layers": [10],
+                "non_linearity": "Tanh",
+                "activation_for_continuous": "Identity",
+                "init_method": "xavier_uniform",
+                "encoding_function": "sum",
+                "decoder_variances": 0.02,
+                "random_seed": [1],
+                "categorical_likelihood_coefficient": 1.0,
+                "kl_coefficient": 1.0,
+                "variance_autotune": False,
+                "use_importance_sampling":  False,
+                "squash_input": False,
+                "metadata_filepath": None,
+                "mask_net_config": {
+                    "decoder_layers": [],
+                    "mask_net_coefficient": 0.5,
+                    "latent_connection": True
+                },
+                "prior_net_config": {
+                    "use_prior_net_to_train": True,
+                    "encoder_layers": [],
+                    "use_prior_net_to_impute": False,
+                    "degenerate_prior": "mask"
+                }
+            },
+            "training_hyperparams": {
+                "epochs": 400,
+                "iterations": 1,
+                "batch_size": 100,
+                "learning_rate": 1e-3,
+                "max_p_train_dropout": 0.00,
+                "vamp_prior_inducing_points": 50,
+                "vamp_prior_reward_samples": 1000,
+                "save_vamp_prior": False,
+                "rewind_to_best_epoch": False,
+                "save_latent_plots_period_epochs": 100,
+                "early_stopping_patience_epochs": None,
+                "score_imputation": False,
+                "score_reconstruction": True
+            }
+        },
+    },
+    ErrorRepairMethod.hivae.value: {
+        "method": impute_with_hivae,
+        "kwargs": {
+            "training_hyperparams": {
+                "dim_latent_z": 10,
+                "dim_latent_y": 5,
+                "dim_latent_s": 10,
+                "batch_size": 128,
+                # "batch_size": 1000,
+                # "epochs": 5,
+                "epochs": 2000,
+                "learning_rate": 1e-3
+            }
         }
     },
     ErrorRepairMethod.edit_gain.value: {
