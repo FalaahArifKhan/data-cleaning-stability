@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import altair as alt
 import seaborn as sns
@@ -7,7 +8,7 @@ from altair.utils.schemapi import Undefined
 from configs.constants import (IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME, ErrorRepairMethod,
                                DIABETES_DATASET, GERMAN_CREDIT_DATASET, BANK_MARKETING_DATASET,
                                CARDIOVASCULAR_DISEASE_DATASET, ACS_INCOME_DATASET,
-                               LAW_SCHOOL_DATASET, ACS_EMPLOYMENT_DATASET)
+                               LAW_SCHOOL_DATASET, ACS_EMPLOYMENT_DATASET, IMPUTERS_ORDER)
 from configs.datasets_config import DATASET_CONFIG
 from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
 from source.visualizations.model_metrics_extraction_for_viz import get_evaluation_scenario
@@ -1099,6 +1100,10 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_in
 
         print(f'Extracted data for {dataset_name}')
 
+    if metric_name.lower() == 'kl_divergence_pred':
+        imputers_metric_df_for_diff_datasets = imputers_metric_df_for_diff_datasets[
+            ~imputers_metric_df_for_diff_datasets[new_metric_name].isnull() & ~imputers_metric_df_for_diff_datasets[new_metric_name].isin([np.inf, -np.inf])]
+
     avg_imputers_metric_df_for_diff_datasets = imputers_metric_df_for_diff_datasets.groupby(['Dataset_Name', 'Null_Imputer_Name', 'Evaluation_Scenario',
                                                                                              'Experiment_Seed', 'Dataset_Part']).mean(numeric_only=True).reset_index()
     return avg_imputers_metric_df_for_diff_datasets, new_metric_name
@@ -1112,8 +1117,7 @@ def create_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_injectio
     test_injection_scenario = test_injection_scenario.upper()
 
     sns.set_style("whitegrid")
-    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest', 'k_means_clustering',
-                      'datawig', 'automl', 'nomi', 'tdm', 'gain', 'edit_gain', 'notmiwae', 'mnar_pvae']
+    imputers_order = IMPUTERS_ORDER
     if without_dummy:
         imputers_order = [t for t in imputers_order if t != ErrorRepairMethod.median_dummy.value]
 

@@ -32,3 +32,4 @@ impyute~=0.0.8
 autoimpute~=0.14.1
 certifi~=2024.2.2
 progress-bar==8
+typing-extensions~=4.8.0

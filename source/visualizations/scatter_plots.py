@@ -1,11 +1,12 @@
+import numpy as np
+import pandas as pd
 import altair as alt
 import seaborn as sns
-import pandas as pd
 from altair.utils.schemapi import Undefined
 
 from configs.constants import (ErrorRepairMethod, DIABETES_DATASET, GERMAN_CREDIT_DATASET, BANK_MARKETING_DATASET,
                                CARDIOVASCULAR_DISEASE_DATASET, ACS_INCOME_DATASET,
-                               LAW_SCHOOL_DATASET, ACS_EMPLOYMENT_DATASET)
+                               LAW_SCHOOL_DATASET, ACS_EMPLOYMENT_DATASET, IMPUTERS_ORDER)
 from source.visualizations.imputers_viz import get_data_for_box_plots_for_diff_imputers_and_datasets_for_mixed_exp
 from source.visualizations.models_viz import get_data_for_box_plots_for_diff_imputers_and_datasets
 
@@ -85,8 +86,9 @@ def get_scatter_plot_data(missingness_types: list, dataset_to_column_name: dict,
     merged_df_2 = pd.merge(merged_df_1, min_max_df,
                            on=['Missingness_Type'],
                            how='left')
+    # Top 10 MVI techniques
     merged_df_2 = merged_df_2[merged_df_2['Null_Imputer_Name'].isin(['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-                                                                     'k_means_clustering', 'datawig', 'automl', 'nomi', 'mnar_pvae'])]
+                                                                     'k_means_clustering', 'datawig', 'automl', 'nomi', 'mnar_pvae', 'hivae'])]
 
     return merged_df_2, new_imputation_quality_metric
 
@@ -97,8 +99,7 @@ def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
                         without_dummy: bool = False, ylim=Undefined):
     sns.set_style("whitegrid")
     columns_order = [missingness_type['train'] + ' - ' + missingness_type['test'] for missingness_type in missingness_types]
-    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-                      'k_means_clustering', 'datawig', 'automl']
+    imputers_order = IMPUTERS_ORDER
     if without_dummy:
         imputers_order = [t for t in imputers_order if t != ErrorRepairMethod.median_dummy.value]
 
@@ -141,7 +142,11 @@ def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
             y=alt.Y(f'{extended_imputation_quality_metric_name}:Q',
                     axis=alt.Axis(title=imputation_metric_title),
                     scale=alt.Scale(domain=[y_min, y_max])),
-            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order, scale=alt.Scale(scheme='category10')),
+            color=alt.Color("Null_Imputer_Name:N",
+                            title=None,
+                            # scale=alt.Scale(scheme='category20'),
+                            scale=alt.Scale(scheme='category10'),
+                            sort=imputers_order),
             shape=alt.Shape(f"{shape_by}:N", title=None),
             # column=alt.Column('Missingness_Type:N', title=None, sort=columns_order)
         )
@@ -158,7 +163,6 @@ def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
     #     )
     # )
 
-    #
     merged_df['Missingness_Type'] = merged_df['Missingness_Type'].replace({'mixed_exp - MCAR1 & MAR1 & MNAR1': 'mixed_exp - mixed_exp'})
 
     # Add faceting based on Missingness_Type column
@@ -195,10 +199,10 @@ def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
             labelOrient='top',
             labelPadding=5,
             labelFontWeight='bold',
-            labelFontSize=base_font_size + 1,
-            titleFontSize=base_font_size + 1,
+            labelFontSize=base_font_size + 6,
+            titleFontSize=base_font_size + 6,
         ).configure_axis(
-            labelFontSize=base_font_size,
+            labelFontSize=base_font_size + 4,
             titleFontSize=base_font_size + 6,
             labelFontWeight='normal',
             titleFontWeight='normal',

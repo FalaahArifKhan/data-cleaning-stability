@@ -8,6 +8,10 @@ EXP_COLLECTION_NAME = 'exp_nulls_data_cleaning'
 MODEL_HYPER_PARAMS_COLLECTION_NAME = 'tuned_model_hyper_params'
 IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME = 'imputation_performance_metrics'
 
+# For visualisations
+IMPUTERS_ORDER = ['deletion', 'median-mode', 'median-dummy', 'miss_forest', 'k_means_clustering', 'datawig',
+                  'automl', 'nomi', 'tdm', 'edit_gain', 'gain', 'hivae', 'notmiwae', 'mnar_pvae']
+
 
 # ====================================================================
 # Datasets
