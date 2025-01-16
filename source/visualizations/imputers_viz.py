@@ -30,8 +30,8 @@ def get_imputers_metric_df(db_client, dataset_name: str, evaluation_scenario: st
     }
     metric_df = db_client.read_metric_df_from_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                                  query=query)
-    # if db_client.db_name == 'data_cleaning_stability_3':
-    if db_client.db_name == 'data_cleaning_stability_2':
+    # if db_client.db_name == 'data_cleaning_stability_2':
+    if db_client.db_name == 'data_cleaning_stability_3':
         metric_df2 = DB_CLIENT_2.read_metric_df_from_db(collection_name=IMPUTATION_PERFORMANCE_METRICS_COLLECTION_NAME,
                                                         query=query)
         metric_df = pd.concat([metric_df, metric_df2])
@@ -1170,9 +1170,10 @@ def create_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_injectio
                     sort=imputers_order,
                     axis=alt.Axis(labels=False)),
             y=alt.Y(f"{new_metric_name}:Q",
-                    title=metric_title,
+                    title=None,
+                    # title=metric_title,
                     scale=alt.Scale(zero=True if metric_name.lower() == 'kl_divergence_pred' else False, domain=ylim)),
-            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order),
+            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order, scale=alt.Scale(scheme='category20c')),
             column=alt.Column('Extended_Dataset_Name',
                               title=None,
                               sort=alt.SortField(field='Dataset_Sequence_Number', order='ascending'))
@@ -1189,11 +1190,11 @@ def create_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_injectio
             symbolStrokeWidth=10,
             labelLimit=400,
             titleLimit=300,
-            columns=5,
+            columns=4,
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
-            symbolOffset=140 if dataset_to_group is not None else 110,
+            symbolOffset=280 if dataset_to_group is not None else 150,
         ).configure_facet(
             spacing=15 if new_metric_name.lower() == 'kl_divergence_pred' or 'difference' in new_metric_name.lower() else 5,
         ).configure_view(
