@@ -51,6 +51,7 @@ class ErrorRepairMethod(Enum):
     mnar_pvae = 'mnar_pvae'
     boost_clean = 'boost_clean'
     cp_clean = 'cp_clean'
+    hivae = 'hivae'
 
     def __str__(self):
         return self.value

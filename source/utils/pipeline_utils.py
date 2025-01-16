@@ -1,5 +1,6 @@
 import copy
 import pandas as pd
+import csv
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from configs.constants import ACS_INCOME_DATASET
@@ -166,3 +167,78 @@ def onehot_decode_dataset(df, encoder, init_cat_columns):
     df_dec_cat = pd.DataFrame(reversed_array, columns=init_cat_columns)
     df_dec = pd.concat([df_dec[num_columns], df_dec_cat], axis=1)
     return df_dec
+
+def generate_types_csv(df: pd.DataFrame, output_path: str, dataset_name: str):
+    """
+    Example stub that writes a minimal 'types.csv' given a DataFrame.
+    You must adapt it to match your columns, data types, and dimension counting.
+    E.g. for numeric columns => type='real', dim=1,
+         for categorical => type='cat', dim=#unique_categories, etc.
+    """
+    import csv
+
+    # Simple guess: if it's numeric => 'real', dim=1;
+    # if it's object/category => 'cat', dim=number of unique non-null categories
+    rows = []
+    for col in df.columns:
+        if pd.api.types.is_numeric_dtype(df[col]):
+            # e.g., treat as real
+            rows.append({'name': col, 'type': 'real', 'dim': 1})
+        else:
+            if dataset_name == ACS_INCOME_DATASET:
+                rows.append({'name': col, 'type': 'count', 'dim': 1})
+            else:
+                # treat as cat
+                unique_vals = df[col].dropna().unique()
+                cat_dim = len(unique_vals) if len(unique_vals) > 1 else 2
+                rows.append({'name': col, 'type': 'cat', 'dim': cat_dim})
+
+    with open(output_path, 'w', newline='', encoding='utf-8') as f:
+        fieldnames = ['name', 'type', 'dim']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for r in rows:
+            writer.writerow(r)
+
+
+def generate_types_dict(df: pd.DataFrame):
+    """
+    Example stub that writes a minimal 'types.csv' given a DataFrame.
+    You must adapt it to match your columns, data types, and dimension counting.
+    E.g. for numeric columns => type='real', dim=1,
+         for categorical => type='cat', dim=#unique_categories, etc.
+    """
+    # Simple guess: if it's numeric => 'real', dim=1;
+    # if it's object/category => 'cat', dim=number of unique non-null categories
+    rows = []
+    for col in df.columns:
+        if pd.api.types.is_numeric_dtype(df[col]):
+            # e.g., treat as real
+            rows.append({'name': col, 'type': 'real', 'dim': 1})
+        else:
+            # treat as cat
+            unique_vals = df[col].dropna().unique()
+            cat_dim = len(unique_vals) if len(unique_vals) > 1 else 2
+            rows.append({'name': col, 'type': 'cat', 'dim': cat_dim})
+
+    return rows
+
+   
+def parse_types_csv_file(types_file):
+    """
+    Utility to parse 'types.csv' into a Python list of dicts.
+    Each row in the CSV is typically:
+       name,type,dim
+    Example row:
+       col0,cat,3
+    This returns:
+       [{'name': 'col0', 'type': 'cat', 'dim': 3}, ...]
+    """
+    types_dict = []
+    with open(types_file, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            # Convert 'dim' to int
+            row['dim'] = int(row['dim'])
+            types_dict.append(row)
+    return types_dict
