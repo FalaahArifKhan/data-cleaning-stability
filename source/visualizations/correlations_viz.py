@@ -50,7 +50,7 @@ def get_data_for_correlation_plots(db_client_1, db_client_3, dataset_names: list
                 missingness_type_df['Train_Injection_Scenario'] = train_injection_scenario
                 metrics_df = pd.concat([metrics_df, missingness_type_df])
 
-            print(f'Extracted data for "{metric_name} metric and "{missingness_type}" missingness type')
+            print(f'Extracted data for "{metric_name}" metric and "{missingness_type}" missingness type')
 
     return metrics_df
 
@@ -89,6 +89,6 @@ def get_data_for_correlation_plots_for_diff_imputers_and_datasets(db_client, dat
         models_metric_df = models_metric_df[models_metric_df['Test_Injection_Scenario'] == test_injection_scenario]
 
         models_metric_df_for_diff_datasets = pd.concat([models_metric_df_for_diff_datasets, models_metric_df])
-        print(f'Extracted data for {dataset_name}')
+        # print(f'Extracted data for {dataset_name}')
 
     return models_metric_df_for_diff_datasets
