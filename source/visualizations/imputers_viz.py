@@ -1061,7 +1061,7 @@ def get_data_for_box_plots_for_diff_imputers_and_datasets_for_mixed_exp(train_in
         metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')])
         if metric_name.lower() == 'rmse':
             column_names = dataset_to_column_name[dataset_name]['num']
-        elif 'kl_divergence' in metric_name.lower():
+        elif 'kl_divergence' in metric_name.lower() or metric_name == 'runtime_in_mins':
             column_names = dataset_to_column_name[dataset_name]['cat'] + dataset_to_column_name[dataset_name]['num']
         else:
             column_names = dataset_to_column_name[dataset_name]['cat']

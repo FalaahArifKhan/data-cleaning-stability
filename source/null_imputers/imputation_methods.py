@@ -24,7 +24,6 @@ from source.null_imputers.missforest_imputer import MissForestImputer
 from source.null_imputers.kmeans_imputer import KMeansImputer
 from source.null_imputers.nomi_imputer import NOMIImputer
 from source.null_imputers.tdm_imputer import TDMImputer
-from source.null_imputers.hivae_imputer import HIVAEImputer
 from source.utils.pipeline_utils import (encode_dataset_for_missforest, decode_dataset_for_missforest,
                                          encode_dataset_for_gain, decode_dataset_for_gain, encode_dataset_for_nomi,
                                          decode_dataset_for_mnar_pvae, encode_dataset_for_mnar_pvae, generate_types_csv,
@@ -643,6 +642,8 @@ def impute_with_hivae(
     Returns:
         tuple: (X_train_imputed, X_tests_imputed_lst, null_imputer_params_dct)
     """
+    from source.null_imputers.hivae_imputer import HIVAEImputer
+
     directory = str(kwargs['directory'])
     os.makedirs(directory, exist_ok=True)
     dataset_name = kwargs['dataset_name']
