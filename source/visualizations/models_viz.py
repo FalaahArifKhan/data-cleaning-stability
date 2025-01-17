@@ -8,7 +8,7 @@ from altair.utils.schemapi import Undefined
 
 from configs.constants import (DIABETES_DATASET, GERMAN_CREDIT_DATASET, BANK_MARKETING_DATASET,
                                CARDIOVASCULAR_DISEASE_DATASET, ACS_INCOME_DATASET,
-                               LAW_SCHOOL_DATASET, ACS_EMPLOYMENT_DATASET)
+                               LAW_SCHOOL_DATASET, ACS_EMPLOYMENT_DATASET, IMPUTERS_ORDER)
 from configs.scenarios_config import EVALUATION_SCENARIOS_CONFIG
 from source.visualizations.model_metrics_extraction_for_viz import (get_models_metric_df, get_baseline_models_metric_df,
                                                                     get_overall_metric_from_disparity_metric,
@@ -1264,20 +1264,19 @@ def create_bar_charts_for_diff_imputers_and_datasets(train_injection_scenario: s
 
     sns.set_style("whitegrid")
     if metric_name in ('Label_Stability', 'Std'):
-        spacing = 10
+        spacing = 5
         plot_height = 300
         plot_width = 200
-        symbol_offset = 60
+        symbol_offset = 50
         resolve_scale_mode = 'shared'
     else:
-        spacing = 10
+        spacing = 5
         plot_height = 200
         plot_width = 180
-        symbol_offset = 140
+        symbol_offset = 130
         resolve_scale_mode = 'independent'
 
-    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest', 'k_means_clustering', 'datawig',
-                      'automl', 'nomi', 'tdm', 'gain', 'edit_gain', 'notmiwae', 'mnar_pvae', 'boost_clean']
+    imputers_order = IMPUTERS_ORDER
     dataset_to_sequence_num = {
         DIABETES_DATASET: 1,
         GERMAN_CREDIT_DATASET: 2,
@@ -1307,9 +1306,16 @@ def create_bar_charts_for_diff_imputers_and_datasets(train_injection_scenario: s
     # if metric_name in ('Label_Stability', 'Std'):
     to_plot['Dataset_Name_With_Model_Name'] = to_plot['Dataset_Name_With_Model_Name'].apply(wrap, args=[13]) # Wrap on whitespace with a max line length of 18 chars
 
+    if 'equalized_odds' in metric_name.lower():
+        y_title = metric_name.replace('Equalized_Odds_', '') + 'D'
+    elif metric_name.lower() == 'selection_rate_difference':
+        y_title = 'SRD'
+    else:
+        y_title = metric_name.replace('_', ' ')
+
     chart = (
         alt.Chart().mark_boxplot(
-            # size=20,
+            size=12,
             ticks=True,
             median={'stroke': 'black', 'strokeWidth': 0.7},
         ).encode(
@@ -1319,10 +1325,10 @@ def create_bar_charts_for_diff_imputers_and_datasets(train_injection_scenario: s
                     axis=alt.Axis(labels=False)),
             y=alt.Y("Metric_Value:Q",
                     title=None,
-                    # title=metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' '),
+                    # title=y_title,
                     scale=alt.Scale(zero=False, domain=ylim)),
-            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order, scale=alt.Scale(scheme='category20c')),
-            # color=alt.Color("Null_Imputer_Name:N", legend=None, title=None, sort=imputers_order, scale=alt.Scale(scheme='category20c')),
+            # color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order, scale=alt.Scale(scheme='category20c')),
+            color=alt.Color("Null_Imputer_Name:N", legend=None, title=None, sort=imputers_order, scale=alt.Scale(scheme='category20c')),
         )
     )
 
