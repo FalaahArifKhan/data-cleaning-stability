@@ -54,6 +54,23 @@ CONNECTION_STRING=your_mongodb_connection_string
     * `Scatter_Plots.ipynb` notebook includes scatter plots for single-mechanism and multi-mechanism missingness colored by null imputers and shaped by datasets (_Section 4.4_ in the paper).
     * `Correlations.ipynb` notebook includes plots for Spearman correlation between MVI technique, model type, test missingness, and performance metrics (F1, fairness and stability) for different train missingness mechanisms (_Section 6_ in the paper).
 
+## MVI techniques
+
+Below we summarize the list of MVI tecnhiques available in our benchmark, their source repos, paper and link to their adaptaition in code. 
+
+Name | Source Repo | Source paper | Adapted Implementation 
+--- | --- | --- | --- 
+DataWig  | https://github.com/awslabs/datawig |  https://www.jmlr.org/papers/volume20/18-753/18-753.pdf | [Code](./source/null_imputers/datawig_imputer.py)
+AutoML | https://github.com/se-jaeger/data-imputation-paper | https://www.frontiersin.org/articles/10.3389/fdata.2021.693674/full | [Code](./source/null_imputers/automl_imputer.py)
+MissForest | https://github.com/yuenshingyan/MissForest | https://academic.oup.com/bioinformatics/article/28/1/112/219101 | [Code](./source/null_imputers/missforest_imputer.py)
+K-Means clustering | https://github.com/nicodv/kmodes |https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=d42bb5ad2d03be6d8fefa63d25d02c0711d19728 | [Code](./source/null_imputers/kmeans_imputer.py)
+NOMI |  https://github.com/guaiyoui/NOMI | https://dl.acm.org/doi/10.1145/3654920  | [Code](./source/null_imputers/nomi_imputer.py)
+TDM | https://github.com/hezgit/TDM | https://proceedings.mlr.press/v202/zhao23h.html | [Code](./source/null_imputers/tdm_imputer.py)
+HI-VAE | https://github.com/probabilistic-learning/HI-VAE | https://www.sciencedirect.com/science/article/pii/S0031320320303046 | [Code](./source/null_imputers/hivae_imputer.py)
+GINA | https://github.com/microsoft/project-azua  | https://arxiv.org/pdf/2110.14708 | [Code](./external_dependencies/azua/models/mnar_pvae.py)
+GAIN | https://github.com/zjuwuyy-DL/An-Experimental-Survey-of-Missing-Data-Imputation-Algorithms/tree/main/1.GAIN | | [Code](./source/null_imputers/gain_imputer.py)
+not-MIWAE | https://github.com/nbip/notMIWAE | https://arxiv.org/pdf/2006.12871  | [Code](./source/null_imputers/notmiwae_imputer.py)
+EDIT |  | https://dl.acm.org/doi/10.14778/3494124.3494143 | [Code](./source/null_imputers/edit_gain_imputer.py)
 
 ## Usage
 
