@@ -9,7 +9,7 @@ This repository contains the source code, scripts, and datasets for the Shades-o
 
 ## Setup
 
-Create a virtual environment and install requirements:
+Create a virtual environment with Python 3.9 and install requirements:
 ```shell
 python -m venv venv 
 source venv/bin/activate
