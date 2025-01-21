@@ -59,7 +59,7 @@ CONNECTION_STRING=your_mongodb_connection_string
 
 ## MVI techniques
 
-Below we summarize the list of MVI tecnhiques available in our benchmark, their source repos, paper and link to their adaptation in code.
+Below we summarize a list of MVI techniques available in our benchmark, their source repos, papers and links to our adaptation in code.
 
 <div style="overflow-x:auto;">
 
