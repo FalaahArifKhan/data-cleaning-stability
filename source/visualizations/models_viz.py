@@ -568,13 +568,17 @@ def create_box_plots_for_diff_imputers_v2(dataset_name: str, model_name: str, me
 def get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_set: str, metric_name: str,
                                                          baseline_metrics_mean_df: pd.DataFrame, title: str,
                                                          base_font_size: int = 18, ylim=Undefined, with_band=True):
-    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-                      'k_means_clustering', 'datawig', 'automl', 'boost_clean']
-
+    imputers_order = IMPUTERS_ORDER
     title = f'{title} & {test_set} test'
     models_metric_df_for_test_set = models_metric_df[models_metric_df['Test_Injection_Strategy'] == test_set]
 
-    metric_title = metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' ')
+    if 'equalized_odds' in metric_name.lower():
+        metric_title = metric_name.replace('Equalized_Odds_', '') + 'D'
+    elif metric_name.lower() == 'selection_rate_difference':
+        metric_title = 'SRD'
+    else:
+        metric_title = metric_name.replace('_', ' ')
+
     line_chart = alt.Chart(models_metric_df_for_test_set).mark_line().encode(
         x=alt.X(field='Test_Error_Rate', type='quantitative', title='Test Error Rate',
                 scale=alt.Scale(nice=False), axis=alt.Axis(labelExpr=f"(datum.value == 0.1) || (datum.value == 0.3) || (datum.value == 0.5) ? datum.label : ''")),
@@ -851,13 +855,17 @@ def create_line_bands_for_no_shift(dataset_name: str, model_name: str, metric_na
 def get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_set: str, metric_name: str,
                                                               baseline_metrics_mean_df: pd.DataFrame, train_set: str,
                                                               base_font_size: int = 18, ylim=Undefined, with_band=True):
-    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest', 'k_means_clustering',
-                      'datawig', 'automl', 'nomi', 'mnar_pvae', 'boost_clean']
-
+    imputers_order = IMPUTERS_ORDER
     title = f'{train_set} train & {test_set} test'
     models_metric_df_for_test_set = models_metric_df[models_metric_df['Test_Injection_Strategy'] == test_set]
 
-    metric_title = metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' ')
+    if 'equalized_odds' in metric_name.lower():
+        metric_title = metric_name.replace('Equalized_Odds_', '') + 'D'
+    elif metric_name.lower() == 'selection_rate_difference':
+        metric_title = 'SRD'
+    else:
+        metric_title = metric_name.replace('_', ' ')
+
     line_chart = alt.Chart(models_metric_df_for_test_set).mark_line().encode(
         x=alt.X(field='Train_Error_Rate', type='quantitative', title='Train Error Rate',
                 scale=alt.Scale(nice=False), axis=alt.Axis(labelExpr=f"(datum.value == 0.1) || (datum.value == 0.3) || (datum.value == 0.5) ? datum.label : ''")),
