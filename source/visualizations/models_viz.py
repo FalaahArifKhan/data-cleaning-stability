@@ -342,28 +342,38 @@ def create_box_plots_for_diff_models(dataset_name: str, null_imputer_name: str, 
     return final_grid_chart
 
 
-def create_box_plots_for_diff_imputers_and_single_eval_scenario_v2(dataset_name: str, evaluation_scenario: str,
-                                                                   model_name: str, metric_name: str, db_client,
-                                                                   title: str, group: str = 'overall',
-                                                                   base_font_size: int = 18, ylim=Undefined):
+def create_box_plots_for_diff_imputers_and_single_eval_scenario_v2(
+    dataset_name: str,
+    evaluation_scenario: str,
+    model_name: str,
+    metric_name: str,
+    db_client,
+    title: str,
+    group: str = 'overall',
+    base_font_size: int = 18,
+    ylim=Undefined
+):
     sns.set_style("whitegrid")
-    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-                      'k_means_clustering', 'datawig', 'automl', 'boost_clean']
+    imputers_order = IMPUTERS_ORDER
 
     metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) if 'equalized_odds' not in metric_name.lower() else metric_name
     if group == 'overall':
-        models_metric_df = get_models_metric_df(db_client=db_client,
-                                                dataset_name=dataset_name,
-                                                evaluation_scenario=evaluation_scenario,
-                                                metric_name=metric_name,
-                                                group=group)
+        models_metric_df = get_models_metric_df(
+            db_client=db_client,
+            dataset_name=dataset_name,
+            evaluation_scenario=evaluation_scenario,
+            metric_name=metric_name,
+            group=group
+        )
     else:
         overall_metric = get_overall_metric_from_disparity_metric(disparity_metric=metric_name)
-        models_metric_df = get_models_disparity_metric_df(db_client=db_client,
-                                                          dataset_name=dataset_name,
-                                                          evaluation_scenario=evaluation_scenario,
-                                                          metric_name=overall_metric,
-                                                          group=group)
+        models_metric_df = get_models_disparity_metric_df(
+            db_client=db_client,
+            dataset_name=dataset_name,
+            evaluation_scenario=evaluation_scenario,
+            metric_name=overall_metric,
+            group=group
+        )
         models_metric_df = models_metric_df[models_metric_df['Metric'] == metric_name]
         models_metric_df = models_metric_df.rename(columns={group: 'Metric_Value'})
 
@@ -373,44 +383,62 @@ def create_box_plots_for_diff_imputers_and_single_eval_scenario_v2(dataset_name:
         axis=1
     )
 
-    # Add a baseline median to models_metric_df to display it as a horizontal line
-    baseline_median = get_baseline_model_median(dataset_name=dataset_name,
-                                                model_name=model_name,
-                                                metric_name=metric_name,
-                                                db_client=db_client,
-                                                group=group)
+    # Add a baseline median for horizontal line
+    baseline_median = get_baseline_model_median(
+        dataset_name=dataset_name,
+        model_name=model_name,
+        metric_name=metric_name,
+        db_client=db_client,
+        group=group
+    )
     models_metric_df['Baseline_Median'] = baseline_median
 
     metric_title = metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' ')
     chart = (
-        alt.Chart().mark_boxplot(
+        alt.Chart()
+        .mark_boxplot(
             ticks=True,
             median={'stroke': 'black', 'strokeWidth': 0.7},
-        ).encode(
-            x=alt.X("Null_Imputer_Name:N",
-                    title=None,
-                    sort=imputers_order,
-                    axis=alt.Axis(labels=False)),
-            y=alt.Y("Metric_Value:Q",
-                    title=metric_title,
-                    scale=alt.Scale(zero=False, domain=ylim)),
-            color=alt.Color("Null_Imputer_Name:N", title=None, sort=imputers_order),
+        )
+        .encode(
+            x=alt.X(
+                "Null_Imputer_Name:N",
+                title=None,
+                sort=imputers_order,
+                axis=alt.Axis(labels=False)
+            ),
+            y=alt.Y(
+                "Metric_Value:Q",
+                title=metric_title,
+                scale=alt.Scale(zero=False, domain=ylim)
+            ),
+            color=alt.Color(
+                "Null_Imputer_Name:N",
+                title=None,
+                sort=imputers_order,
+                scale=alt.Scale(scheme='category20c')
+            ),
         )
     )
 
     baseline_horizontal_line = (
-        alt.Chart().mark_rule().encode(
+        alt.Chart()
+        .mark_rule()
+        .encode(
             y="Baseline_Median:Q",
             color=alt.value("blue"),
             size=alt.value(2)
         )
     )
 
+    width = 200
     if metric_name == 'Accuracy':
         models_metric_df['Base_Rate'] = get_base_rate(dataset_name)
 
         base_rate_horizontal_line = (
-            alt.Chart().mark_rule().encode(
+            alt.Chart()
+            .mark_rule()
+            .encode(
                 y="Base_Rate:Q",
                 color=alt.value("red"),
                 size=alt.value(2)
@@ -421,12 +449,14 @@ def create_box_plots_for_diff_imputers_and_single_eval_scenario_v2(dataset_name:
             alt.layer(
                 chart, baseline_horizontal_line, base_rate_horizontal_line,
                 data=models_metric_df,
-            ).properties(
-                width=120,
-            ).facet(
-                column=alt.Column('Test_Injection_Strategy:N',
-                                  title=title,
-                                  sort=['MCAR', 'MAR', 'MNAR']),
+            )
+            .properties(width=width)
+            .facet(
+                column=alt.Column(
+                    'Test_Injection_Strategy:N',
+                    title=title,
+                    sort=['MCAR', 'MAR', 'MNAR']
+                ),
             )
         )
 
@@ -435,60 +465,68 @@ def create_box_plots_for_diff_imputers_and_single_eval_scenario_v2(dataset_name:
             alt.layer(
                 chart, baseline_horizontal_line,
                 data=models_metric_df,
-            ).properties(
-                width=120,
-            ).facet(
-                column=alt.Column('Test_Injection_Strategy:N',
-                                  title=title,
-                                  sort=['MCAR', 'MAR', 'MNAR']),
+            )
+            .properties(width=width)
+            .facet(
+                column=alt.Column(
+                    'Test_Injection_Strategy:N',
+                    title=title,
+                    sort=['MCAR', 'MAR', 'MNAR']
+                ),
             )
         )
 
+    # Return chart without applying .configure() to avoid conflict during concatenation
     return final_chart
-
 
 def create_box_plots_for_diff_imputers_v2(dataset_name: str, model_name: str, metric_name: str, db_client,
                                           group: str = 'overall', ylim=Undefined):
     base_font_size = 20
-    base_chart1 = create_box_plots_for_diff_imputers_and_single_eval_scenario_v2(dataset_name=dataset_name,
-                                                                                 evaluation_scenario='exp1_mcar3',
-                                                                                 title='MCAR train set',
-                                                                                 model_name=model_name,
-                                                                                 metric_name=metric_name,
-                                                                                 db_client=db_client,
-                                                                                 group=group,
-                                                                                 base_font_size=base_font_size,
-                                                                                 ylim=ylim)
+    base_chart1 = create_box_plots_for_diff_imputers_and_single_eval_scenario_v2(
+        dataset_name=dataset_name,
+        evaluation_scenario='exp1_mcar3',
+        title='MCAR train set',
+        model_name=model_name,
+        metric_name=metric_name,
+        db_client=db_client,
+        group=group,
+        base_font_size=base_font_size,
+        ylim=ylim
+    )
     print('Prepared a plot for an MCAR train set')
-    base_chart2 = create_box_plots_for_diff_imputers_and_single_eval_scenario_v2(dataset_name=dataset_name,
-                                                                                 evaluation_scenario='exp1_mar3',
-                                                                                 title='MAR train set',
-                                                                                 model_name=model_name,
-                                                                                 metric_name=metric_name,
-                                                                                 db_client=db_client,
-                                                                                 group=group,
-                                                                                 base_font_size=base_font_size,
-                                                                                 ylim=ylim)
+
+    base_chart2 = create_box_plots_for_diff_imputers_and_single_eval_scenario_v2(
+        dataset_name=dataset_name,
+        evaluation_scenario='exp1_mar3',
+        title='MAR train set',
+        model_name=model_name,
+        metric_name=metric_name,
+        db_client=db_client,
+        group=group,
+        base_font_size=base_font_size,
+        ylim=ylim
+    )
     print('Prepared a plot for an MAR train set')
-    base_chart3 = create_box_plots_for_diff_imputers_and_single_eval_scenario_v2(dataset_name=dataset_name,
-                                                                                 evaluation_scenario='exp1_mnar3',
-                                                                                 title='MNAR train set',
-                                                                                 model_name=model_name,
-                                                                                 metric_name=metric_name,
-                                                                                 db_client=db_client,
-                                                                                 group=group,
-                                                                                 base_font_size=base_font_size,
-                                                                                 ylim=ylim)
+
+    base_chart3 = create_box_plots_for_diff_imputers_and_single_eval_scenario_v2(
+        dataset_name=dataset_name,
+        evaluation_scenario='exp1_mnar3',
+        title='MNAR train set',
+        model_name=model_name,
+        metric_name=metric_name,
+        db_client=db_client,
+        group=group,
+        base_font_size=base_font_size,
+        ylim=ylim
+    )
     print('Prepared a plot for an MNAR train set')
 
-    # Concatenate two base charts
-    main_base_chart = alt.hconcat()
-    main_base_chart |= base_chart1
-    main_base_chart |= base_chart2
-    main_base_chart |= base_chart3
+    # Concatenate the base charts
+    main_base_chart = alt.hconcat(base_chart1, base_chart2, base_chart3)
 
     final_grid_chart = (
-        main_base_chart.configure_legend(
+        main_base_chart
+        .configure_legend(
             titleFontSize=base_font_size + 4,
             labelFontSize=base_font_size + 2,
             symbolStrokeWidth=10,
@@ -498,28 +536,31 @@ def create_box_plots_for_diff_imputers_v2(dataset_name: str, model_name: str, me
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
-            symbolOffset=120,
-        ).configure_facet(
+            symbolOffset=250,
+        )
+        .configure_facet(
             spacing=5,
-        ).configure_view(
+        )
+        .configure_view(
             stroke=None
-        ).configure_header(
+        )
+        .configure_header(
             labelOrient='bottom',
             labelPadding=5,
             labelFontSize=base_font_size + 2,
             titleFontSize=base_font_size + 6,
-        ).configure_axis(
+        )
+        .configure_axis(
             labelFontSize=base_font_size + 4,
             titleFontSize=base_font_size + 6,
             labelFontWeight='normal',
             titleFontWeight='normal',
-        ).configure_title(
+        )
+        .configure_title(
             fontSize=base_font_size + 6,
         )
+        .resolve_scale(color='shared', y='shared')  # Ensure shared color and y scales
     )
-
-    # Set a shared scale for the y-axis
-    final_grid_chart = final_grid_chart.resolve_scale(y='shared')
 
     return final_grid_chart
 
@@ -527,13 +568,17 @@ def create_box_plots_for_diff_imputers_v2(dataset_name: str, model_name: str, me
 def get_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_set: str, metric_name: str,
                                                          baseline_metrics_mean_df: pd.DataFrame, title: str,
                                                          base_font_size: int = 18, ylim=Undefined, with_band=True):
-    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-                      'k_means_clustering', 'datawig', 'automl', 'boost_clean']
-
+    imputers_order = IMPUTERS_ORDER
     title = f'{title} & {test_set} test'
     models_metric_df_for_test_set = models_metric_df[models_metric_df['Test_Injection_Strategy'] == test_set]
 
-    metric_title = metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' ')
+    if 'equalized_odds' in metric_name.lower():
+        metric_title = metric_name.replace('Equalized_Odds_', '') + 'D'
+    elif metric_name.lower() == 'selection_rate_difference':
+        metric_title = 'SRD'
+    else:
+        metric_title = metric_name.replace('_', ' ')
+
     line_chart = alt.Chart(models_metric_df_for_test_set).mark_line().encode(
         x=alt.X(field='Test_Error_Rate', type='quantitative', title='Test Error Rate',
                 scale=alt.Scale(nice=False), axis=alt.Axis(labelExpr=f"(datum.value == 0.1) || (datum.value == 0.3) || (datum.value == 0.5) ? datum.label : ''")),
@@ -719,11 +764,11 @@ def create_line_bands_for_diff_imputers(dataset_name: str, model_name: str, metr
             symbolStrokeWidth=10,
             labelLimit=400,
             titleLimit=300,
-            columns=3,
+            columns=4,
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
-            symbolOffset=80,
+            symbolOffset=10,
         )
     )
 
@@ -810,13 +855,17 @@ def create_line_bands_for_no_shift(dataset_name: str, model_name: str, metric_na
 def get_exp2_line_bands_for_diff_imputers_and_single_test_set(models_metric_df, test_set: str, metric_name: str,
                                                               baseline_metrics_mean_df: pd.DataFrame, train_set: str,
                                                               base_font_size: int = 18, ylim=Undefined, with_band=True):
-    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest', 'k_means_clustering',
-                      'datawig', 'automl', 'nomi', 'mnar_pvae', 'boost_clean']
-
+    imputers_order = IMPUTERS_ORDER
     title = f'{train_set} train & {test_set} test'
     models_metric_df_for_test_set = models_metric_df[models_metric_df['Test_Injection_Strategy'] == test_set]
 
-    metric_title = metric_name.replace('Equalized_Odds_', '') + 'D' if 'equalized_odds' in metric_name.lower() else metric_name.replace('_', ' ')
+    if 'equalized_odds' in metric_name.lower():
+        metric_title = metric_name.replace('Equalized_Odds_', '') + 'D'
+    elif metric_name.lower() == 'selection_rate_difference':
+        metric_title = 'SRD'
+    else:
+        metric_title = metric_name.replace('_', ' ')
+
     line_chart = alt.Chart(models_metric_df_for_test_set).mark_line().encode(
         x=alt.X(field='Train_Error_Rate', type='quantitative', title='Train Error Rate',
                 scale=alt.Scale(nice=False), axis=alt.Axis(labelExpr=f"(datum.value == 0.1) || (datum.value == 0.3) || (datum.value == 0.5) ? datum.label : ''")),
