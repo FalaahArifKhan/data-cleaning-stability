@@ -62,24 +62,24 @@ def get_scatter_plot_data(missingness_types: list, dataset_to_column_name: dict,
               (imputation_quality_metrics_df[new_imputation_quality_metric] > 20))
         ]
 
-    # if new_imputation_quality_metric.lower() == 'rmse_difference':
-    #     imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
-    #         ~((imputation_quality_metrics_df[new_imputation_quality_metric] > 0.5) |
-    #           (imputation_quality_metrics_df[new_imputation_quality_metric] < -0.3))
-    #     ]
-    # elif new_imputation_quality_metric.lower() == 'kl_divergence_pred_difference':
-    #     imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
-    #         ~((imputation_quality_metrics_df[new_imputation_quality_metric] > 4) |
-    #           (imputation_quality_metrics_df[new_imputation_quality_metric] < -4))
-    #     ]
-    # elif new_imputation_quality_metric.lower() == 'kl_divergence_pred':
-    #     imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
-    #         ~(imputation_quality_metrics_df[new_imputation_quality_metric] > 20)
-    #     ]
-    # elif new_imputation_quality_metric.lower() == 'rmse':
-    #     imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
-    #         ~(imputation_quality_metrics_df[new_imputation_quality_metric] > 2)
-    #     ]
+    if new_imputation_quality_metric.lower() == 'rmse_difference':
+        imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
+            ~((imputation_quality_metrics_df[new_imputation_quality_metric] > 0.5) |
+              (imputation_quality_metrics_df[new_imputation_quality_metric] < -0.3))
+        ]
+    elif new_imputation_quality_metric.lower() == 'kl_divergence_pred_difference':
+        imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
+            ~((imputation_quality_metrics_df[new_imputation_quality_metric] > 4) |
+              (imputation_quality_metrics_df[new_imputation_quality_metric] < -4))
+        ]
+    elif new_imputation_quality_metric.lower() == 'kl_divergence_pred':
+        imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
+            ~(imputation_quality_metrics_df[new_imputation_quality_metric] > 20)
+        ]
+    elif new_imputation_quality_metric.lower() == 'rmse':
+        imputation_quality_metrics_df = imputation_quality_metrics_df.loc[
+            ~(imputation_quality_metrics_df[new_imputation_quality_metric] > 2)
+        ]
 
     model_performance_metrics_df = model_performance_metrics_df.rename(columns={'Metric_Value': model_performance_metric_name})
     avg_imputation_quality_metrics_df = imputation_quality_metrics_df.groupby(['Dataset_Name', 'Null_Imputer_Name', 'Evaluation_Scenario', 'Missingness_Type']).mean(numeric_only=True).reset_index()
@@ -117,9 +117,9 @@ def get_scatter_plot_data(missingness_types: list, dataset_to_column_name: dict,
     merged_df_2 = pd.merge(merged_df_1, min_max_df,
                            on=['Missingness_Type'],
                            how='left')
-    # # Top 10 MVI techniques
-    # merged_df_2 = merged_df_2[merged_df_2['Null_Imputer_Name'].isin(['deletion', 'median-mode', 'median-dummy', 'miss_forest',
-    #                                                                  'k_means_clustering', 'datawig', 'automl', 'nomi', 'mnar_pvae', 'hivae'])]
+    # Top 10 MVI techniques
+    merged_df_2 = merged_df_2[merged_df_2['Null_Imputer_Name'].isin(['deletion', 'median-mode', 'median-dummy', 'miss_forest',
+                                                                     'k_means_clustering', 'datawig', 'automl', 'nomi', 'mnar_pvae', 'hivae'])]
 
     return merged_df_2, new_imputation_quality_metric
 
@@ -130,7 +130,9 @@ def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
                         without_dummy: bool = False, ylim=Undefined):
     sns.set_style("whitegrid")
     columns_order = [missingness_type['train'] + ' - ' + missingness_type['test'] for missingness_type in missingness_types]
-    imputers_order = IMPUTERS_ORDER
+    # imputers_order = IMPUTERS_ORDER
+    imputers_order = ['deletion', 'median-mode', 'median-dummy', 'miss_forest',
+                      'k_means_clustering', 'datawig', 'automl', 'nomi', 'hivae', 'mnar_pvae']
     if without_dummy:
         imputers_order = [t for t in imputers_order if t != ErrorRepairMethod.median_dummy.value]
 
@@ -175,10 +177,13 @@ def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
                     scale=alt.Scale(domain=[y_min, y_max])),
             color=alt.Color("Null_Imputer_Name:N",
                             title=None,
-                            scale=alt.Scale(scheme='category20'),
-                            # scale=alt.Scale(scheme='category10'),
+                            # legend=None,
+                            # scale=alt.Scale(scheme='category20'),
+                            scale=alt.Scale(scheme='category10'),
                             sort=imputers_order),
-            shape=alt.Shape(f"{shape_by}:N", title=None),
+            shape=alt.Shape(f"{shape_by}:N",
+                            # legend=None,
+                            title=None),
             # column=alt.Column('Missingness_Type:N', title=None, sort=columns_order)
         )
     )
@@ -212,8 +217,8 @@ def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
 
     final_chart = (
         faceted_plot.configure_legend(
-            titleFontSize=base_font_size + 4,
-            labelFontSize=base_font_size + 2,
+            titleFontSize=base_font_size + 10,
+            labelFontSize=base_font_size + 8,
             symbolStrokeWidth=10,
             labelLimit=400,
             titleLimit=300,
@@ -221,7 +226,7 @@ def create_scatter_plot(missingness_types: list, dataset_to_column_name: dict,
             orient='top',
             direction='horizontal',
             titleAnchor='middle',
-            symbolOffset=100 if dataset_to_group is not None else 80,
+            symbolOffset=80 if dataset_to_group is not None else 60,
         ).configure_view(
             stroke=None
         ).configure_facet(

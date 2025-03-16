@@ -1312,17 +1312,20 @@ def create_bar_charts_for_diff_imputers_and_datasets(train_injection_scenario: s
     metric_name = '_'.join([c.capitalize() for c in metric_name.split('_')]) if 'equalized_odds' not in metric_name.lower() else metric_name
 
     sns.set_style("whitegrid")
-    if metric_name in ('Label_Stability', 'Std'):
+    # if metric_name in ('Label_Stability', 'Std'):
+    if metric_name in ('Std'):
         spacing = 5
         plot_height = 300
         plot_width = 200
-        symbol_offset = 50
+        # symbol_offset = 50
+        symbol_offset = 10
         resolve_scale_mode = 'shared'
     else:
         spacing = 5
         plot_height = 200
         plot_width = 180
-        symbol_offset = 130
+        # symbol_offset = 130
+        symbol_offset = 50
         resolve_scale_mode = 'independent'
 
     imputers_order = IMPUTERS_ORDER
@@ -1343,6 +1346,9 @@ def create_bar_charts_for_diff_imputers_and_datasets(train_injection_scenario: s
                                                                     dataset_to_group=dataset_to_group)
     to_plot['Dataset_Sequence_Number'] = to_plot['Dataset_Name'].apply(lambda x: dataset_to_sequence_num[x])
     to_plot['Dataset_Name'] = to_plot['Dataset_Name'].replace({ACS_INCOME_DATASET: 'folk_inc'})
+    # to_plot = to_plot[~to_plot['Dataset_Name'].isin(['bank', 'law_school'])]
+    # to_plot = to_plot[~to_plot['Dataset_Name'].isin(['diabetes', 'german'])]
+    to_plot = to_plot[~to_plot['Dataset_Name'].isin(['law_school', 'folk_emp'])]
 
     # if metric_name in ('Label_Stability', 'Std'):
     to_plot['Dataset_Name_With_Model_Name'] = (
@@ -1428,8 +1434,8 @@ def create_bar_charts_for_diff_imputers_and_datasets(train_injection_scenario: s
 
     final_chart = (
         final_chart.configure_legend(
-            titleFontSize=base_font_size + 12,
-            labelFontSize=base_font_size + 10,
+            titleFontSize=base_font_size + 8,
+            labelFontSize=base_font_size + 6,
             symbolStrokeWidth=10,
             labelLimit=400,
             titleLimit=300,
